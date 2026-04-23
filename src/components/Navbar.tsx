@@ -1,0 +1,198 @@
+import { useEffect, useState } from "react";
+import {
+  Search,
+  Heart,
+  ShoppingBag,
+  User,
+  Menu,
+  X,
+  ChevronDown,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const shopCategories = [
+  {
+    title: "Cleansers",
+    items: ["Foaming Cleanser", "Oil Cleanser", "Micellar Water"],
+  },
+  { title: "Serums", items: ["Vitamin C", "Niacinamide", "Hyaluronic Acid"] },
+  {
+    title: "Moisturizers",
+    items: ["Day Cream", "Night Cream", "Gel Moisturizer"],
+  },
+  { title: "Sunscreens", items: ["SPF 50+", "Tinted SPF", "Mineral SPF"] },
+  { title: "Masks", items: ["Sheet Mask", "Clay Mask", "Sleeping Mask"] },
+  { title: "Treatment", items: ["Acne Care", "Brightening", "Anti Aging"] },
+];
+
+const navLinks = [
+  { label: "Home", href: "#home" },
+  { label: "Shop", href: "#shop", hasMega: true },
+  { label: "Best Seller", href: "#bestseller" },
+  { label: "New Arrivals", href: "#new" },
+  { label: "Collections", href: "#collections" },
+  { label: "About", href: "#about" },
+  { label: "Blog", href: "#blog" },
+  { label: "Contact", href: "#contact" },
+];
+
+const Navbar = () => {
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [megaOpen, setMegaOpen] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 30);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return (
+    <header
+      className={cn(
+        "fixed inset-x-0 top-0 z-50 transition-all duration-500",
+        scrolled
+          ? "glass border-b border-white/40 py-3"
+          : "bg-transparent py-5",
+      )}
+    >
+      {/* Top bar */}
+      {!scrolled && (
+        <div className="hidden md:block bg-foreground/95 text-background text-xs tracking-[0.2em] uppercase py-2 -mt-5 mb-3 absolute inset-x-0 top-0">
+          <div className="container text-center">
+            ✦ Free Shipping for Orders Above Rp 500.000 • BPOM Certified •
+            Cruelty Free ✦
+          </div>
+        </div>
+      )}
+
+      <div
+        className={cn(
+          "container flex items-center justify-between",
+          !scrolled && "md:mt-7",
+        )}
+      >
+        {/* Logo */}
+        <a href="#home" className="flex items-center gap-2 shrink-0">
+          <span className="font-display text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
+            Kasta<span className="text-primary italic">Beuate</span>
+          </span>
+        </a>
+
+        {/* Desktop nav */}
+        <nav className="hidden lg:flex items-center gap-8">
+          {navLinks.map((link) => (
+            <div
+              key={link.label}
+              className="relative"
+              onMouseEnter={() => link.hasMega && setMegaOpen(true)}
+              onMouseLeave={() => link.hasMega && setMegaOpen(false)}
+            >
+              <a
+                href={link.href}
+                className="story-link text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-1"
+              >
+                {link.label}
+                {link.hasMega && <ChevronDown className="h-3 w-3" />}
+              </a>
+
+              {link.hasMega && megaOpen && (
+                <div className="fixed left-0 right-0 top-full mt-2 px-6 animate-fade-in">
+                  <div className="container">
+                    <div className="glass-card p-8 grid grid-cols-3 lg:grid-cols-6 gap-6">
+                      {shopCategories.map((cat) => (
+                        <div key={cat.title}>
+                          <h4 className="font-display text-base text-primary mb-3">
+                            {cat.title}
+                          </h4>
+                          <ul className="space-y-2">
+                            {cat.items.map((it) => (
+                              <li key={it}>
+                                <a
+                                  href="#"
+                                  className="text-xs text-muted-foreground hover:text-primary story-link"
+                                >
+                                  {it}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </nav>
+
+        {/* Right icons */}
+        <div className="flex items-center gap-1 md:gap-2">
+          <button
+            className="p-2 rounded-full hover:bg-accent transition-colors"
+            aria-label="Search"
+          >
+            <Search className="h-5 w-5 text-foreground/70" />
+          </button>
+          <button
+            className="p-2 rounded-full hover:bg-accent transition-colors hidden sm:block"
+            aria-label="Wishlist"
+          >
+            <Heart className="h-5 w-5 text-foreground/70" />
+          </button>
+          <button
+            className="p-2 rounded-full hover:bg-accent transition-colors relative"
+            aria-label="Cart"
+          >
+            <ShoppingBag className="h-5 w-5 text-foreground/70" />
+            <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-semibold rounded-full h-4 w-4 flex items-center justify-center">
+              2
+            </span>
+          </button>
+          <button
+            className="p-2 rounded-full hover:bg-accent transition-colors hidden sm:block"
+            aria-label="Account"
+          >
+            <User className="h-5 w-5 text-foreground/70" />
+          </button>
+          <button
+            className="p-2 rounded-full hover:bg-accent transition-colors lg:hidden"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Menu"
+          >
+            {mobileOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="lg:hidden glass border-t border-white/40 mt-3 animate-fade-in">
+          <nav className="container py-6 flex flex-col gap-4">
+            {navLinks.map((l) => (
+              <a
+                key={l.label}
+                href={l.href}
+                className="text-base font-medium text-foreground/80 hover:text-primary"
+                onClick={() => setMobileOpen(false)}
+              >
+                {l.label}
+              </a>
+            ))}
+            <a href="#" className="text-base font-medium text-primary mt-2">
+              Login / Register
+            </a>
+          </nav>
+        </div>
+      )}
+    </header>
+  );
+};
+
+export default Navbar;

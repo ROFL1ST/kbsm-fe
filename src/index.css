@@ -1,0 +1,193 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Luxury Beauty Design System
+   All colors in HSL.
+   Palette: Soft Nude, Warm Beige, Pure White, Rose Gold, Soft Blush Pink
+*/
+
+@layer base {
+  :root {
+    /* Core surfaces */
+    --background: 30 33% 97%;           /* Soft Nude #F5EDE6 */
+    --foreground: 25 18% 18%;           /* Deep mocha for text */
+
+    --card: 0 0% 100%;
+    --card-foreground: 25 18% 18%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 25 18% 18%;
+
+    /* Brand */
+    --primary: 351 30% 57%;             /* Rose Gold #B76E79 */
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 351 50% 72%;
+
+    --secondary: 28 32% 86%;            /* Warm Beige #E8DCCF */
+    --secondary-foreground: 25 18% 18%;
+
+    --muted: 30 33% 94%;
+    --muted-foreground: 25 12% 42%;
+
+    --accent: 0 53% 94%;                /* Soft Blush Pink #F8E8E8 */
+    --accent-foreground: 351 30% 35%;
+
+    --blush: 0 53% 94%;
+    --nude: 30 33% 93%;
+    --beige: 28 32% 86%;
+    --rose-gold: 351 30% 57%;
+    --rose-gold-light: 351 40% 80%;
+    --gold: 36 45% 62%;
+
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 28 25% 88%;
+    --input: 28 25% 90%;
+    --ring: 351 30% 57%;
+
+    --radius: 1rem;
+
+    /* Gradients */
+    --gradient-luxury: linear-gradient(135deg, hsl(30 33% 97%) 0%, hsl(0 53% 94%) 50%, hsl(28 32% 90%) 100%);
+    --gradient-rose: linear-gradient(135deg, hsl(351 30% 57%) 0%, hsl(351 50% 72%) 100%);
+    --gradient-nude: linear-gradient(180deg, hsl(30 33% 97%) 0%, hsl(28 32% 90%) 100%);
+    --gradient-glow: radial-gradient(circle at 30% 20%, hsl(0 53% 94% / 0.8), transparent 60%);
+
+    /* Shadows — soft luxury */
+    --shadow-soft: 0 4px 20px -4px hsl(25 18% 18% / 0.06);
+    --shadow-elegant: 0 12px 40px -12px hsl(351 30% 57% / 0.18);
+    --shadow-luxury: 0 20px 60px -20px hsl(25 18% 18% / 0.15);
+    --shadow-glow: 0 0 40px hsl(351 50% 72% / 0.25);
+
+    /* Glass */
+    --glass-bg: hsl(0 0% 100% / 0.65);
+    --glass-border: hsl(0 0% 100% / 0.5);
+
+    /* Transitions */
+    --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-luxury: cubic-bezier(0.16, 1, 0.3, 1);
+
+    --sidebar-background: 30 33% 97%;
+    --sidebar-foreground: 25 18% 18%;
+    --sidebar-primary: 351 30% 57%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 53% 94%;
+    --sidebar-accent-foreground: 351 30% 35%;
+    --sidebar-border: 28 25% 88%;
+    --sidebar-ring: 351 30% 57%;
+  }
+
+  .dark {
+    --background: 25 18% 10%;
+    --foreground: 30 33% 95%;
+    --card: 25 18% 12%;
+    --card-foreground: 30 33% 95%;
+    --popover: 25 18% 12%;
+    --popover-foreground: 30 33% 95%;
+    --primary: 351 50% 65%;
+    --primary-foreground: 25 18% 10%;
+    --secondary: 25 15% 18%;
+    --secondary-foreground: 30 33% 95%;
+    --muted: 25 15% 16%;
+    --muted-foreground: 30 15% 65%;
+    --accent: 351 25% 22%;
+    --accent-foreground: 30 33% 95%;
+    --border: 25 15% 20%;
+    --input: 25 15% 20%;
+    --ring: 351 50% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', Georgia, serif;
+    @apply tracking-tight;
+  }
+}
+
+@layer components {
+  .font-display {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--glass-border);
+  }
+
+  .glass-card {
+    @apply glass rounded-3xl;
+    box-shadow: var(--shadow-elegant);
+  }
+
+  .luxury-shadow {
+    box-shadow: var(--shadow-luxury);
+  }
+
+  .elegant-shadow {
+    box-shadow: var(--shadow-elegant);
+  }
+
+  .soft-shadow {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .story-link {
+    @apply relative inline-block;
+  }
+  .story-link::after {
+    content: '';
+    @apply absolute left-0 -bottom-0.5 h-px w-full origin-bottom-right scale-x-0 bg-current transition-transform duration-500;
+    transition-timing-function: var(--transition-luxury);
+  }
+  .story-link:hover::after {
+    @apply origin-bottom-left scale-x-100;
+  }
+
+  .hover-lift {
+    @apply transition-all duration-500;
+    transition-timing-function: var(--transition-luxury);
+  }
+  .hover-lift:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-luxury);
+  }
+
+  .gradient-text {
+    background: var(--gradient-rose);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+@layer utilities {
+  .bg-gradient-luxury { background: var(--gradient-luxury); }
+  .bg-gradient-rose { background: var(--gradient-rose); }
+  .bg-gradient-nude { background: var(--gradient-nude); }
+  .bg-gradient-glow { background: var(--gradient-glow); }
+}
