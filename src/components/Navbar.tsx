@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Search,
   Heart,
@@ -7,7 +8,14 @@ import {
   Menu,
   X,
   ChevronDown,
+  LogOut,
+  Settings,
 } from "lucide-react";
+import {
+  AUTH_STATE_CHANGE_EVENT,
+  clearAccessToken,
+  hasAccessToken,
+} from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 const shopCategories = [
@@ -37,9 +45,12 @@ const navLinks = [
 ];
 
 const Navbar = () => {
+  const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
@@ -47,6 +58,27 @@ const Navbar = () => {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    const syncAuthState = () => {
+      setIsLoggedIn(hasAccessToken());
+    };
+
+    syncAuthState();
+    window.addEventListener("storage", syncAuthState);
+    window.addEventListener(AUTH_STATE_CHANGE_EVENT, syncAuthState);
+
+    return () => {
+      window.removeEventListener("storage", syncAuthState);
+      window.removeEventListener(AUTH_STATE_CHANGE_EVENT, syncAuthState);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    clearAccessToken();
+    setAccountMenuOpen(false);
+    navigate("/login");
+  };
 
   return (
     <header
@@ -136,27 +168,110 @@ const Navbar = () => {
           >
             <Search className="h-5 w-5 text-foreground/70" />
           </button>
-          <button
-            className="p-2 rounded-full hover:bg-accent transition-colors hidden sm:block"
-            aria-label="Wishlist"
-          >
-            <Heart className="h-5 w-5 text-foreground/70" />
-          </button>
-          <button
-            className="p-2 rounded-full hover:bg-accent transition-colors relative"
-            aria-label="Cart"
-          >
-            <ShoppingBag className="h-5 w-5 text-foreground/70" />
-            <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-semibold rounded-full h-4 w-4 flex items-center justify-center">
-              2
-            </span>
-          </button>
-          <button
-            className="p-2 rounded-full hover:bg-accent transition-colors hidden sm:block"
-            aria-label="Account"
-          >
-            <User className="h-5 w-5 text-foreground/70" />
-          </button>
+          {isLoggedIn && (
+            <>
+              <Link
+                to="/"
+                className="p-2 rounded-full hover:bg-accent transition-colors hidden sm:block"
+                aria-label="Wishlist"
+              >
+                <Heart className="h-5 w-5 text-foreground/70" />
+              </Link>
+              <Link
+                to="/"
+                className="p-2 rounded-full hover:bg-accent transition-colors relative"
+                aria-label="Cart"
+              >
+                <ShoppingBag className="h-5 w-5 text-foreground/70" />
+                <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-semibold rounded-full h-4 w-4 flex items-center justify-center">
+                  2
+                </span>
+              </Link>
+            </>
+          )}
+          {isLoggedIn ? (
+            <div className="relative hidden sm:block">
+              <button
+                type="button"
+                className="p-2 rounded-full hover:bg-accent transition-colors"
+                aria-label="Account"
+                onClick={() => setAccountMenuOpen((current) => !current)}
+              >
+                <User className="h-5 w-5 text-foreground/70" />
+              </button>
+
+              {accountMenuOpen && (
+                <div className="absolute right-0 top-full z-50 mt-3 w-44 overflow-hidden rounded-2xl border border-white/40 bg-white/90 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.25)] backdrop-blur-xl animate-fade-in">
+                  <Link
+                    to="/"
+                    className="flex items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors hover:bg-accent/70"
+                    onClick={() => setAccountMenuOpen(false)}
+                  >
+                    <Settings className="h-4 w-4" />
+                    Settings
+                  </Link>
+                  <div className="h-px bg-border/80" />
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-3 px-4 py-3 text-sm text-destructive transition-colors hover:bg-destructive/5"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              className="hidden sm:inline-flex h-10 items-center justify-center rounded-full border border-foreground/10 bg-white/60 px-5 text-sm font-medium text-foreground transition-colors hover:bg-primary hover:text-white"
+            >
+              Sign In
+            </Link>
+          )}
+          {isLoggedIn && (
+            <div className="relative sm:hidden">
+              <button
+                type="button"
+                className="p-2 rounded-full hover:bg-accent transition-colors"
+                aria-label="Account"
+                onClick={() => setAccountMenuOpen((current) => !current)}
+              >
+                <User className="h-5 w-5 text-foreground/70" />
+              </button>
+
+              {accountMenuOpen && (
+                <div className="absolute right-0 top-full z-50 mt-3 w-44 overflow-hidden rounded-2xl border border-white/40 bg-white/90 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.25)] backdrop-blur-xl animate-fade-in">
+                  <Link
+                    to="/"
+                    className="flex items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors hover:bg-accent/70"
+                    onClick={() => setAccountMenuOpen(false)}
+                  >
+                    <Settings className="h-4 w-4" />
+                    Settings
+                  </Link>
+                  <div className="h-px bg-border/80" />
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-3 px-4 py-3 text-sm text-destructive transition-colors hover:bg-destructive/5"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+          {!isLoggedIn && (
+            <Link
+              to="/login"
+              className="inline-flex sm:hidden h-10 items-center justify-center rounded-full border border-foreground/10 bg-white/60 px-4 text-sm font-medium text-foreground transition-colors hover:bg-primary hover:text-white"
+            >
+              Sign In
+            </Link>
+          )}
           <button
             className="p-2 rounded-full hover:bg-accent transition-colors lg:hidden"
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -185,9 +300,13 @@ const Navbar = () => {
                 {l.label}
               </a>
             ))}
-            <a href="#" className="text-base font-medium text-primary mt-2">
-              Login / Register
-            </a>
+            <Link
+              to={isLoggedIn ? "/" : "/login"}
+              className="text-base font-medium text-primary mt-2"
+              onClick={() => setMobileOpen(false)}
+            >
+              {isLoggedIn ? "My Account" : "Sign In"}
+            </Link>
           </nav>
         </div>
       )}
