@@ -34,13 +34,13 @@ const shopCategories = [
 ];
 
 const navLinks = [
-  { label: "Home", href: "#home" },
+  { label: "Home", href: "/" },
   { label: "Shop", href: "#shop", hasMega: true },
   { label: "Best Seller", href: "#bestseller" },
   { label: "New Arrivals", href: "#new" },
   { label: "Collections", href: "#collections" },
   { label: "About", href: "#about" },
-  { label: "Blog", href: "#blog" },
+  { label: "Blog", href: "/blog", isRoute: true },
   { label: "Contact", href: "#contact" },
 ];
 
@@ -121,13 +121,22 @@ const Navbar = () => {
               onMouseEnter={() => link.hasMega && setMegaOpen(true)}
               onMouseLeave={() => link.hasMega && setMegaOpen(false)}
             >
-              <a
-                href={link.href}
-                className="story-link text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-1"
-              >
-                {link.label}
-                {link.hasMega && <ChevronDown className="h-3 w-3" />}
-              </a>
+              {link.isRoute ? (
+                <Link
+                  to={link.href}
+                  className="story-link text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-1"
+                >
+                  {link.label}
+                </Link>
+              ) : (
+                <a
+                  href={link.href}
+                  className="story-link text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-1"
+                >
+                  {link.label}
+                  {link.hasMega && <ChevronDown className="h-3 w-3" />}
+                </a>
+              )}
 
               {link.hasMega && megaOpen && (
                 <div className="fixed left-0 right-0 top-full mt-2 px-6 animate-fade-in">
@@ -290,16 +299,27 @@ const Navbar = () => {
       {mobileOpen && (
         <div className="lg:hidden glass border-t border-white/40 mt-3 animate-fade-in">
           <nav className="container py-6 flex flex-col gap-4">
-            {navLinks.map((l) => (
-              <a
-                key={l.label}
-                href={l.href}
-                className="text-base font-medium text-foreground/80 hover:text-primary"
-                onClick={() => setMobileOpen(false)}
-              >
-                {l.label}
-              </a>
-            ))}
+            {navLinks.map((l) =>
+              l.isRoute ? (
+                <Link
+                  key={l.label}
+                  to={l.href}
+                  className="text-base font-medium text-foreground/80 hover:text-primary"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {l.label}
+                </Link>
+              ) : (
+                <a
+                  key={l.label}
+                  href={l.href}
+                  className="text-base font-medium text-foreground/80 hover:text-primary"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {l.label}
+                </a>
+              )
+            )}
             <Link
               to={isLoggedIn ? "/" : "/login"}
               className="text-base font-medium text-primary mt-2"
