@@ -320,13 +320,35 @@ const Navbar = () => {
                 </a>
               )
             )}
-            <Link
-              to={isLoggedIn ? "/" : "/login"}
-              className="text-base font-medium text-primary mt-2"
-              onClick={() => setMobileOpen(false)}
-            >
-              {isLoggedIn ? "My Account" : "Sign In"}
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link
+                  to="/profile"
+                  className="text-base font-medium text-primary mt-2"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  My Profile
+                </Link>
+                <button
+                  type="button"
+                  className="text-base font-medium text-left text-destructive mt-2"
+                  onClick={() => {
+                    handleLogout();
+                    setMobileOpen(false);
+                  }}
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/login"
+                className="text-base font-medium text-primary mt-2"
+                onClick={() => setMobileOpen(false)}
+              >
+                Sign In
+              </Link>
+            )}
           </nav>
         </div>
       )}
