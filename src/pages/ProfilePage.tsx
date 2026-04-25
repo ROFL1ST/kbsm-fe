@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import { Link } from "react-router-dom";
 import {
   User,
   Phone,
@@ -12,12 +13,15 @@ import {
   Camera,
   Edit3,
   X,
+  Venus,
+  Mars,
   Save,
   Sparkles,
   UserCircle,
   Shield,
   ChevronRight,
   CalendarDays,
+  MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -484,6 +488,24 @@ const ProfilePage = () => {
                     value="Aktif"
                     highlight
                   />
+                </div>
+                
+                <div className="mt-6 pt-6 border-t border-border">
+                  <Link
+                    to="/profile/addresses"
+                    className="flex items-center justify-between p-4 rounded-2xl bg-accent/30 hover:bg-accent/50 transition-colors group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <MapPin className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-medium text-sm">Buku Alamat</p>
+                        <p className="text-xs text-muted-foreground">Kelola alamat pengiriman Anda</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                  </Link>
                 </div>
               </div>
 
