@@ -16,10 +16,6 @@ type RegisterResponseData = {
   created_at: string;
 };
 
-type ForgotPasswordResponseData = {
-  reset_token: string;
-};
-
 type LoginResponseData = {
   access_token: string;
   token_type: string;
@@ -34,11 +30,6 @@ type LoginResponseData = {
 export type AuthCredentials = {
   email: string;
   password: string;
-};
-
-export type ResetPasswordPayload = {
-  token: string;
-  new_password: string;
 };
 
 function getApiBaseUrl() {
@@ -116,48 +107,6 @@ export async function registerUser(credentials: AuthCredentials) {
 
 export async function loginUser(credentials: AuthCredentials) {
   return postJson<LoginResponseData>("/auth/login", credentials);
-}
-
-export async function forgotPassword(email: string) {
-  return postAnyJson<ForgotPasswordResponseData, { email: string }>(
-    "/auth/forgot-password",
-    { email },
-  );
-}
-
-export async function resetPassword(payload: ResetPasswordPayload) {
-  return postAnyJson<null, ResetPasswordPayload>("/auth/reset-password", payload);
-}
-
-export async function sendResetPasswordEmail(payload: {
-  email: string;
-  resetToken: string;
-}) {
-  const response = await fetch("/api/send-reset-email", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  const result = await readJsonSafely<{
-    success?: boolean;
-    message?: string;
-    error?: string;
-  }>(response);
-
-  if (!result) {
-    throw new Error(
-      "Endpoint kirim email reset password mengembalikan response kosong.",
-    );
-  }
-
-  if (!response.ok || !result.success) {
-    throw new Error(result.error || result.message || "Gagal mengirim email reset password.");
-  }
-
-  return result;
 }
 
 export function saveAccessToken(token: string) {

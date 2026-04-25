@@ -8,6 +8,8 @@ import { toast } from "@/components/ui/sonner";
 import { loginUser, saveAccessToken } from "@/lib/auth";
 import AuthShell from "@/components/AuthShell";
 
+const LOGIN_UNAUTHORIZED_MESSAGES = new Set(["unauthorized", "Unauthorized"]);
+
 const LoginForm = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -44,7 +46,12 @@ const LoginForm = () => {
       setPassword("");
       navigate("/");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Login gagal.");
+      const message = error instanceof Error ? error.message : "Login gagal.";
+      toast.error(
+        LOGIN_UNAUTHORIZED_MESSAGES.has(message)
+          ? "Email atau password kamu salah."
+          : message,
+      );
     } finally {
       setIsSubmitting(false);
     }

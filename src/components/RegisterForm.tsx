@@ -8,6 +8,9 @@ import { toast } from "@/components/ui/sonner";
 import { loginUser, registerUser, saveAccessToken } from "@/lib/auth";
 import AuthShell from "@/components/AuthShell";
 
+const MIN_PASSWORD_LENGTH = 6;
+const REGISTER_CONFLICT_MESSAGES = new Set(["conflict", "Email already registered"]);
+
 const RegisterForm = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -30,6 +33,11 @@ const RegisterForm = () => {
       return;
     }
 
+    if (trimmedPassword.length < MIN_PASSWORD_LENGTH) {
+      toast.error(`Password minimal ${MIN_PASSWORD_LENGTH} karakter.`);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -44,12 +52,17 @@ const RegisterForm = () => {
       });
 
       saveAccessToken(loginResponse.data.access_token);
-      toast.success("Registrasi berhasil dan kamu sudah otomatis login.");
+      toast.success("Registrasi berhasil.");
       setEmail("");
       setPassword("");
       navigate("/");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Registrasi gagal.");
+      const message = error instanceof Error ? error.message : "Registrasi gagal.";
+      toast.error(
+        REGISTER_CONFLICT_MESSAGES.has(message)
+          ? "Email ini sudah digunakan."
+          : message,
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -69,7 +82,7 @@ const RegisterForm = () => {
         </h2>
       </div>
 
-      <form className="space-y-5" onSubmit={handleSubmit}>
+      <form className="space-y-5" onSubmit={handleSubmit} noValidate>
         <div className="space-y-2">
           <Label htmlFor="register-email">Email</Label>
           <div className="relative">
@@ -93,7 +106,7 @@ const RegisterForm = () => {
             <Input
               id="register-password"
               type={showPassword ? "text" : "password"}
-              placeholder="Minimal 8 karakter"
+              placeholder={`Minimal ${MIN_PASSWORD_LENGTH} karakter`}
               className="h-12 rounded-full border-white/70 bg-white/70 px-11"
               value={password}
               onChange={(event) => setPassword(event.target.value)}

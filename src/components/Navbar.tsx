@@ -106,7 +106,7 @@ const Navbar = () => {
         )}
       >
         {/* Logo */}
-        <a href="#home" className="flex items-center gap-2 shrink-0">
+        <a href="/" className="flex items-center gap-2 shrink-0">
           <span className="font-display text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
             Kasta<span className="text-primary italic">Beuate</span>
           </span>
