@@ -31,7 +31,7 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/shop" element={<Shop />} />
-          <Route path="/shop/product/:productDetailId" element={<ProductDetail />} />
+          <Route path="/shop/product/:productUnitId" element={<ProductDetail />} />
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/blog/:slug" element={<BlogDetailPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

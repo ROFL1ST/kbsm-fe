@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Star, Heart, Eye, ShoppingBag } from "lucide-react";
+import { Star, Eye, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatRupiah, type ProductCardData } from "@/lib/products";
 
@@ -11,12 +11,6 @@ const ProductCard = ({ p }: { p: ProductCardData }) => (
           {p.badge}
         </span>
       )}
-      <button
-        className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full glass transition-colors hover:bg-primary hover:text-white"
-        aria-label="Wishlist"
-      >
-        <Heart className="h-4 w-4" />
-      </button>
 
       <Link to={`/shop/product/${p.id}`} aria-label={`Lihat detail ${p.name}`}>
         <img

@@ -3,28 +3,28 @@ import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   ChevronRight,
-  Heart,
   Minus,
   Plus,
   Share2,
-  ShoppingBag,
-  Star,
   Store,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ProductCard from "@/components/ProductCard";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { Button } from "@/components/ui/button";
 import {
   fetchProducts,
+  fetchProductDetail,
   formatRupiah,
+  getProductImages,
   mapProductToCard,
   PRODUCT_CACHE_TTL,
 } from "@/lib/products";
 
 const ProductDetail = () => {
   const params = useParams();
-  const productDetailId = Number(params.productDetailId);
+  const productUnitId = Number(params.productUnitId);
   const mobileGalleryRef = useRef<HTMLDivElement | null>(null);
   const [activeMobileSlide, setActiveMobileSlide] = useState(0);
 
@@ -33,15 +33,32 @@ const ProductDetail = () => {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["product-detail", productDetailId],
-    queryFn: () => fetchProducts(),
-    select: (items) =>
-      items.find((item) => item.product_detail_id === productDetailId) ??
-      items[0] ??
-      null,
+    queryKey: ["product-detail", productUnitId],
+    queryFn: () => fetchProductDetail(productUnitId),
     enabled:
-      Number.isInteger(productDetailId) &&
-      productDetailId > 0,
+      Number.isInteger(productUnitId) &&
+      productUnitId > 0,
+    staleTime: PRODUCT_CACHE_TTL,
+    gcTime: PRODUCT_CACHE_TTL * 2,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+
+  const {
+    data: relatedProducts = [],
+    isLoading: isRelatedLoading,
+  } = useQuery({
+    queryKey: ["related-products", product?.category_id],
+    queryFn: () =>
+      fetchProducts({
+        categoryId: product!.category_id,
+        size: 5,
+      }),
+    select: (items) =>
+      items
+        .filter((item) => item.product_unit_id !== productUnitId)
+        .map(mapProductToCard),
+    enabled: typeof product?.category_id === "number" && product.category_id > 0,
     staleTime: PRODUCT_CACHE_TTL,
     gcTime: PRODUCT_CACHE_TTL * 2,
     refetchOnWindowFocus: false,
@@ -55,17 +72,19 @@ const ProductDetail = () => {
   }, [product]);
 
   const cardProduct = product ? mapProductToCard(product) : null;
+  const productImages = product ? getProductImages(product) : [];
   const discountValue =
     product && product.discount_flag ? product.discount_amount : 0;
   const discountPercentage =
     product && product.discount_flag && product.price > 0
       ? Math.round((product.discount_amount / product.price) * 100)
       : 0;
-  const mobileSlides = cardProduct ? Array.from({ length: 6 }, () => cardProduct.image) : [];
+  const mobileSlides = productImages.length > 0 ? productImages : cardProduct ? [cardProduct.image] : [];
+  const activeImage = mobileSlides[activeMobileSlide] ?? cardProduct?.image ?? "";
 
   useEffect(() => {
     setActiveMobileSlide(0);
-  }, [productDetailId]);
+  }, [productUnitId]);
 
   const handleMobileGalleryScroll = () => {
     if (!mobileGalleryRef.current) {
@@ -96,7 +115,7 @@ const ProductDetail = () => {
     <main className="min-h-screen bg-background">
       <Navbar />
 
-      <section className="bg-background pb-32 pt-32 md:pb-20 md:pt-36">
+      <section className="bg-background pb-40 pt-32 md:pb-20 md:pt-36">
         <div className="container space-y-6">
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <Link to="/" className="transition-colors hover:text-foreground">
@@ -141,16 +160,17 @@ const ProductDetail = () => {
             <div className="space-y-8">
               <div className="grid gap-6 lg:grid-cols-[84px_minmax(0,1fr)_minmax(340px,420px)] lg:items-start">
                 <div className="hidden gap-3 lg:grid">
-                  {Array.from({ length: 4 }).map((_, index) => (
+                  {mobileSlides.map((slide, index) => (
                     <button
-                      key={index}
+                      key={`${slide}-${index}`}
                       type="button"
                       className={`overflow-hidden rounded-xl border bg-white ${
-                        index === 0 ? "border-primary" : "border-border/60"
+                        index === activeMobileSlide ? "border-primary" : "border-border/60"
                       }`}
+                      onClick={() => setActiveMobileSlide(index)}
                     >
                       <img
-                        src={cardProduct.image}
+                        src={slide}
                         alt={`${cardProduct.name} preview ${index + 1}`}
                         className="aspect-[4/5] h-full w-full object-cover"
                       />
@@ -161,7 +181,7 @@ const ProductDetail = () => {
                 <div className="mx-auto w-full max-w-[620px] overflow-hidden rounded-2xl border border-border/60 bg-white">
                   <div className="relative hidden bg-gradient-to-br from-primary/10 via-white to-primary/5 md:block">
                     <img
-                      src={cardProduct.image}
+                      src={activeImage}
                       alt={cardProduct.name}
                       width={1200}
                       height={1200}
@@ -219,13 +239,6 @@ const ProductDetail = () => {
                   </button>
 
                   <div className="flex items-center gap-5">
-                    <button
-                      type="button"
-                      className="text-foreground transition-colors hover:text-primary"
-                      aria-label="Tambah Favorit"
-                    >
-                      <Heart className="h-6 w-6" />
-                    </button>
                     <button
                       type="button"
                       className="text-foreground transition-colors hover:text-primary"
@@ -320,13 +333,6 @@ const ProductDetail = () => {
                       type="button"
                       className="inline-flex items-center justify-center gap-2 transition-colors hover:text-primary"
                     >
-                      <Heart className="h-4 w-4" />
-                      Tambah Favorit
-                    </button>
-                    <button
-                      type="button"
-                      className="inline-flex items-center justify-center gap-2 transition-colors hover:text-primary"
-                    >
                       <Store className="h-4 w-4" />
                       Beli offline
                     </button>
@@ -406,13 +412,64 @@ const ProductDetail = () => {
                   dangerouslySetInnerHTML={{ __html: product.product_description }}
                 />
               </div>
+
+              <div className="space-y-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-semibold text-foreground md:text-2xl">
+                      Produk Terkait
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Produk lain dalam kategori {product.category_name}
+                    </p>
+                  </div>
+                  <Link
+                    to="/shop"
+                    className="text-sm font-medium text-primary transition-colors hover:text-primary/80"
+                  >
+                    Lihat semua
+                  </Link>
+                </div>
+
+                {isRelatedLoading ? (
+                  <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <div
+                        key={index}
+                        className="aspect-[3/4] rounded-3xl bg-muted animate-pulse"
+                      />
+                    ))}
+                  </div>
+                ) : relatedProducts.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+                    {relatedProducts.map((relatedProduct) => (
+                      <ProductCard key={relatedProduct.id} p={relatedProduct} />
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             </div>
           )}
         </div>
       </section>
 
       <Footer />
-      <WhatsAppFloat />
+      {product && cardProduct && !isLoading && !isError ? (
+        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-background/95 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur md:hidden">
+          <div className="mx-auto grid w-full max-w-2xl grid-cols-2 gap-3">
+            <Button
+              variant="outline"
+              className="h-12 w-full rounded-none border-foreground bg-white px-4 text-base font-semibold text-foreground hover:bg-muted"
+            >
+              Beli Langsung
+            </Button>
+            <Button className="h-12 w-full rounded-xl bg-primary px-5 text-base font-semibold text-primary-foreground hover:bg-primary/90">
+              + Keranjang
+            </Button>
+          </div>
+        </div>
+      ) : null}
+      <WhatsAppFloat className="bottom-24 md:bottom-6" />
     </main>
   );
 };

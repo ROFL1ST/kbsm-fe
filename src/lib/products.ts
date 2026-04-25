@@ -9,8 +9,16 @@ type ProductsApiResponse = {
   error: string | null;
 };
 
+type ProductDetailApiResponse = {
+  status: boolean;
+  message: string;
+  data: ProductApiItem;
+  error: string | null;
+};
+
 type FetchProductsOptions = {
   categoryId?: number;
+  size?: number;
   status?: number;
 };
 
@@ -30,7 +38,7 @@ export type ProductApiItem = {
   discount_amount: number;
   final_price: number;
   is_best_seller: boolean;
-  path: string;
+  path: string | string[];
 };
 
 export type ProductCardData = {
@@ -55,6 +63,20 @@ function getApiBaseUrl() {
   return API_BASE_URL;
 }
 
+export function getProductImages(product: ProductApiItem) {
+  if (Array.isArray(product.path)) {
+    const images = product.path.filter(
+      (image): image is string => typeof image === "string" && image.trim().length > 0,
+    );
+
+    return images.length > 0 ? images : [""];
+  }
+
+  return typeof product.path === "string" && product.path.trim().length > 0
+    ? [product.path]
+    : [""];
+}
+
 export async function fetchProducts(options: FetchProductsOptions = {}) {
   const query = new URLSearchParams();
 
@@ -66,6 +88,10 @@ export async function fetchProducts(options: FetchProductsOptions = {}) {
     query.set("status", String(options.status));
   }
 
+  if (typeof options.size === "number" && Number.isFinite(options.size)) {
+    query.set("size", String(options.size));
+  }
+
   const endpoint = query.size > 0
     ? `${getApiBaseUrl()}/products?${query.toString()}`
     : `${getApiBaseUrl()}/products`;
@@ -74,6 +100,18 @@ export async function fetchProducts(options: FetchProductsOptions = {}) {
 
   if (!response.ok || !payload.status || !Array.isArray(payload.data)) {
     throw new Error(payload.error || payload.message || "Gagal mengambil produk.");
+  }
+
+  return payload.data;
+}
+
+export async function fetchProductDetail(productUnitId: number) {
+  const endpoint = `${getApiBaseUrl()}/products/detail?product_unit_id=${productUnitId}`;
+  const response = await fetch(endpoint);
+  const payload = (await response.json()) as ProductDetailApiResponse;
+
+  if (!response.ok || !payload.status || !payload.data) {
+    throw new Error(payload.error || payload.message || "Gagal mengambil detail produk.");
   }
 
   return payload.data;
@@ -96,7 +134,7 @@ export function mapProductToCard(product: ProductApiItem): ProductCardData {
       : 0;
 
   return {
-    id: product.product_detail_id,
+    id: product.product_unit_id,
     productId: product.product_id,
     categoryId: product.category_id,
     name: product.product_name,
@@ -105,7 +143,7 @@ export function mapProductToCard(product: ProductApiItem): ProductCardData {
     oldPrice,
     rating: 5,
     reviews: product.total_quantity,
-    image: product.path,
+    image: getProductImages(product)[0] ?? "",
     badge: product.is_best_seller
       ? "Best Seller"
       : discountPercentage > 0
