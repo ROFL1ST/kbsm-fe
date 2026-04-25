@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Flame, ArrowRight } from "lucide-react";
 import categoryImg from "@/assets/category-skincare.jpg";
@@ -72,11 +73,14 @@ const FlashSale = () => {
           </div>
 
           <Button
+            asChild
             size="lg"
             className="rounded-full bg-foreground text-background hover:bg-primary h-14 px-8 text-sm tracking-[0.15em] uppercase elegant-shadow group"
           >
-            Shop Deals
-            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            <Link to="/shop">
+              Shop Deals
+              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
           </Button>
         </div>
       </div>

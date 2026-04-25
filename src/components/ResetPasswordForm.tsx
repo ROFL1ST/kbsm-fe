@@ -1,71 +1,27 @@
 import { FormEvent, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff, LockKeyhole } from "lucide-react";
 import AuthShell from "@/components/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/sonner";
-import { loginUser, resetPassword, saveAccessToken } from "@/lib/auth";
 
 const ResetPasswordForm = () => {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [newPassword, setNewPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
-  const token = searchParams.get("token")?.trim() ?? "";
-  const email = searchParams.get("email")?.trim() ?? "";
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (isSubmitting) {
-      return;
-    }
-
     const trimmedPassword = newPassword.trim();
-
-    if (!token) {
-      toast.error("Token reset password tidak ditemukan.");
-      return;
-    }
-
-    if (!email) {
-      toast.error("Email tidak ditemukan pada link reset password.");
-      return;
-    }
 
     if (!trimmedPassword) {
       toast.error("Password baru wajib diisi.");
       return;
     }
 
-    setIsSubmitting(true);
-
-    try {
-      await resetPassword({
-        token,
-        new_password: trimmedPassword,
-      });
-
-      const loginResponse = await loginUser({
-        email,
-        password: trimmedPassword,
-      });
-
-      saveAccessToken(loginResponse.data.access_token);
-      toast.success("Password berhasil direset dan kamu sudah login.");
-      setNewPassword("");
-      navigate("/");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Gagal mereset password.",
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+    toast.error("Fitur reset password belum tersedia.");
   };
 
   return (
@@ -85,7 +41,7 @@ const ResetPasswordForm = () => {
         </p>
       </div>
 
-      <form className="space-y-5" onSubmit={handleSubmit}>
+      <form className="space-y-5" onSubmit={handleSubmit} noValidate>
         <div className="space-y-2">
           <Label htmlFor="reset-password">Password Baru</Label>
           <div className="relative">
@@ -97,13 +53,11 @@ const ResetPasswordForm = () => {
               className="h-12 rounded-full border-white/70 bg-white/70 px-11"
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
-              disabled={isSubmitting}
             />
             <button
               type="button"
               aria-label={showPassword ? "Hide password" : "Show password"}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-primary"
-              disabled={isSubmitting}
               onClick={() => setShowPassword((current) => !current)}
             >
               {showPassword ? (
@@ -119,9 +73,8 @@ const ResetPasswordForm = () => {
           type="submit"
           size="lg"
           className="group h-14 w-full rounded-full bg-foreground text-background hover:bg-primary elegant-shadow"
-          disabled={isSubmitting}
         >
-          {isSubmitting ? "Memproses..." : "Simpan Password Baru"}
+          Simpan Password Baru
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </Button>
       </form>

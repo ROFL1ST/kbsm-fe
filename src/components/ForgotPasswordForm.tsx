@@ -6,18 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/sonner";
-import { forgotPassword, sendResetPasswordEmail } from "@/lib/auth";
 
 const ForgotPasswordForm = () => {
   const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    if (isSubmitting) {
-      return;
-    }
 
     const trimmedEmail = email.trim();
 
@@ -26,29 +20,7 @@ const ForgotPasswordForm = () => {
       return;
     }
 
-    setIsSubmitting(true);
-
-    try {
-      const response = await forgotPassword(trimmedEmail);
-
-      if (!response.data?.reset_token) {
-        throw new Error("Reset token tidak tersedia.");
-      }
-
-      await sendResetPasswordEmail({
-        email: trimmedEmail,
-        resetToken: response.data.reset_token,
-      });
-
-      toast.success("Email reset password berhasil dikirim.");
-      setEmail("");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Gagal memproses lupa password.",
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+    toast.error("Fitur lupa password belum tersedia.");
   };
 
   return (
@@ -68,7 +40,7 @@ const ForgotPasswordForm = () => {
         </p>
       </div>
 
-      <form className="space-y-5" onSubmit={handleSubmit}>
+      <form className="space-y-5" onSubmit={handleSubmit} noValidate>
         <div className="space-y-2">
           <Label htmlFor="forgot-email">Email</Label>
           <div className="relative">
@@ -80,7 +52,6 @@ const ForgotPasswordForm = () => {
               className="h-12 rounded-full border-white/70 bg-white/70 pl-11"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              disabled={isSubmitting}
             />
           </div>
         </div>
@@ -89,9 +60,8 @@ const ForgotPasswordForm = () => {
           type="submit"
           size="lg"
           className="group h-14 w-full rounded-full bg-foreground text-background hover:bg-primary elegant-shadow"
-          disabled={isSubmitting}
         >
-          {isSubmitting ? "Mengirim..." : "Kirim Link Reset"}
+          Kirim Link Reset
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </Button>
       </form>

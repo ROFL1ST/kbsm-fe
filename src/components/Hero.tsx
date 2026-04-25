@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import { Sparkles, Leaf, ShieldCheck, ArrowRight } from "lucide-react";
 import heroImg from "@/assets/hero-skincare.jpg";
 
@@ -36,11 +37,14 @@ const Hero = () => {
 
           <div className="flex flex-wrap gap-4">
             <Button
+              asChild
               size="lg"
               className="rounded-full bg-foreground text-background hover:bg-primary group h-14 px-8 text-sm tracking-[0.15em] uppercase elegant-shadow"
             >
-              Shop Now
-              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              <Link to="/shop">
+                Shop Now
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
             </Button>
             <Button
               size="lg"
