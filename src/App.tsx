@@ -9,6 +9,8 @@ import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
 import BlogPage from "./pages/BlogPage.tsx";
 import BlogDetailPage from "./pages/BlogDetailPage.tsx";
+import ProfilePage from "./pages/ProfilePage.tsx";
+import AddressPage from "./pages/AddressPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Register from "./pages/Register.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
@@ -34,6 +36,8 @@ const App = () => (
           <Route path="/shop/product/:productUnitId" element={<ProductDetail />} />
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/blog/:slug" element={<BlogDetailPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile/addresses" element={<AddressPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
