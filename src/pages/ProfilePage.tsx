@@ -13,8 +13,6 @@ import {
   Camera,
   Edit3,
   X,
-  Venus,
-  Mars,
   Save,
   Sparkles,
   UserCircle,
