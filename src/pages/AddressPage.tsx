@@ -80,6 +80,7 @@ import {
 
 /* ─── Zod Schema ─── */
 const addressSchema = z.object({
+  address_label: z.string().min(2, "Label alamat minimal 2 karakter (cth: Rumah, Kantor)"),
   receiver_name: z.string().min(2, "Nama penerima minimal 2 karakter"),
   phone_number: z.string().min(9, "Nomor telepon tidak valid"),
   address: z.string().min(10, "Alamat lengkap minimal 10 karakter"),
@@ -115,6 +116,7 @@ export default function AddressPage() {
   const form = useForm<AddressFormValues>({
     resolver: zodResolver(addressSchema),
     defaultValues: {
+      address_label: "",
       receiver_name: "",
       phone_number: "",
       address: "",
@@ -150,6 +152,7 @@ export default function AddressPage() {
   const handleOpenAdd = () => {
     setEditingId(null);
     form.reset({
+      address_label: "",
       receiver_name: "",
       phone_number: "",
       address: "",
@@ -166,6 +169,7 @@ export default function AddressPage() {
   const handleOpenEdit = (address: UserAddress) => {
     setEditingId(address.id);
     form.reset({
+      address_label: address.address_label || "",
       receiver_name: address.receiver_name,
       phone_number: address.phone_number,
       address: address.address,
@@ -187,6 +191,7 @@ export default function AddressPage() {
 
     const addressData: Omit<UserAddress, "id"> = {
       user_id: "user-1",
+      address_label: data.address_label,
       receiver_name: data.receiver_name,
       phone_number: data.phone_number,
       address: data.address,
@@ -306,6 +311,11 @@ export default function AddressPage() {
                   <div className="space-y-3 flex-1">
                     <div className="flex items-center gap-3">
                       <h3 className="font-semibold text-lg">{address.receiver_name}</h3>
+                      {address.address_label && (
+                        <Badge variant="secondary" className="bg-secondary/50 hover:bg-secondary/50 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-semibold">
+                          {address.address_label}
+                        </Badge>
+                      )}
                       {address.is_default && (
                         <Badge className="bg-primary hover:bg-primary text-primary-foreground text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-semibold">
                           <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -424,6 +434,20 @@ export default function AddressPage() {
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="address_label"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Label Alamat</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Cth: Rumah, Kantor, Rumah Nenek..." className="h-11 rounded-xl" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <FormField
                     control={form.control}

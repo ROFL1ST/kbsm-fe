@@ -3,6 +3,7 @@ export interface UserAddress {
   user_id: string;
   receiver_name: string;
   phone_number: string;
+  address_label: string; // e.g. Rumah, Kantor
   address: string;
   province_id: number;
   city_id: number;
@@ -105,6 +106,7 @@ const DEFAULT_ADDRESSES: UserAddress[] = [
     user_id: "user-1",
     receiver_name: "Amelia Sari",
     phone_number: "081234567890",
+    address_label: "Kantor",
     address: "Jl. Sudirman Kav. 52-53, Gedung Kasta Lt. 10",
     province_id: 1,
     province_name: "DKI Jakarta",
