@@ -65,65 +65,132 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-import {
-  type UserAddress,
-  DUMMY_PROVINCES,
-  DUMMY_CITIES,
-  DUMMY_DISTRICTS,
-  DUMMY_SUBDISTRICTS,
-  getAddresses,
-  addAddress,
-  updateAddress,
-  deleteAddress,
-  setDefaultAddress,
-} from "@/data/addressData";
 
+import { getAuthUser } from "@/lib/auth";
+import {
+  type ApiAddress,
+  type ApiProvince,
+  type ApiCity,
+  type ApiSubdistrict,
+  getUserAddresses,
+  createUserAddress,
+  updateUserAddress,
+  getApiProvinces,
+  getApiCities,
+  getApiSubdistricts,
+} from "@/lib/address";
 /* ─── Zod Schema ─── */
+const PROVINCE_POSTAL_PREFIX: Record<number, string[]> = {
+  1: ["8"], // Bali
+  2: ["3"], // Bangka Belitung
+  3: ["1", "4"], // Banten
+  4: ["3"], // Bengkulu
+  5: ["5"], // DIY
+  6: ["1"], // DKI Jakarta
+  7: ["9"], // Gorontalo
+  8: ["3"], // Jambi
+  9: ["1", "4"], // Jawa Barat
+  10: ["5"], // Jawa Tengah
+  11: ["6"], // Jawa Timur
+  12: ["7"], // Kalbar
+  13: ["7"], // Kalsel
+  14: ["7"], // Kalteng
+  15: ["7"], // Kaltim
+  16: ["7"], // Kaltara
+  17: ["2"], // Kepri
+  18: ["3"], // Lampung
+  19: ["9"], // Maluku
+  20: ["9"], // Malut
+  21: ["2"], // Aceh
+  22: ["8"], // NTB
+  23: ["8"], // NTT
+  24: ["9"], // Papua
+  25: ["9"], // Papua Barat
+  26: ["2"], // Riau
+  27: ["9"], // Sulbar
+  28: ["9"], // Sulsel
+  29: ["9"], // Sulteng
+  30: ["9"], // Sultra
+  31: ["9"], // Sulut
+  32: ["2"], // Sumbar
+  33: ["3"], // Sumsel
+  34: ["2"], // Sumut
+};
+
 const addressSchema = z.object({
-  address_label: z.string().min(2, "Label alamat minimal 2 karakter (cth: Rumah, Kantor)"),
+  label: z.string().min(2, "Label alamat minimal 2 karakter (cth: Rumah, Kantor)"),
   receiver_name: z.string().min(2, "Nama penerima minimal 2 karakter"),
   phone_number: z.string().min(9, "Nomor telepon tidak valid"),
   address: z.string().min(10, "Alamat lengkap minimal 10 karakter"),
   province_id: z.string().min(1, "Pilih provinsi"),
   city_id: z.string().min(1, "Pilih kota/kabupaten"),
   district_id: z.string().min(1, "Pilih kecamatan"),
-  subdistrict_id: z.string().min(1, "Pilih kelurahan"),
-  postal_code: z.string().min(5, "Kode pos tidak valid"),
+  subdistrict_name: z.string().min(2, "Isi nama kelurahan"),
+  postal_code: z.string().length(5, "Kode pos harus 5 digit"),
   is_default: z.boolean().default(false),
+}).superRefine((data, ctx) => {
+  const provinceId = Number(data.province_id);
+  const prefixes = PROVINCE_POSTAL_PREFIX[provinceId];
+  if (prefixes && data.postal_code && data.postal_code.length > 0) {
+    const firstDigit = data.postal_code.charAt(0);
+    if (!prefixes.includes(firstDigit)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Kode pos untuk wilayah ini umumnya diawali angka ${prefixes.join(" atau ")}`,
+        path: ["postal_code"],
+      });
+    }
+  }
 });
 
 type AddressFormValues = z.infer<typeof addressSchema>;
 
 export default function AddressPage() {
-  const [addresses, setAddresses] = useState<UserAddress[]>([]);
+  const [addresses, setAddresses] = useState<ApiAddress[]>([]);
   const [mounted, setMounted] = useState(false);
 
   // Form Modal State
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Delete Dialog State
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [addressToDelete, setAddressToDelete] = useState<number | null>(null);
+  const fetchAddresses = async () => {
+    try {
+      const user = getAuthUser();
+      if (user) {
+        const data = await getUserAddresses(user.id);
+        setAddresses(data);
+      }
+    } catch (err) {
+      toast.error("Gagal memuat alamat");
+    } finally {
+      setMounted(true);
+    }
+  };
 
   useEffect(() => {
-    setAddresses(getAddresses());
-    setMounted(true);
+    fetchAddresses();
     document.title = "Daftar Alamat — Kasta Beauté";
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  // Regional API State
+  const [provinces, setProvinces] = useState<ApiProvince[]>([]);
+  const [cities, setCities] = useState<ApiCity[]>([]);
+  const [subdistricts, setSubdistricts] = useState<ApiSubdistrict[]>([]);
+
+  // Form setup
   const form = useForm<AddressFormValues>({
     resolver: zodResolver(addressSchema),
     defaultValues: {
-      address_label: "",
+      label: "",
       receiver_name: "",
       phone_number: "",
       address: "",
       province_id: "",
       city_id: "",
       district_id: "",
-      subdistrict_id: "",
+      subdistrict_name: "",
       postal_code: "",
       is_default: false,
     },
@@ -131,67 +198,80 @@ export default function AddressPage() {
 
   const watchProvince = form.watch("province_id");
   const watchCity = form.watch("city_id");
-  const watchDistrict = form.watch("district_id");
-  const watchSubdistrict = form.watch("subdistrict_id");
 
-  // Cascading dropdown logic
-  const availableCities = watchProvince ? DUMMY_CITIES[Number(watchProvince)] || [] : [];
-  const availableDistricts = watchCity ? DUMMY_DISTRICTS[Number(watchCity)] || [] : [];
-  const availableSubdistricts = watchDistrict ? DUMMY_SUBDISTRICTS[Number(watchDistrict)] || [] : [];
-
-  // Auto-fill postal code when subdistrict is selected
+  // Fetch Provinces on Mount
   useEffect(() => {
-    if (watchSubdistrict) {
-      const sub = availableSubdistricts.find((s) => s.id === Number(watchSubdistrict));
-      if (sub) {
-        form.setValue("postal_code", sub.zip);
-      }
+    getApiProvinces().then(setProvinces).catch(console.error);
+  }, []);
+
+  // Fetch Cities when Province changes
+  useEffect(() => {
+    if (watchProvince) {
+      getApiCities(watchProvince).then(setCities).catch(console.error);
+    } else {
+      setCities([]);
     }
-  }, [watchSubdistrict, availableSubdistricts, form]);
+  }, [watchProvince]);
+
+  // Fetch Subdistricts (Kecamatan) when City changes
+  useEffect(() => {
+    if (watchCity) {
+      getApiSubdistricts(watchCity).then(setSubdistricts).catch(console.error);
+    } else {
+      setSubdistricts([]);
+    }
+  }, [watchCity]);
 
   const handleOpenAdd = () => {
     setEditingId(null);
     form.reset({
-      address_label: "",
+      label: "",
       receiver_name: "",
       phone_number: "",
       address: "",
       province_id: "",
       city_id: "",
       district_id: "",
-      subdistrict_id: "",
+      subdistrict_name: "",
       postal_code: "",
       is_default: addresses.length === 0,
     });
     setIsFormOpen(true);
   };
 
-  const handleOpenEdit = (address: UserAddress) => {
+  const handleOpenEdit = (address: ApiAddress) => {
     setEditingId(address.id);
     form.reset({
-      address_label: address.address_label || "",
+      label: address.label || "",
       receiver_name: address.receiver_name,
       phone_number: address.phone_number,
       address: address.address,
       province_id: String(address.province_id),
       city_id: String(address.city_id),
-      district_id: String(address.district_id),
-      subdistrict_id: String(address.subdistrict_id),
-      postal_code: address.postal_code,
+      district_id: String(address.district_id || ""),
+      subdistrict_name: address.subdistrict_name || "",
+      postal_code: address.postal_code || "",
       is_default: address.is_default,
     });
     setIsFormOpen(true);
   };
 
-  const onSubmit = (data: AddressFormValues) => {
-    const province_name = DUMMY_PROVINCES.find((p) => p.id === Number(data.province_id))?.name || "";
-    const city_name = DUMMY_CITIES[Number(data.province_id)]?.find((c) => c.id === Number(data.city_id))?.name || "";
-    const district_name = DUMMY_DISTRICTS[Number(data.city_id)]?.find((d) => d.id === Number(data.district_id))?.name || "";
-    const subdistrict_name = DUMMY_SUBDISTRICTS[Number(data.district_id)]?.find((s) => s.id === Number(data.subdistrict_id))?.name || "";
+  const onSubmit = async (data: AddressFormValues) => {
+    const user = getAuthUser();
+    if (!user) {
+      toast.error("Sesi telah habis, silakan login kembali.");
+      return;
+    }
 
-    const addressData: Omit<UserAddress, "id"> = {
-      user_id: "user-1",
-      address_label: data.address_label,
+    setIsSubmitting(true);
+    const province_name = provinces.find((p) => String(p.province_id) === String(data.province_id))?.province || "";
+    const city_name = cities.find((c) => String(c.city_id) === String(data.city_id))?.city_name || "";
+    const district_name = subdistricts.find((s) => String(s.subdistrict_id) === String(data.district_id))?.subdistrict_name || "";
+    const subdistrict_name = data.subdistrict_name; // Kelurahan manual
+
+    const addressData = {
+      user_id: user.id,
+      label: data.label,
       receiver_name: data.receiver_name,
       phone_number: data.phone_number,
       address: data.address,
@@ -199,39 +279,39 @@ export default function AddressPage() {
       province_name,
       city_id: Number(data.city_id),
       city_name,
-      district_id: Number(data.district_id),
+      district_id: Number(data.district_id) || null,
       district_name,
-      subdistrict_id: Number(data.subdistrict_id),
+      subdistrict_id: null, // As backend doesn't provide kelurahan ID
       subdistrict_name,
-      postal_code: data.postal_code,
+      postal_code: data.postal_code || null,
       is_default: data.is_default,
     };
 
-    if (editingId) {
-      updateAddress(editingId, addressData);
-      toast.success("Alamat berhasil diperbarui!");
-    } else {
-      addAddress(addressData);
-      toast.success("Alamat baru berhasil ditambahkan!");
+    try {
+      if (editingId) {
+        await updateUserAddress({ ...addressData, id: editingId });
+        toast.success("Alamat berhasil diperbarui!");
+      } else {
+        await createUserAddress(addressData);
+        toast.success("Alamat baru berhasil ditambahkan!");
+      }
+      await fetchAddresses();
+      setIsFormOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menyimpan alamat");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setAddresses(getAddresses());
-    setIsFormOpen(false);
   };
 
-  const handleDelete = () => {
-    if (addressToDelete) {
-      deleteAddress(addressToDelete);
-      setAddresses(getAddresses());
-      toast.success("Alamat berhasil dihapus");
+  const handleSetDefault = async (address: ApiAddress) => {
+    try {
+      await updateUserAddress({ ...address, is_default: true });
+      toast.success("Alamat utama berhasil diubah");
+      await fetchAddresses();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal mengatur alamat utama");
     }
-    setIsDeleteDialogOpen(false);
-  };
-
-  const handleSetDefault = (id: number) => {
-    setDefaultAddress(id);
-    setAddresses(getAddresses());
-    toast.success("Alamat utama berhasil diubah");
   };
 
   if (!mounted) {
@@ -311,9 +391,9 @@ export default function AddressPage() {
                   <div className="space-y-3 flex-1">
                     <div className="flex items-center gap-3">
                       <h3 className="font-semibold text-lg">{address.receiver_name}</h3>
-                      {address.address_label && (
+                      {address.label && (
                         <Badge variant="secondary" className="bg-secondary/50 hover:bg-secondary/50 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-semibold">
-                          {address.address_label}
+                          {address.label}
                         </Badge>
                       )}
                       {address.is_default && (
@@ -347,26 +427,13 @@ export default function AddressPage() {
                         <Pencil className="h-3.5 w-3.5 mr-1.5" />
                         Edit
                       </Button>
-                      {!address.is_default && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-full text-destructive hover:bg-destructive/10"
-                          onClick={() => {
-                            setAddressToDelete(address.id);
-                            setIsDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
                     </div>
                     {!address.is_default && (
                       <Button
                         variant="ghost"
                         size="sm"
                         className="rounded-full text-xs h-8 text-primary hover:bg-primary/10"
-                        onClick={() => handleSetDefault(address.id)}
+                        onClick={() => handleSetDefault(address)}
                       >
                         Jadikan Utama
                       </Button>
@@ -383,7 +450,7 @@ export default function AddressPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="rounded-xl">
                         {!address.is_default && (
-                          <DropdownMenuItem onClick={() => handleSetDefault(address.id)}>
+                          <DropdownMenuItem onClick={() => handleSetDefault(address)}>
                             <Home className="h-4 w-4 mr-2 text-primary" />
                             Jadikan Utama
                           </DropdownMenuItem>
@@ -392,21 +459,6 @@ export default function AddressPage() {
                           <Pencil className="h-4 w-4 mr-2" />
                           Edit Alamat
                         </DropdownMenuItem>
-                        {!address.is_default && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => {
-                                setAddressToDelete(address.id);
-                                setIsDeleteDialogOpen(true);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Hapus Alamat
-                            </DropdownMenuItem>
-                          </>
-                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -421,8 +473,8 @@ export default function AddressPage() {
           FORM DIALOG (ADD / EDIT)
       ──────────────────────────────────────────────────────── */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-[600px] p-0 rounded-3xl overflow-hidden border-border/50">
-          <div className="p-6 md:p-8 space-y-6">
+        <DialogContent className="w-[95vw] sm:max-w-[600px] p-0 rounded-3xl border-border/50 max-h-[85vh] overflow-y-auto">
+          <div className="p-5 md:p-8 space-y-6">
             <DialogHeader>
               <DialogTitle className="font-display text-2xl">
                 {editingId ? "Edit Alamat" : "Tambah Alamat Baru"}
@@ -436,7 +488,7 @@ export default function AddressPage() {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
                   control={form.control}
-                  name="address_label"
+                  name="label"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Label Alamat</FormLabel>
@@ -484,15 +536,15 @@ export default function AddressPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Provinsi</FormLabel>
-                        <Select onValueChange={(v) => { field.onChange(v); form.setValue("city_id", ""); }} value={field.value}>
+                        <Select onValueChange={(v) => { field.onChange(v); form.setValue("city_id", ""); form.setValue("district_id", ""); }} value={field.value}>
                           <FormControl>
                             <SelectTrigger className="h-11 rounded-xl">
                               <SelectValue placeholder="Pilih Provinsi" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {DUMMY_PROVINCES.map((p) => (
-                              <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                            {provinces.map((p) => (
+                              <SelectItem key={p.province_id} value={String(p.province_id)}>{p.province}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -513,8 +565,8 @@ export default function AddressPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {availableCities.map((c) => (
-                              <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                            {cities.map((c) => (
+                              <SelectItem key={c.city_id} value={String(c.city_id)}>{c.city_name}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -531,15 +583,15 @@ export default function AddressPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Kecamatan</FormLabel>
-                        <Select onValueChange={(v) => { field.onChange(v); form.setValue("subdistrict_id", ""); }} value={field.value} disabled={!watchCity}>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={!watchCity}>
                           <FormControl>
                             <SelectTrigger className="h-11 rounded-xl">
                               <SelectValue placeholder="Pilih Kecamatan" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {availableDistricts.map((d) => (
-                              <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
+                            {subdistricts.map((d) => (
+                              <SelectItem key={d.subdistrict_id} value={String(d.subdistrict_id)}>{d.subdistrict_name}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -549,22 +601,13 @@ export default function AddressPage() {
                   />
                   <FormField
                     control={form.control}
-                    name="subdistrict_id"
+                    name="subdistrict_name"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Kelurahan</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} disabled={!watchDistrict}>
-                          <FormControl>
-                            <SelectTrigger className="h-11 rounded-xl">
-                              <SelectValue placeholder="Pilih Kelurahan" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {availableSubdistricts.map((s) => (
-                              <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <Input placeholder="Cth: Kelurahan Kuta" className="h-11 rounded-xl" {...field} />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -630,12 +673,13 @@ export default function AddressPage() {
                     type="button"
                     variant="outline"
                     className="flex-1 rounded-full h-11"
+                    disabled={isSubmitting}
                     onClick={() => setIsFormOpen(false)}
                   >
                     Batal
                   </Button>
-                  <Button type="submit" className="flex-1 rounded-full h-11 shadow-md">
-                    Simpan Alamat
+                  <Button type="submit" disabled={isSubmitting} className="flex-1 rounded-full h-11 shadow-md">
+                    {isSubmitting ? "Menyimpan..." : "Simpan Alamat"}
                   </Button>
                 </div>
               </form>
@@ -644,28 +688,7 @@ export default function AddressPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ────────────────────────────────────────────────────────
-          DELETE CONFIRMATION DIALOG
-      ──────────────────────────────────────────────────────── */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent className="rounded-3xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="font-display">Hapus Alamat?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Apakah Anda yakin ingin menghapus alamat ini? Tindakan ini tidak dapat dibatalkan.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 sm:gap-0">
-            <AlertDialogCancel className="rounded-full">Batal</AlertDialogCancel>
-            <AlertDialogAction
-              className="rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={handleDelete}
-            >
-              Hapus Alamat
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
 
       <Footer />
       <WhatsAppFloat />
