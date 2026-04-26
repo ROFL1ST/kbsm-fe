@@ -61,12 +61,12 @@ import {
   GENDER_OPTIONS,
   GENDER_LABELS,
   DEFAULT_PROFILE,
-  loadProfile,
-  saveProfile,
   calcAge,
   formatBirthDate,
   getInitials,
 } from "@/data/profileData";
+import { getAuthUser } from "@/lib/auth";
+import { getUserProfile, updateUserProfile } from "@/lib/profile";
 import { cn } from "@/lib/utils";
 
 /* ─── Zod Schema ─── */
@@ -140,7 +140,7 @@ const ProfileAvatar = ({
   src: string | null;
   name: string;
   isEditing: boolean;
-  onFileSelect?: (base64: string) => void;
+  onFileSelect?: (base64: string, file: File) => void;
 }) => {
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -150,7 +150,7 @@ const ProfileAvatar = ({
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
-        onFileSelect?.(reader.result);
+        onFileSelect?.(reader.result, file);
       }
     };
     reader.readAsDataURL(file);
@@ -203,15 +203,33 @@ const ProfileAvatar = ({
 const ProfilePage = () => {
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  /* Load from localStorage on mount */
+  /* Load from API on mount */
   useEffect(() => {
-    setProfile(loadProfile());
-    setMounted(true);
     document.title = "Profil Saya — Kasta Beauté";
     window.scrollTo({ top: 0, behavior: "smooth" });
+
+    const fetchProfile = async () => {
+      try {
+        const user = getAuthUser();
+        if (user) {
+          const apiProfile = await getUserProfile(user.id);
+          setProfile(apiProfile);
+        }
+      } catch (err) {
+        toast.error("Gagal mengambil profil", {
+          description: err instanceof Error ? err.message : "Terjadi kesalahan",
+        });
+      } finally {
+        setMounted(true);
+      }
+    };
+
+    fetchProfile();
   }, []);
 
   /* ── Form ── */
@@ -219,7 +237,7 @@ const ProfilePage = () => {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       full_name: profile.full_name,
-      email: profile.email ?? "",
+      email: profile.email || getAuthUser()?.email || "",
       phone: profile.phone ?? "",
       gender: profile.gender ?? undefined,
       birth_date: profile.birth_date ?? "",
@@ -227,39 +245,52 @@ const ProfilePage = () => {
     },
   });
 
-  /* Sync form when profile loads from localStorage */
+  /* Sync form when profile loads from API */
   useEffect(() => {
     form.reset({
       full_name: profile.full_name,
-      email: profile.email ?? "",
+      email: profile.email || getAuthUser()?.email || "",
       phone: profile.phone ?? "",
       gender: profile.gender ?? undefined,
       birth_date: profile.birth_date ?? "",
       profile_picture: profile.profile_picture ?? undefined,
     });
+    setSelectedFile(null);
   }, [profile, form]);
 
-  const onSubmit = (data: ProfileFormValues) => {
-    const updated: UserProfile = {
-      user_id: String(profile.user_id),
-      full_name: data.full_name,
-      email: data.email,
-      phone: data.phone,
-      gender: (data.gender as Gender) ?? null,
-      birth_date: data.birth_date ?? null,
-      profile_picture: data.profile_picture ?? null,
-    };
-    saveProfile(updated);
-    setProfile(updated);
-    setIsEditing(false);
-    toast.success("Profil berhasil disimpan! ✨", {
-      description: "Informasi profilmu telah diperbarui.",
-    });
+  const onSubmit = async (data: ProfileFormValues) => {
+    if (!profile.user_id) return;
+    
+    setIsSubmitting(true);
+    try {
+      const updated = await updateUserProfile({
+        user_id: profile.user_id,
+        full_name: data.full_name,
+        phone: data.phone,
+        gender: data.gender,
+        birth_date: data.birth_date,
+        profile_picture: selectedFile,
+      });
+      
+      setProfile(updated);
+      setIsEditing(false);
+      setSelectedFile(null);
+      toast.success("Profil berhasil disimpan! ✨", {
+        description: "Informasi profilmu telah diperbarui.",
+      });
+    } catch (err) {
+      toast.error("Gagal menyimpan profil", {
+        description: err instanceof Error ? err.message : "Terjadi kesalahan",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
     form.reset();
     setIsEditing(false);
+    setSelectedFile(null);
   };
 
   /* Computed values */
@@ -317,9 +348,10 @@ const ProfilePage = () => {
             src={displayPicture}
             name={displayName}
             isEditing={isEditing}
-            onFileSelect={(base64) =>
-              form.setValue("profile_picture", base64)
-            }
+            onFileSelect={(base64, file) => {
+              form.setValue("profile_picture", base64);
+              setSelectedFile(file);
+            }}
           />
 
           {/* Name */}
@@ -328,7 +360,7 @@ const ProfilePage = () => {
               {displayName}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {profile.email ?? "Tambahkan email kamu"}
+              {profile.email || getAuthUser()?.email || "Tambahkan email kamu"}
             </p>
           </div>
 
@@ -376,6 +408,7 @@ const ProfilePage = () => {
                 type="button"
                 variant="outline"
                 onClick={handleCancel}
+                disabled={isSubmitting}
                 className="rounded-full border-foreground/20 hover:bg-foreground hover:text-background gap-2 px-6 text-sm tracking-[0.12em] uppercase"
               >
                 <X className="h-4 w-4" />
@@ -384,10 +417,11 @@ const ProfilePage = () => {
               <Button
                 type="button"
                 onClick={form.handleSubmit(onSubmit)}
+                disabled={isSubmitting}
                 className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2 px-6 text-sm tracking-[0.12em] uppercase elegant-shadow"
               >
                 <Save className="h-4 w-4" />
-                Simpan
+                {isSubmitting ? "Menyimpan..." : "Simpan"}
               </Button>
             </div>
           )}
@@ -419,8 +453,8 @@ const ProfilePage = () => {
                   <InfoRow
                     icon={Mail}
                     label="Email"
-                    value={profile.email ?? "Belum diisi"}
-                    highlight={!!profile.email}
+                    value={profile.email || getAuthUser()?.email || "Belum diisi"}
+                    highlight={!!(profile.email || getAuthUser()?.email)}
                   />
                   <InfoRow
                     icon={Phone}
@@ -739,6 +773,7 @@ const ProfilePage = () => {
                   <Button
                     type="button"
                     variant="outline"
+                    disabled={isSubmitting}
                     className="flex-1 rounded-full h-12 border-foreground/20 hover:bg-foreground hover:text-background text-sm tracking-[0.12em] uppercase gap-2"
                     onClick={handleCancel}
                   >
@@ -747,10 +782,11 @@ const ProfilePage = () => {
                   </Button>
                   <Button
                     type="submit"
+                    disabled={isSubmitting}
                     className="flex-1 rounded-full h-12 bg-foreground text-background hover:bg-primary text-sm tracking-[0.12em] uppercase gap-2 elegant-shadow"
                   >
                     <Save className="h-4 w-4" />
-                    Simpan Perubahan
+                    {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
                   </Button>
                 </div>
               </form>

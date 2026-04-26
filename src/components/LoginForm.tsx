@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/sonner";
-import { loginUser, saveAccessToken } from "@/lib/auth";
+import { loginUser, saveAccessToken, saveAuthUser } from "@/lib/auth";
 import AuthShell from "@/components/AuthShell";
 
 const LOGIN_UNAUTHORIZED_MESSAGES = new Set(["unauthorized", "Unauthorized"]);
@@ -41,6 +41,7 @@ const LoginForm = () => {
       });
 
       saveAccessToken(loginResponse.data.access_token);
+      saveAuthUser(loginResponse.data.user);
       toast.success("Login berhasil.");
       setEmail("");
       setPassword("");
