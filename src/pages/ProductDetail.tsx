@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   ChevronRight,
   Minus,
@@ -13,6 +13,9 @@ import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/sonner";
+import { hasAccessToken } from "@/lib/auth";
+import { addToCart } from "@/lib/cart";
 import {
   fetchProducts,
   fetchProductDetail,
@@ -23,10 +26,12 @@ import {
 } from "@/lib/products";
 
 const ProductDetail = () => {
+  const navigate = useNavigate();
   const params = useParams();
   const productUnitId = Number(params.productUnitId);
   const mobileGalleryRef = useRef<HTMLDivElement | null>(null);
   const [activeMobileSlide, setActiveMobileSlide] = useState(0);
+  const [quantity, setQuantity] = useState(1);
 
   const {
     data: product,
@@ -84,7 +89,39 @@ const ProductDetail = () => {
 
   useEffect(() => {
     setActiveMobileSlide(0);
+    setQuantity(1);
   }, [productUnitId]);
+
+  const addToCartMutation = useMutation({
+    mutationFn: async () => {
+      if (!product || !cardProduct) {
+        throw new Error("Produk tidak tersedia.");
+      }
+
+      if (!hasAccessToken()) {
+        throw new Error("Kamu harus login dulu sebelum menambahkan produk ke keranjang.");
+      }
+
+      if (quantity <= 0) {
+        throw new Error("Quantity produk harus lebih dari 0.");
+      }
+
+      await addToCart({
+        product_unit_id: product.product_unit_id,
+        quantity,
+      });
+    },
+    onSuccess: () => {
+      toast.success("Produk berhasil ditambahkan ke keranjang.");
+    },
+    onError: (error) => {
+      const message = error instanceof Error ? error.message : "Gagal menambahkan produk ke keranjang.";
+      toast.error(message);
+      if (message.includes("login")) {
+        navigate("/login");
+      }
+    },
+  });
 
   const handleMobileGalleryScroll = () => {
     if (!mobileGalleryRef.current) {
@@ -109,6 +146,18 @@ const ProductDetail = () => {
       left: mobileGalleryRef.current.clientWidth * index,
       behavior: "smooth",
     });
+  };
+
+  const decreaseQuantity = () => {
+    setQuantity((current) => Math.max(1, current - 1));
+  };
+
+  const increaseQuantity = () => {
+    if (!product) {
+      return;
+    }
+
+    setQuantity((current) => Math.min(product.total_quantity, current + 1));
   };
 
   return (
@@ -296,15 +345,19 @@ const ProductDetail = () => {
                           <button
                             type="button"
                             className="flex h-full w-11 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
+                            onClick={decreaseQuantity}
+                            disabled={quantity <= 1}
                           >
                             <Minus className="h-4 w-4" />
                           </button>
                           <div className="flex h-full w-14 items-center justify-center border-x border-border/60 font-medium">
-                            1
+                            {quantity}
                           </div>
                           <button
                             type="button"
                             className="flex h-full w-11 items-center justify-center text-muted-foreground transition-colors hover:bg-muted"
+                            onClick={increaseQuantity}
+                            disabled={quantity >= product.total_quantity}
                           >
                             <Plus className="h-4 w-4" />
                           </button>
@@ -323,8 +376,12 @@ const ProductDetail = () => {
                     >
                       Beli Langsung
                     </Button>
-                    <Button className="h-12 w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary/90">
-                      + Tambahkan ke Keranjang
+                    <Button
+                      className="h-12 w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
+                      onClick={() => addToCartMutation.mutate()}
+                      disabled={addToCartMutation.isPending || product.total_quantity <= 0}
+                    >
+                      {addToCartMutation.isPending ? "Menambahkan..." : "+ Tambahkan ke Keranjang"}
                     </Button>
                   </div>
 
@@ -463,8 +520,12 @@ const ProductDetail = () => {
             >
               Beli Langsung
             </Button>
-            <Button className="h-12 w-full rounded-xl bg-primary px-5 text-base font-semibold text-primary-foreground hover:bg-primary/90">
-              + Keranjang
+            <Button
+              className="h-12 w-full rounded-xl bg-primary px-5 text-base font-semibold text-primary-foreground hover:bg-primary/90"
+              onClick={() => addToCartMutation.mutate()}
+              disabled={addToCartMutation.isPending || product.total_quantity <= 0}
+            >
+              {addToCartMutation.isPending ? "Menambahkan..." : "+ Keranjang"}
             </Button>
           </div>
         </div>

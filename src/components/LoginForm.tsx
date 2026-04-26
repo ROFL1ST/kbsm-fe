@@ -41,7 +41,7 @@ const LoginForm = () => {
       });
 
       saveAccessToken(loginResponse.data.access_token);
-      saveAuthUser(loginResponse.data.user);
+      await saveAuthUser(loginResponse.data.user);
       toast.success("Login berhasil.");
       setEmail("");
       setPassword("");

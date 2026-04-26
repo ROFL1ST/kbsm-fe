@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Search,
@@ -16,6 +17,7 @@ import {
   clearAccessToken,
   hasAccessToken,
 } from "@/lib/auth";
+import { CART_STATE_CHANGE_EVENT, fetchCart, getCartItemCountFromItems } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 
 const shopCategories = [
@@ -74,11 +76,44 @@ const Navbar = () => {
     };
   }, []);
 
+  const {
+    data: cartData,
+    refetch: refetchCart,
+  } = useQuery({
+    queryKey: ["navbar-cart"],
+    queryFn: fetchCart,
+    enabled: isLoggedIn,
+    staleTime: 1000 * 15,
+    gcTime: 1000 * 60,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      return;
+    }
+
+    const syncCartState = () => {
+      refetchCart();
+    };
+
+    window.addEventListener(CART_STATE_CHANGE_EVENT, syncCartState);
+    window.addEventListener(AUTH_STATE_CHANGE_EVENT, syncCartState);
+
+    return () => {
+      window.removeEventListener(CART_STATE_CHANGE_EVENT, syncCartState);
+      window.removeEventListener(AUTH_STATE_CHANGE_EVENT, syncCartState);
+    };
+  }, [isLoggedIn, refetchCart]);
+
   const handleLogout = () => {
     clearAccessToken();
     setAccountMenuOpen(false);
     navigate("/login");
   };
+
+  const cartItemCount = cartData ? getCartItemCountFromItems(cartData.items) : 0;
 
   return (
     <header
@@ -187,14 +222,16 @@ const Navbar = () => {
                 <Heart className="h-5 w-5 text-foreground/70" />
               </Link>
               <Link
-                to="/"
+                to="/cart"
                 className="p-2 rounded-full hover:bg-accent transition-colors relative"
                 aria-label="Cart"
               >
                 <ShoppingBag className="h-5 w-5 text-foreground/70" />
-                <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-semibold rounded-full h-4 w-4 flex items-center justify-center">
-                  2
-                </span>
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-semibold rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+                    {cartItemCount}
+                  </span>
+                )}
               </Link>
             </>
           )}
