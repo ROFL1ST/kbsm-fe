@@ -1,0 +1,101 @@
+import { fetchAuth } from "./auth";
+
+type DeliveryCostRequest = {
+  origin_subdistrict_id: number;
+  destination_subdistrict_id: number;
+  weight: number;
+  courier: string;
+};
+
+type DeliveryCostApiEnvelope = {
+  status: boolean;
+  message: string;
+  data: unknown;
+  error: string | null;
+};
+
+export type ShippingOption = {
+  id: string;
+  courier: string;
+  courierName: string;
+  service: string;
+  description: string;
+  cost: number;
+  etd: string;
+};
+
+function parseShippingOptions(input: unknown, courier: string): ShippingOption[] {
+  const source = Array.isArray(input)
+    ? input
+    : typeof input === "object" && input !== null
+      ? [
+          ...(Array.isArray((input as { costs?: unknown[] }).costs) ? (input as { costs: unknown[] }).costs : []),
+          ...(Array.isArray((input as { results?: { costs?: unknown[] }[] }).results)
+            ? (input as { results: { costs?: unknown[] }[] }).results.flatMap((result) => result.costs ?? [])
+            : []),
+        ]
+      : [];
+
+  return source.flatMap((item, index) => {
+    if (!item || typeof item !== "object") {
+      return [];
+    }
+
+    const candidate = item as {
+      code?: unknown;
+      name?: unknown;
+      service?: unknown;
+      description?: unknown;
+      cost?: number | { value?: unknown; etd?: unknown }[] | { value?: unknown; etd?: unknown };
+      value?: unknown;
+      etd?: unknown;
+    };
+
+    const resolvedCourier =
+      typeof candidate.code === "string" && candidate.code.trim().length > 0
+        ? candidate.code
+        : courier;
+    const courierName =
+      typeof candidate.name === "string" && candidate.name.trim().length > 0
+        ? candidate.name
+        : resolvedCourier.toUpperCase();
+    const service = typeof candidate.service === "string" ? candidate.service : `${resolvedCourier.toUpperCase()} Service ${index + 1}`;
+    const description = typeof candidate.description === "string" ? candidate.description : "Standard delivery";
+
+    const pricingSource = Array.isArray(candidate.cost)
+      ? candidate.cost[0]
+      : candidate.cost && typeof candidate.cost === "object"
+        ? candidate.cost
+        : candidate;
+
+    const cost = typeof candidate.cost === "number"
+      ? candidate.cost
+      : typeof pricingSource?.value === "number"
+        ? pricingSource.value
+        : Number(pricingSource?.value ?? 0);
+    const etd = typeof pricingSource?.etd === "string" ? pricingSource.etd : String(pricingSource?.etd ?? "");
+
+    if (!Number.isFinite(cost) || cost < 0) {
+      return [];
+    }
+
+    return [{
+      id: `${resolvedCourier}-${service}-${index}`,
+      courier: resolvedCourier,
+      courierName,
+      service,
+      description,
+      cost,
+      etd,
+    }];
+  });
+}
+
+export async function fetchDeliveryCost(request: DeliveryCostRequest) {
+  const payload = await fetchAuth<unknown>("/auth/delivery-cost", {
+    method: "POST",
+    body: JSON.stringify(request),
+  }) as DeliveryCostApiEnvelope;
+
+  return parseShippingOptions(payload.data, request.courier);
+}
