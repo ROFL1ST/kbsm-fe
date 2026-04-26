@@ -81,6 +81,16 @@ export async function updateUserAddress(data: Omit<ApiAddress, "created_at" | "u
   return payload.data;
 }
 
+export async function deleteUserAddress(userId: string, addressId: number | string): Promise<void> {
+  const payload = await fetchAuth<any>(`/auth/user-addresses?user_id=${userId}&id=${addressId}`, {
+    method: "DELETE",
+  });
+
+  if (!payload.status) {
+    throw new Error(payload.message || "Gagal menghapus alamat.");
+  }
+}
+
 export async function getApiProvinces(): Promise<ApiProvince[]> {
   const payload = await fetchAuth<ApiProvince[]>("/auth/provinces", { method: "GET" });
   return payload.data || [];

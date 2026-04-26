@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Home,
   ArrowLeft,
+  Loader2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -75,6 +76,7 @@ import {
   getUserAddresses,
   createUserAddress,
   updateUserAddress,
+  deleteUserAddress,
   getApiProvinces,
   getApiCities,
   getApiSubdistricts,
@@ -153,6 +155,11 @@ export default function AddressPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Delete Alert State
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [addressToDelete, setAddressToDelete] = useState<ApiAddress | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchAddresses = async () => {
     try {
@@ -314,6 +321,31 @@ export default function AddressPage() {
     }
   };
 
+  const confirmDeleteAddress = (address: ApiAddress) => {
+    setAddressToDelete(address);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const executeDeleteAddress = async () => {
+    if (!addressToDelete) return;
+    
+    const user = getAuthUser();
+    if (!user) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteUserAddress(user.id, addressToDelete.id);
+      toast.success("Alamat berhasil dihapus");
+      await fetchAddresses();
+      setIsDeleteDialogOpen(false);
+      setAddressToDelete(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menghapus alamat");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (!mounted) {
     return (
       <main className="min-h-screen bg-background flex flex-col">
@@ -427,6 +459,17 @@ export default function AddressPage() {
                         <Pencil className="h-3.5 w-3.5 mr-1.5" />
                         Edit
                       </Button>
+                      {!address.is_default && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => confirmDeleteAddress(address)}
+                          className="rounded-full text-xs h-8 text-destructive border-destructive/20 hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                          Hapus
+                        </Button>
+                      )}
                     </div>
                     {!address.is_default && (
                       <Button
@@ -459,6 +502,12 @@ export default function AddressPage() {
                           <Pencil className="h-4 w-4 mr-2" />
                           Edit Alamat
                         </DropdownMenuItem>
+                        {!address.is_default && (
+                          <DropdownMenuItem onClick={() => confirmDeleteAddress(address)} className="text-destructive focus:text-destructive">
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Hapus Alamat
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -692,6 +741,37 @@ export default function AddressPage() {
 
       <Footer />
       <WhatsAppFloat />
+
+      {/* ────────────────────────────────────────────────────────
+          DELETE CONFIRMATION ALERT DIALOG
+      ──────────────────────────────────────────────────────── */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => !isDeleting && setIsDeleteDialogOpen(open)}>
+        <AlertDialogContent className="rounded-3xl max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display">Hapus Alamat?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini tidak dapat dibatalkan. Alamat "{addressToDelete?.label}" akan dihapus secara permanen dari akun Anda.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting} className="rounded-xl">Batal</AlertDialogCancel>
+            <Button
+              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={executeDeleteAddress}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Menghapus...
+                </>
+              ) : (
+                "Hapus"
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }
