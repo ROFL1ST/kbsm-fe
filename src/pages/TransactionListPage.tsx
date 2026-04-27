@@ -3,7 +3,7 @@ import { PackageSearch } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Pagination,
   PaginationContent,
@@ -20,7 +20,7 @@ import { getAuthUser } from "@/lib/auth";
 import type { ProgressTypeCode } from "@/lib/transactions";
 import { PROGRESS_LABELS } from "@/lib/transactions";
 
-const TAB_OPTIONS: { value: ProgressTypeCode | "ALL"; label: string }[] = [
+const FILTER_OPTIONS: { value: ProgressTypeCode | "ALL"; label: string }[] = [
   { value: "ALL", label: "Semua" },
   { value: "FOLLOW_UP", label: PROGRESS_LABELS.FOLLOW_UP },
   { value: "PACKING", label: PROGRESS_LABELS.PACKING },
@@ -30,7 +30,7 @@ const TAB_OPTIONS: { value: ProgressTypeCode | "ALL"; label: string }[] = [
 ];
 
 export default function TransactionListPage() {
-  const [activeTab, setActiveTab] = useState<ProgressTypeCode | "ALL">("ALL");
+  const [activeFilter, setActiveFilter] = useState<ProgressTypeCode | "ALL">("ALL");
   const [page, setPage] = useState(1);
   const user = getAuthUser();
 
@@ -40,7 +40,7 @@ export default function TransactionListPage() {
   }, []);
 
   const progressFilter: ProgressTypeCode | null =
-    activeTab === "ALL" ? null : activeTab;
+    activeFilter === "ALL" ? null : activeFilter;
 
   const { transactions: rawTransactions, meta, isLoading, error } = useTransactions({
     user_id: user?.id ?? null,
@@ -49,24 +49,21 @@ export default function TransactionListPage() {
     limit: 10,
   });
 
-  // Defensive fallback — ensure transactions is always an array
   const transactions = Array.isArray(rawTransactions) ? rawTransactions : [];
-
   const totalPages = meta ? Math.ceil(meta.total / meta.size) : 0;
 
-  function handleTabChange(value: string) {
-    setActiveTab(value as ProgressTypeCode | "ALL");
+  function handleFilterChange(value: ProgressTypeCode | "ALL") {
+    setActiveFilter(value);
     setPage(1);
   }
 
   function renderPagination() {
     if (totalPages <= 1) return null;
-    const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
     const showEllipsis = totalPages > 5;
 
     let visiblePages: (number | "...")[];
     if (!showEllipsis) {
-      visiblePages = pages;
+      visiblePages = Array.from({ length: totalPages }, (_, i) => i + 1);
     } else if (page <= 3) {
       visiblePages = [1, 2, 3, "...", totalPages];
     } else if (page >= totalPages - 2) {
@@ -112,6 +109,8 @@ export default function TransactionListPage() {
     );
   }
 
+  const activeLabel = FILTER_OPTIONS.find((f) => f.value === activeFilter)?.label ?? "Semua";
+
   return (
     <main className="min-h-screen bg-background">
       <Navbar />
@@ -152,56 +151,57 @@ export default function TransactionListPage() {
               </p>
             </div>
           ) : (
-            <Tabs value={activeTab} onValueChange={handleTabChange}>
-              {/* Tab filter */}
-              <div className="overflow-x-auto pb-1 -mx-1 px-1">
-                <TabsList className="inline-flex h-auto gap-1.5 bg-accent/30 p-1 rounded-xl w-max">
-                  {TAB_OPTIONS.map((tab) => (
-                    <TabsTrigger
-                      key={tab.value}
-                      value={tab.value}
-                      className="rounded-lg px-4 py-2 text-xs font-medium whitespace-nowrap data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
+            <div className="space-y-6">
+              {/* ── Pill Filter ── */}
+              <ScrollArea className="w-full">
+                <div className="flex w-max space-x-2 pb-3">
+                  {FILTER_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => handleFilterChange(opt.value)}
+                      className={`min-h-[44px] px-5 py-2.5 rounded-full text-sm font-medium transition-colors shadow-sm whitespace-nowrap ${
+                        activeFilter === opt.value
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-white border border-border/60 text-foreground hover:bg-accent active:bg-accent"
+                      }`}
                     >
-                      {tab.label}
-                    </TabsTrigger>
+                      {opt.label}
+                    </button>
                   ))}
-                </TabsList>
-              </div>
+                </div>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
 
-              {/* Content per tab */}
-              {TAB_OPTIONS.map((tab) => (
-                <TabsContent key={tab.value} value={tab.value} className="mt-5">
-                  {isLoading ? (
-                    <TransactionSkeleton />
-                  ) : error ? (
-                    <div className="glass-card p-10 flex flex-col items-center gap-3 text-center">
-                      <PackageSearch className="h-10 w-10 text-destructive/40" />
-                      <h3 className="font-medium">Gagal memuat pesanan</h3>
-                      <p className="text-sm text-muted-foreground">{error}</p>
-                    </div>
-                  ) : transactions.length === 0 ? (
-                    <div className="glass-card p-12 flex flex-col items-center gap-4 text-center">
-                      <PackageSearch className="h-12 w-12 text-muted-foreground/30" />
-                      <h3 className="font-display text-xl">Belum ada pesanan</h3>
-                      <p className="text-sm text-muted-foreground max-w-xs">
-                        {tab.value === "ALL"
-                          ? "Kamu belum pernah melakukan pembelian."
-                          : `Tidak ada pesanan dengan status "${tab.label}".`}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {transactions.map((trx) => (
-                        <TransactionCard key={trx.id} transaction={trx} />
-                      ))}
-                    </div>
-                  )}
-                </TabsContent>
-              ))}
+              {/* ── Transaction List ── */}
+              {isLoading ? (
+                <TransactionSkeleton />
+              ) : error ? (
+                <div className="glass-card p-10 flex flex-col items-center gap-3 text-center">
+                  <PackageSearch className="h-10 w-10 text-destructive/40" />
+                  <h3 className="font-medium">Gagal memuat pesanan</h3>
+                  <p className="text-sm text-muted-foreground">{error}</p>
+                </div>
+              ) : transactions.length === 0 ? (
+                <div className="glass-card p-12 flex flex-col items-center gap-4 text-center">
+                  <PackageSearch className="h-12 w-12 text-muted-foreground/30" />
+                  <h3 className="font-display text-xl">Belum ada pesanan</h3>
+                  <p className="text-sm text-muted-foreground max-w-xs">
+                    {activeFilter === "ALL"
+                      ? "Kamu belum pernah melakukan pembelian."
+                      : `Tidak ada pesanan dengan status "${activeLabel}".`}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {transactions.map((trx) => (
+                    <TransactionCard key={trx.id} transaction={trx} />
+                  ))}
+                </div>
+              )}
 
-              {/* Pagination */}
+              {/* ── Pagination ── */}
               {!isLoading && transactions.length > 0 && renderPagination()}
-            </Tabs>
+            </div>
           )}
         </div>
       </section>
