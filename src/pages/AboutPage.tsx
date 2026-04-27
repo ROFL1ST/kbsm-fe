@@ -15,6 +15,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { cn } from "@/lib/utils";
+import kastaLogo from "@/assets/kasta.png";
 
 /* --- Stat counter hook --- */
 function useCountUp(target: number, duration = 1800, start = false) {
@@ -65,7 +66,7 @@ const TESTIMONIALS = [
     name: "Sari Dewi",
     location: "Jakarta",
     rating: 5,
-    text: "Produk Kasta Beauté benar-benar mengubah rutinitas skincare saya. Kulit terasa lebih lembut dan cerah hanya dalam 2 minggu!",
+    text: "Produk Kasta Beaut\u00e9 benar-benar mengubah rutinitas skincare saya. Kulit terasa lebih lembut dan cerah hanya dalam 2 minggu!",
     avatar: "SD",
   },
   {
@@ -73,7 +74,7 @@ const TESTIMONIALS = [
     name: "Andini Putri",
     location: "Bandung",
     rating: 5,
-    text: "Saya sudah coba banyak brand lokal, tapi Kasta Beauté tetap jadi favorit. Formulanya ringan, nggak bikin jerawat, dan wanginya enak banget.",
+    text: "Saya sudah coba banyak brand lokal, tapi Kasta Beaut\u00e9 tetap jadi favorit. Formulanya ringan, nggak bikin jerawat, dan wanginya enak banget.",
     avatar: "AP",
   },
   {
@@ -104,7 +105,7 @@ const VALUES = [
     icon: Heart,
     title: "Dibuat dengan Cinta",
     description:
-      "Setiap detail produk dirancang dengan penuh perhatian dari formula hingga kemasan karena kamu layak mendapatkan yang terbaik.",
+      "Setiap detail produk dirancang dengan penuh perhatian \u2014 dari formula hingga kemasan \u2014 karena kamu layak mendapatkan yang terbaik.",
   },
 ];
 
@@ -114,7 +115,7 @@ export default function AboutPage() {
   const [statsStarted, setStatsStarted] = useState(false);
 
   useEffect(() => {
-    document.title = "Tentang Kami Kasta Beauté";
+    document.title = "Tentang Kami \u2014 Kasta Beaut\u00e9";
     window.scrollTo({ top: 0, behavior: "smooth" });
 
     const observer = new IntersectionObserver(
@@ -140,6 +141,18 @@ export default function AboutPage() {
         <div className="absolute -bottom-20 -left-40 w-[400px] h-[400px] bg-blush rounded-full blur-3xl" />
 
         <div className="container relative text-center space-y-6 max-w-3xl mx-auto">
+          {/* Logo brand */}
+          <div className="flex justify-center mb-2 animate-fade-in">
+            <img
+              src={kastaLogo}
+              alt="Kasta Beaut\u00e9"
+              width={120}
+              height={120}
+              className="object-contain drop-shadow-md"
+              loading="eager"
+            />
+          </div>
+
           <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-xs tracking-[0.2em] uppercase text-primary animate-fade-in">
             <Sparkles className="h-3.5 w-3.5" />
             Tentang Kami
@@ -152,8 +165,8 @@ export default function AboutPage() {
           </h1>
 
           <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed animate-fade-up delay-75">
-            Kasta Beauté hadir untuk merayakan kecantikan autentik setiap perempuan
-            Indonesia dengan produk perawatan kulit yang jujur, aman, dan efektif.
+            Kasta Beaut\u00e9 hadir untuk merayakan kecantikan autentik setiap perempuan
+            Indonesia \u2014 dengan produk perawatan kulit yang jujur, aman, dan efektif.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 animate-fade-up delay-100">
@@ -185,16 +198,16 @@ export default function AboutPage() {
       <section className="py-20 md:py-28">
         <div className="container">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
-            {/* Visual */}
+            {/* Visual — logo in a styled frame */}
             <div className="relative order-2 md:order-1 animate-fade-in">
-              <div className="aspect-[4/5] rounded-3xl overflow-hidden bg-gradient-nude">
+              <div className="aspect-square rounded-3xl overflow-hidden bg-gradient-luxury flex items-center justify-center p-10 md:p-16">
                 <img
-                  src="https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=800&q=80"
-                  alt="Kasta Beauté products flat lay"
+                  src={kastaLogo}
+                  alt="Kasta Beaut\u00e9 logo"
                   loading="lazy"
-                  width={800}
-                  height={1000}
-                  className="w-full h-full object-cover"
+                  width={400}
+                  height={400}
+                  className="w-full max-w-[280px] object-contain drop-shadow-xl"
                 />
               </div>
               {/* Floating badge */}
@@ -218,19 +231,19 @@ export default function AboutPage() {
 
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
-                  Kasta Beauté lahir dari satu keyakinan sederhana: setiap perempuan
+                  Kasta Beaut\u00e9 lahir dari satu keyakinan sederhana: setiap perempuan
                   berhak mendapatkan produk perawatan kulit yang berkualitas tanpa harus
                   menguras kantong.
                 </p>
                 <p>
                   Berawal dari dapur kecil di Bandung pada 2020, kami meracik
-                  formula pertama kami dengan bahan-bahan alami lokal terbaik
+                  formula pertama kami dengan bahan-bahan alami lokal terbaik \u2014
                   memastikan setiap tetes produk aman, efektif, dan teruji secara
                   dermatologi.
                 </p>
                 <p>
                   Kini ribuan perempuan Indonesia telah mempercayakan rutinitas
-                  kecantikan mereka kepada Kasta Beauté, dan kami terus berinovasi
+                  kecantikan mereka kepada Kasta Beaut\u00e9, dan kami terus berinovasi
                   untuk menghadirkan yang terbaik bagi kulit tropis Indonesia.
                 </p>
               </div>
@@ -288,7 +301,7 @@ export default function AboutPage() {
             </div>
             <h2 className="font-display text-4xl md:text-5xl">
               Mengapa Memilih{" "}
-              <em className="italic gradient-text">Kasta Beauté</em>?
+              <em className="italic gradient-text">Kasta Beaut\u00e9</em>?
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto text-sm leading-relaxed">
               Setiap produk yang kami hadirkan mencerminkan komitmen kami terhadap
@@ -372,9 +385,16 @@ export default function AboutPage() {
             <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-blush rounded-full blur-3xl pointer-events-none" />
 
             <div className="relative space-y-7">
-              <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-xs tracking-[0.2em] uppercase text-primary">
-                <Sparkles className="h-3.5 w-3.5" />
-                Mulai Sekarang
+              {/* Logo kecil di CTA */}
+              <div className="flex justify-center">
+                <img
+                  src={kastaLogo}
+                  alt="Kasta Beaut\u00e9"
+                  width={64}
+                  height={64}
+                  loading="lazy"
+                  className="object-contain opacity-80"
+                />
               </div>
 
               <h2 className="font-display text-4xl md:text-5xl leading-tight text-balance">
@@ -384,7 +404,7 @@ export default function AboutPage() {
 
               <p className="text-muted-foreground leading-relaxed max-w-md mx-auto text-sm">
                 Temukan produk perawatan kulit yang tepat untuk kamu.
-                Ribuan perempuan Indonesia sudah merasakannya sekarang giliran kamu.
+                Ribuan perempuan Indonesia sudah merasakannya \u2014 sekarang giliran kamu.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
