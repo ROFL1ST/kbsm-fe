@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Search,
@@ -16,6 +17,7 @@ import {
   clearAccessToken,
   hasAccessToken,
 } from "@/lib/auth";
+import { CART_STATE_CHANGE_EVENT, fetchCart, getCartItemCountFromItems } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -55,6 +57,7 @@ const Navbar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
+  // Search states
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebounce(searchInput, 400);
@@ -78,10 +81,34 @@ const Navbar = () => {
     };
   }, []);
 
+  // Cart — dynamic count via React Query
+  const { data: cartData, refetch: refetchCart } = useQuery({
+    queryKey: ["navbar-cart"],
+    queryFn: fetchCart,
+    enabled: isLoggedIn,
+    staleTime: 1000 * 15,
+    gcTime: 1000 * 60,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const syncCartState = () => refetchCart();
+    window.addEventListener(CART_STATE_CHANGE_EVENT, syncCartState);
+    window.addEventListener(AUTH_STATE_CHANGE_EVENT, syncCartState);
+    return () => {
+      window.removeEventListener(CART_STATE_CHANGE_EVENT, syncCartState);
+      window.removeEventListener(AUTH_STATE_CHANGE_EVENT, syncCartState);
+    };
+  }, [isLoggedIn, refetchCart]);
+
+  // Auto-focus input when search opens
   useEffect(() => {
     if (searchOpen) setTimeout(() => searchInputRef.current?.focus(), 50);
   }, [searchOpen]);
 
+  // Close search on Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && searchOpen) handleCloseSearch();
@@ -108,6 +135,8 @@ const Navbar = () => {
     navigate("/login");
   };
 
+  const cartItemCount = cartData ? getCartItemCountFromItems(cartData.items) : 0;
+
   return (
     <header
       className={cn(
@@ -131,7 +160,7 @@ const Navbar = () => {
           !scrolled && !searchOpen && "md:mt-7",
         )}
       >
-        {/* Logo — always visible on all breakpoints */}
+        {/* Logo */}
         <a href="/" className="flex items-center gap-2 shrink-0">
           <span className="font-display text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
             Kasta<span className="text-primary italic">Beuate</span>
@@ -192,8 +221,8 @@ const Navbar = () => {
         )}
 
         {/*
-          Desktop search bar (lg+) — always in DOM, animates 0fr → 1fr.
-          Mobile: hidden here; search renders as a full-width row below instead.
+          Desktop search bar (lg+) — animates 0fr → 1fr horizontally.
+          Mobile/tablet: hidden here; slide-down row renders below.
         */}
         <div
           className="hidden lg:grid min-w-0"
@@ -223,7 +252,7 @@ const Navbar = () => {
 
         {/* Right icons */}
         <div className="flex items-center gap-1 md:gap-2 shrink-0">
-          {/* Search toggle — visible on all breakpoints */}
+          {/* Search toggle — all breakpoints */}
           <button
             className="p-2 rounded-full hover:bg-accent transition-colors"
             aria-label={searchOpen ? "Tutup pencarian" : "Cari produk"}
@@ -248,14 +277,16 @@ const Navbar = () => {
                     <Heart className="h-5 w-5 text-foreground/70" />
                   </Link>
                   <Link
-                    to="/"
+                    to="/cart"
                     className="p-2 rounded-full hover:bg-accent transition-colors relative"
                     aria-label="Cart"
                   >
                     <ShoppingBag className="h-5 w-5 text-foreground/70" />
-                    <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-semibold rounded-full h-4 w-4 flex items-center justify-center">
-                      2
-                    </span>
+                    {cartItemCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-semibold rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+                        {cartItemCount}
+                      </span>
+                    )}
                   </Link>
                 </>
               )}
@@ -357,9 +388,8 @@ const Navbar = () => {
       </div>
 
       {/*
-        Mobile/Tablet search bar (< lg) — full-width slide-down row.
-        Animates via grid-template-rows: 0fr → 1fr so it slides in smoothly
-        without affecting the main row above.
+        Mobile/Tablet search bar (< lg) — full-width slide-down.
+        Animates via grid-template-rows: 0fr → 1fr.
       */}
       <div
         className="lg:hidden grid"
