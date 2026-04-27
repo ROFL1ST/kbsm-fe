@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Search,
   Heart,
@@ -49,6 +49,9 @@ const navLinks = [
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const urlSearchQuery = searchParams.get("search") ?? "";
+
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
@@ -98,6 +101,8 @@ const Navbar = () => {
   }, [searchOpen]);
 
   const handleOpenSearch = () => {
+    // Pre-fill input from current URL search param (e.g. ?search=air)
+    setSearchInput(urlSearchQuery);
     setSearchOpen(true);
     setMobileOpen(false);
     setMegaOpen(false);
@@ -140,13 +145,10 @@ const Navbar = () => {
           !scrolled && !searchOpen && "md:mt-7",
         )}
       >
-        {/* Logo — always visible */}
+        {/* Logo — always visible, never hidden */}
         <a
           href="/"
-          className={cn(
-            "flex items-center gap-2 shrink-0 transition-all duration-300",
-            searchOpen && "opacity-0 pointer-events-none w-0 overflow-hidden",
-          )}
+          className="flex items-center gap-2 shrink-0 transition-opacity duration-300"
         >
           <span className="font-display text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
             Kasta<span className="text-primary italic">Beuate</span>
@@ -215,7 +217,7 @@ const Navbar = () => {
           ))}
         </nav>
 
-        {/* Search bar — expands when open */}
+        {/* Search bar — expands when open, sits between logo and right icons */}
         <div
           className={cn(
             "relative transition-all duration-300 ease-in-out",
@@ -244,8 +246,8 @@ const Navbar = () => {
           )}
         </div>
 
-        {/* Right icons */}
-        <div className="flex items-center gap-1 md:gap-2">
+        {/* Right icons — always visible */}
+        <div className="flex items-center gap-1 md:gap-2 shrink-0">
           {/* Search toggle button */}
           <button
             className="p-2 rounded-full hover:bg-accent transition-colors"
@@ -259,128 +261,124 @@ const Navbar = () => {
             )}
           </button>
 
-          {/* Other icons — hidden when search is open */}
-          {!searchOpen && (
+          {/* Other icons — always visible */}
+          {isLoggedIn && (
             <>
-              {isLoggedIn && (
-                <>
-                  <Link
-                    to="/"
-                    className="p-2 rounded-full hover:bg-accent transition-colors hidden sm:block"
-                    aria-label="Wishlist"
-                  >
-                    <Heart className="h-5 w-5 text-foreground/70" />
-                  </Link>
-                  <Link
-                    to="/"
-                    className="p-2 rounded-full hover:bg-accent transition-colors relative"
-                    aria-label="Cart"
-                  >
-                    <ShoppingBag className="h-5 w-5 text-foreground/70" />
-                    <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-semibold rounded-full h-4 w-4 flex items-center justify-center">
-                      2
-                    </span>
-                  </Link>
-                </>
-              )}
-
-              {isLoggedIn ? (
-                <div className="relative hidden sm:block">
-                  <button
-                    type="button"
-                    className="p-2 rounded-full hover:bg-accent transition-colors"
-                    aria-label="Account"
-                    onClick={() => setAccountMenuOpen((c) => !c)}
-                  >
-                    <User className="h-5 w-5 text-foreground/70" />
-                  </button>
-                  {accountMenuOpen && (
-                    <div className="absolute right-0 top-full z-50 mt-3 w-44 overflow-hidden rounded-2xl border border-white/40 bg-white/90 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.25)] backdrop-blur-xl animate-fade-in">
-                      <Link
-                        to="/profile"
-                        className="flex items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors hover:bg-accent/70"
-                        onClick={() => setAccountMenuOpen(false)}
-                      >
-                        <Settings className="h-4 w-4" />
-                        Profile
-                      </Link>
-                      <div className="h-px bg-border/80" />
-                      <button
-                        type="button"
-                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-destructive transition-colors hover:bg-destructive/5"
-                        onClick={handleLogout}
-                      >
-                        <LogOut className="h-4 w-4" />
-                        Logout
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <Link
-                  to="/login"
-                  className="hidden sm:inline-flex h-10 items-center justify-center rounded-full border border-foreground/10 bg-white/60 px-5 text-sm font-medium text-foreground transition-colors hover:bg-primary hover:text-white"
-                >
-                  Sign In
-                </Link>
-              )}
-
-              {isLoggedIn && (
-                <div className="relative sm:hidden">
-                  <button
-                    type="button"
-                    className="p-2 rounded-full hover:bg-accent transition-colors"
-                    aria-label="Account"
-                    onClick={() => setAccountMenuOpen((c) => !c)}
-                  >
-                    <User className="h-5 w-5 text-foreground/70" />
-                  </button>
-                  {accountMenuOpen && (
-                    <div className="absolute right-0 top-full z-50 mt-3 w-44 overflow-hidden rounded-2xl border border-white/40 bg-white/90 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.25)] backdrop-blur-xl animate-fade-in">
-                      <Link
-                        to="/"
-                        className="flex items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors hover:bg-accent/70"
-                        onClick={() => setAccountMenuOpen(false)}
-                      >
-                        <Settings className="h-4 w-4" />
-                        Settings
-                      </Link>
-                      <div className="h-px bg-border/80" />
-                      <button
-                        type="button"
-                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-destructive transition-colors hover:bg-destructive/5"
-                        onClick={handleLogout}
-                      >
-                        <LogOut className="h-4 w-4" />
-                        Logout
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {!isLoggedIn && (
-                <Link
-                  to="/login"
-                  className="inline-flex sm:hidden h-10 items-center justify-center rounded-full border border-foreground/10 bg-white/60 px-4 text-sm font-medium text-foreground transition-colors hover:bg-primary hover:text-white"
-                >
-                  Sign In
-                </Link>
-              )}
-
-              <button
-                className="p-2 rounded-full hover:bg-accent transition-colors lg:hidden"
-                onClick={() => setMobileOpen(!mobileOpen)}
-                aria-label="Menu"
+              <Link
+                to="/"
+                className="p-2 rounded-full hover:bg-accent transition-colors hidden sm:block"
+                aria-label="Wishlist"
               >
-                {mobileOpen ? (
-                  <X className="h-5 w-5" />
-                ) : (
-                  <Menu className="h-5 w-5" />
-                )}
-              </button>
+                <Heart className="h-5 w-5 text-foreground/70" />
+              </Link>
+              <Link
+                to="/"
+                className="p-2 rounded-full hover:bg-accent transition-colors relative"
+                aria-label="Cart"
+              >
+                <ShoppingBag className="h-5 w-5 text-foreground/70" />
+                <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-semibold rounded-full h-4 w-4 flex items-center justify-center">
+                  2
+                </span>
+              </Link>
             </>
           )}
+
+          {isLoggedIn ? (
+            <div className="relative hidden sm:block">
+              <button
+                type="button"
+                className="p-2 rounded-full hover:bg-accent transition-colors"
+                aria-label="Account"
+                onClick={() => setAccountMenuOpen((c) => !c)}
+              >
+                <User className="h-5 w-5 text-foreground/70" />
+              </button>
+              {accountMenuOpen && (
+                <div className="absolute right-0 top-full z-50 mt-3 w-44 overflow-hidden rounded-2xl border border-white/40 bg-white/90 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.25)] backdrop-blur-xl animate-fade-in">
+                  <Link
+                    to="/profile"
+                    className="flex items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors hover:bg-accent/70"
+                    onClick={() => setAccountMenuOpen(false)}
+                  >
+                    <Settings className="h-4 w-4" />
+                    Profile
+                  </Link>
+                  <div className="h-px bg-border/80" />
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-3 px-4 py-3 text-sm text-destructive transition-colors hover:bg-destructive/5"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              className="hidden sm:inline-flex h-10 items-center justify-center rounded-full border border-foreground/10 bg-white/60 px-5 text-sm font-medium text-foreground transition-colors hover:bg-primary hover:text-white"
+            >
+              Sign In
+            </Link>
+          )}
+
+          {isLoggedIn && (
+            <div className="relative sm:hidden">
+              <button
+                type="button"
+                className="p-2 rounded-full hover:bg-accent transition-colors"
+                aria-label="Account"
+                onClick={() => setAccountMenuOpen((c) => !c)}
+              >
+                <User className="h-5 w-5 text-foreground/70" />
+              </button>
+              {accountMenuOpen && (
+                <div className="absolute right-0 top-full z-50 mt-3 w-44 overflow-hidden rounded-2xl border border-white/40 bg-white/90 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.25)] backdrop-blur-xl animate-fade-in">
+                  <Link
+                    to="/"
+                    className="flex items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors hover:bg-accent/70"
+                    onClick={() => setAccountMenuOpen(false)}
+                  >
+                    <Settings className="h-4 w-4" />
+                    Settings
+                  </Link>
+                  <div className="h-px bg-border/80" />
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-3 px-4 py-3 text-sm text-destructive transition-colors hover:bg-destructive/5"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!isLoggedIn && (
+            <Link
+              to="/login"
+              className="inline-flex sm:hidden h-10 items-center justify-center rounded-full border border-foreground/10 bg-white/60 px-4 text-sm font-medium text-foreground transition-colors hover:bg-primary hover:text-white"
+            >
+              Sign In
+            </Link>
+          )}
+
+          <button
+            className="p-2 rounded-full hover:bg-accent transition-colors lg:hidden"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Menu"
+          >
+            {mobileOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
+          </button>
         </div>
       </div>
 
