@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -21,12 +21,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/sonner";
 import { getAuthUser, hasAccessToken } from "@/lib/auth";
-import { getUserAddresses } from "@/lib/address";
-import { fetchCart, type CartItem } from "@/lib/cart";
+import { getDefaultUserAddress } from "@/lib/address";
+import { calculateCartSummary, fetchCart, type CartItem, type DirectCheckoutState } from "@/lib/cart";
 import { fetchDeliveryCost } from "@/lib/checkout";
 import { formatRupiah, getProductImages } from "@/lib/products";
 
-const ORIGIN_SUBDISTRICT_ID = 218;
+const ORIGIN_SUBDISTRICT_ID = 19043;
+const FALLBACK_DESTINATION_SUBDISTRICT_ID = 212;
 const DEFAULT_ITEM_WEIGHT = 1000;
 
 const PAYMENT_METHODS = [
@@ -56,13 +57,15 @@ const COURIERS = [
 ];
 
 function resolveReviewItems(items: CartItem[]) {
-  const selectedItems = items.filter((item) => item.is_selected);
-  return selectedItems.length > 0 ? selectedItems : items;
+  return items.filter((item) => item.is_selected);
 }
 
 const PreCheckoutPage = () => {
+  const location = useLocation();
   const isLoggedIn = hasAccessToken();
   const authUser = getAuthUser();
+  const directCheckoutState = location.state as DirectCheckoutState | null;
+  const directCheckoutItem = directCheckoutState?.mode === "direct" ? directCheckoutState.item : null;
   const [checkoutStep, setCheckoutStep] = useState<"shipping" | "payment">("shipping");
   const [selectedCourier, setSelectedCourier] = useState(COURIERS[0].id);
   const [selectedShippingId, setSelectedShippingId] = useState("");
@@ -76,7 +79,7 @@ const PreCheckoutPage = () => {
   } = useQuery({
     queryKey: ["pre-checkout-cart"],
     queryFn: fetchCart,
-    enabled: isLoggedIn,
+    enabled: isLoggedIn && !directCheckoutItem,
     staleTime: 1000 * 30,
     gcTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
@@ -84,13 +87,13 @@ const PreCheckoutPage = () => {
   });
 
   const {
-    data: addresses = [],
+    data: primaryAddress = null,
     isLoading: isAddressLoading,
     isError: isAddressError,
     error: addressError,
   } = useQuery({
-    queryKey: ["pre-checkout-addresses", authUser?.id],
-    queryFn: () => getUserAddresses(authUser!.id),
+    queryKey: ["pre-checkout-default-address", authUser?.id],
+    queryFn: () => getDefaultUserAddress(authUser!.id),
     enabled: isLoggedIn && Boolean(authUser?.id),
     staleTime: 1000 * 60,
     gcTime: 1000 * 60 * 5,
@@ -98,9 +101,13 @@ const PreCheckoutPage = () => {
     refetchOnReconnect: false,
   });
 
-  const reviewItems = resolveReviewItems(cart?.items ?? []);
-  const primaryAddress = addresses.find((address) => address.is_default) ?? addresses[0] ?? null;
-  const destinationSubdistrictId = primaryAddress?.subdistrict_id ?? primaryAddress?.district_id ?? null;
+  const reviewItems = directCheckoutItem
+    ? [directCheckoutItem]
+    : resolveReviewItems(cart?.items ?? []);
+  const destinationSubdistrictId =
+    primaryAddress?.subdistrict_id ??
+    primaryAddress?.district_id ??
+    FALLBACK_DESTINATION_SUBDISTRICT_ID;
   const totalWeight = reviewItems.reduce((total, item) => total + (item.quantity * DEFAULT_ITEM_WEIGHT), 0);
 
   const {
@@ -116,7 +123,7 @@ const PreCheckoutPage = () => {
       weight: Math.max(totalWeight, DEFAULT_ITEM_WEIGHT),
       courier: selectedCourier,
     }),
-    enabled: isLoggedIn && Boolean(destinationSubdistrictId) && reviewItems.length > 0,
+    enabled: isLoggedIn && reviewItems.length > 0,
     staleTime: 1000 * 30,
     gcTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
@@ -169,7 +176,7 @@ const PreCheckoutPage = () => {
     shippingOptions.find((option) => option.id === selectedShippingId) ??
     shippingOptions[0] ??
     null;
-  const subtotal = cart?.summary.final_price ?? 0;
+  const subtotal = calculateCartSummary(reviewItems).final_price;
   const shippingCost = selectedShippingOption?.cost ?? 0;
   const grandTotal = subtotal + shippingCost;
 
@@ -222,7 +229,7 @@ const PreCheckoutPage = () => {
             <div className="rounded-3xl border border-border/60 bg-white p-8 text-center text-muted-foreground soft-shadow">
               Gagal memuat data checkout. Coba refresh beberapa saat lagi.
             </div>
-          ) : reviewItems.length === 0 || !cart?.summary ? (
+          ) : reviewItems.length === 0 || (!directCheckoutItem && !cart?.summary) ? (
             <div className="rounded-[2rem] border border-border/60 bg-white px-6 py-14 text-center soft-shadow md:px-12">
               <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <ShoppingBag className="h-7 w-7" />
@@ -241,10 +248,15 @@ const PreCheckoutPage = () => {
                 <section className="rounded-[2rem] border border-border/60 bg-white p-6 soft-shadow md:p-7">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.24em] text-primary">Shipping Address</p>
-                      <h2 className="mt-2 text-2xl font-semibold text-foreground">Alamat utama</h2>
+                      <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
+                        Alamat Pengiriman
+                      </p>
                     </div>
-                    <Button asChild variant="outline" className="rounded-full">
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="h-10 rounded-full border-border/80 px-6 text-base font-medium text-slate-500 hover:bg-muted text-sm"
+                    >
                       <Link to="/profile/addresses">Ubah alamat</Link>
                     </Button>
                   </div>
@@ -263,31 +275,27 @@ const PreCheckoutPage = () => {
                       </Button>
                     </div>
                   ) : (
-                    <div className="mt-6 rounded-3xl bg-muted/20 p-5">
+                    <div className="mt-6">
                       <div className="flex items-start gap-3">
-                        <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                          <MapPin className="h-5 w-5" />
-                        </div>
-                        <div className="min-w-0 flex-1 space-y-2">
+                        <MapPin className="mt-1 h-5 w-5 shrink-0 fill-primary text-primary" />
+                        <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-semibold text-foreground">{primaryAddress.receiver_name}</p>
                             {primaryAddress.label ? (
-                              <span className="rounded-full border border-border/60 px-2.5 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                                {primaryAddress.label}
-                              </span>
-                            ) : null}
-                            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-primary">
-                              <CheckCircle2 className="h-3 w-3" />
-                              Primary
-                            </span>
+                              <p className="text-lg font-semibold text-foreground md:text-lg">
+                                {primaryAddress.label} <span className="font-normal">•</span> {primaryAddress.receiver_name}
+                              </p>
+                            ) : (
+                              <p className="text-lg font-semibold text-foreground md:text-lg">
+                                {primaryAddress.receiver_name}
+                              </p>
+                            )}
                           </div>
-                          <p className="text-sm text-foreground">{primaryAddress.phone_number}</p>
-                          <p className="text-sm leading-relaxed text-muted-foreground">
-                            {primaryAddress.address}
-                            <br />
-                            {primaryAddress.subdistrict_name}, {primaryAddress.district_name}
-                            <br />
-                            {primaryAddress.city_name}, {primaryAddress.province_name} {primaryAddress.postal_code}
+                          <p className="mt-3 text-base leading-relaxed text-foreground md:text-sm">
+                            {primaryAddress.address}, {primaryAddress.subdistrict_name}, {primaryAddress.district_name}, {primaryAddress.city_name}, {primaryAddress.province_name}
+                            {primaryAddress.postal_code ? `, ${primaryAddress.postal_code}` : ""}
+                          </p>
+                          <p className="mt-1 text-base text-foreground md:text-sm">
+                            {primaryAddress.phone_number}
                           </p>
                         </div>
                       </div>
@@ -330,12 +338,12 @@ const PreCheckoutPage = () => {
                                   <p className="text-[11px] uppercase tracking-[0.24em] text-primary">
                                     {item.product.category_name}
                                   </p>
-                                  <h3 className="mt-1 line-clamp-2 text-lg font-semibold leading-tight text-foreground">
+                                  <h3 className="mt-1 line-clamp-2 text-base font-medium leading-tight text-foreground">
                                     {item.product.product_name}
                                   </h3>
                                 </div>
                                 <div className="text-right">
-                                  <p className="text-lg font-semibold text-foreground">
+                                  <p className="text-base font-semibold text-foreground">
                                     {formatRupiah(item.calculation.final_price)}
                                   </p>
                                   <p className="text-xs text-muted-foreground">
@@ -435,7 +443,7 @@ const PreCheckoutPage = () => {
                           </div>
                         ) : null}
 
-                        {!destinationSubdistrictId ? null : isShippingError ? (
+                        {isShippingError ? (
                           <p className="mt-4 text-sm text-destructive">
                             Gagal menghitung ongkir untuk courier ini.
                           </p>

@@ -1,18 +1,31 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, CreditCard, ShoppingBag } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, CreditCard, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/components/ui/sonner";
-import { hasAccessToken } from "@/lib/auth";
-import { fetchCart } from "@/lib/cart";
+import { getAuthUser, hasAccessToken } from "@/lib/auth";
+import {
+  calculateCartItemSummary,
+  calculateCartSummary,
+  fetchCart,
+  removeCartItem,
+  type CartItem,
+  type CartResponseData,
+  updateCartItem,
+} from "@/lib/cart";
 import { formatRupiah, getProductImages } from "@/lib/products";
 
 const CartPage = () => {
   const isLoggedIn = hasAccessToken();
+  const authUser = getAuthUser();
+  const queryClient = useQueryClient();
+  const [localCart, setLocalCart] = useState<CartResponseData | null>(null);
+  const [pendingItemIds, setPendingItemIds] = useState<number[]>([]);
 
   const {
     data: cart,
@@ -34,6 +47,15 @@ const CartPage = () => {
   }, []);
 
   useEffect(() => {
+    if (cart) {
+      setLocalCart({
+        ...cart,
+        summary: calculateCartSummary(cart.items),
+      });
+    }
+  }, [cart]);
+
+  useEffect(() => {
     if (!isError || !error) {
       return;
     }
@@ -46,8 +68,188 @@ const CartPage = () => {
     return <Navigate to="/login" replace />;
   }
 
-  const items = cart?.items ?? [];
-  const summary = cart?.summary;
+  const syncCartCaches = (nextCart: CartResponseData | null) => {
+    setLocalCart(nextCart);
+    queryClient.setQueryData(["cart"], nextCart ?? undefined);
+    queryClient.setQueryData(["navbar-cart"], nextCart ?? undefined);
+    queryClient.setQueryData(["pre-checkout-cart"], nextCart ?? undefined);
+  };
+
+  const withPendingItem = async (itemId: number, action: () => Promise<void>) => {
+    setPendingItemIds((current) => [...current, itemId]);
+
+    try {
+      await action();
+    } finally {
+      setPendingItemIds((current) => current.filter((currentId) => currentId !== itemId));
+    }
+  };
+
+  const handleCartUpdate = async (
+    item: CartItem,
+    changes: Pick<CartItem, "quantity" | "is_selected">,
+  ) => {
+    if (!authUser?.id) {
+      toast.error("Sesi login tidak ditemukan. Silakan login kembali.");
+      return;
+    }
+
+    if (!localCart) {
+      return;
+    }
+
+    const previousCart = localCart;
+    const nextItems = previousCart.items.map((currentItem) => {
+      if (currentItem.id !== item.id) {
+        return currentItem;
+      }
+
+      const nextQuantity = changes.quantity;
+      return {
+        ...currentItem,
+        quantity: nextQuantity,
+        is_selected: changes.is_selected,
+        calculation: calculateCartItemSummary(currentItem, nextQuantity),
+      };
+    });
+    const nextCart = {
+      items: nextItems,
+      summary: calculateCartSummary(nextItems),
+    };
+
+    syncCartCaches(nextCart);
+
+    await withPendingItem(item.id, async () => {
+      try {
+        await updateCartItem({
+          user_id: authUser.id,
+          cart_id: item.id,
+          quantity: changes.quantity,
+          is_selected: changes.is_selected,
+        });
+      } catch (updateError) {
+        syncCartCaches(previousCart);
+        const message =
+          updateError instanceof Error
+            ? updateError.message
+            : "Gagal memperbarui item keranjang.";
+        toast.error(message);
+      }
+    });
+  };
+
+  const handleRemoveCartItem = async (cartItemId: number) => {
+    if (!localCart) {
+      return;
+    }
+
+    const previousCart = localCart;
+    const nextItems = previousCart.items.filter((item) => item.id !== cartItemId);
+    const nextCart = {
+      items: nextItems,
+      summary: calculateCartSummary(nextItems),
+    };
+
+    syncCartCaches(nextCart);
+
+    await withPendingItem(cartItemId, async () => {
+      try {
+        await removeCartItem(cartItemId);
+        toast.success("Item berhasil dihapus dari keranjang.");
+      } catch (removeError) {
+        syncCartCaches(previousCart);
+        const message =
+          removeError instanceof Error
+            ? removeError.message
+            : "Gagal menghapus item dari keranjang.";
+        toast.error(message);
+      }
+    });
+  };
+
+  const handleToggleAllItems = async (checked: boolean) => {
+    if (!authUser?.id || !localCart) {
+      return;
+    }
+
+    const previousCart = localCart;
+    const nextItems = previousCart.items.map((item) => ({
+      ...item,
+      is_selected: checked,
+    }));
+    const nextCart = {
+      items: nextItems,
+      summary: calculateCartSummary(nextItems),
+    };
+
+    syncCartCaches(nextCart);
+    setPendingItemIds(nextItems.map((item) => item.id));
+
+    try {
+      await Promise.all(
+        nextItems.map((item) =>
+          updateCartItem({
+            user_id: authUser.id,
+            cart_id: item.id,
+            quantity: item.quantity,
+            is_selected: checked,
+          }),
+        ),
+      );
+    } catch (updateError) {
+      syncCartCaches(previousCart);
+      const message =
+        updateError instanceof Error
+          ? updateError.message
+          : "Gagal memperbarui pilihan item keranjang.";
+      toast.error(message);
+    } finally {
+      setPendingItemIds([]);
+    }
+  };
+
+  const handleRemoveSelectedItems = async () => {
+    if (!localCart) {
+      return;
+    }
+
+    const selectedCartItems = localCart.items.filter((item) => item.is_selected);
+    if (selectedCartItems.length === 0) {
+      toast.error("Pilih item yang ingin dihapus dulu.");
+      return;
+    }
+
+    const previousCart = localCart;
+    const nextItems = previousCart.items.filter((item) => !item.is_selected);
+    const nextCart = {
+      items: nextItems,
+      summary: calculateCartSummary(nextItems),
+    };
+
+    syncCartCaches(nextCart);
+    setPendingItemIds(selectedCartItems.map((item) => item.id));
+
+    try {
+      await Promise.all(selectedCartItems.map((item) => removeCartItem(item.id)));
+      toast.success("Item terpilih berhasil dihapus.");
+    } catch (removeError) {
+      syncCartCaches(previousCart);
+      const message =
+        removeError instanceof Error
+          ? removeError.message
+          : "Gagal menghapus item terpilih.";
+      toast.error(message);
+    } finally {
+      setPendingItemIds([]);
+    }
+  };
+
+  const items = localCart?.items ?? [];
+  const summary = localCart?.summary ?? calculateCartSummary(items);
+  const selectedItems = items.filter((item) => item.is_selected);
+  const hasSelectedItems = selectedItems.length > 0;
+  const isAllSelected = items.length > 0 && selectedItems.length === items.length;
+  const hasPendingItems = pendingItemIds.length > 0;
 
   return (
     <main className="min-h-screen bg-background">
@@ -81,7 +283,7 @@ const CartPage = () => {
               Lanjut belanja
             </Link>
             <span className="rounded-full border border-border/60 bg-white px-4 py-2 text-sm text-muted-foreground">
-              {isLoading ? "Memuat keranjang..." : `${items.length} item di keranjang`}
+              {isLoading ? "Memuat keranjang..." : `${items.length} item, ${selectedItems.length} dipilih`}
             </span>
           </div>
 
@@ -115,82 +317,155 @@ const CartPage = () => {
           ) : (
             <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
               <div className="space-y-4">
+                <div className="rounded-[1.75rem] border border-border/60 bg-white px-6 py-5 soft-shadow">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <Checkbox
+                        checked={isAllSelected}
+                        disabled={hasPendingItems}
+                        className="h-5 w-5 rounded-md data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                        onCheckedChange={(checked) => {
+                          void handleToggleAllItems(checked === true);
+                        }}
+                      />
+                      <div className="flex items-baseline gap-2">
+                        <p className="text-md font-semibold text-foreground">Pilih Semua</p>
+                        <span className="text-sm text-muted-foreground md:text-base">({selectedItems.length})</span>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      disabled={!hasSelectedItems || hasPendingItems}
+                      className="h-auto p-0 text-base font-medium text-primary hover:bg-transparent hover:text-primary/80"
+                      onClick={() => {
+                        void handleRemoveSelectedItems();
+                      }}
+                    >
+                      Hapus
+                    </Button>
+                  </div>
+                </div>
+
                 {items.map((item) => {
                   const image = getProductImages(item.product)[0] ?? "";
-                  const productPrice = item.product.discount_flag
-                    ? item.product.final_price
-                    : item.product.price;
+                  const isPending = pendingItemIds.includes(item.id);
+                  const maxQuantity = Math.max(item.product.total_quantity, 1);
 
                   return (
                     <article
                       key={item.id}
-                      className="overflow-hidden rounded-[2rem] border border-border/60 bg-white p-5 soft-shadow md:p-6"
+                      className={`overflow-hidden rounded-[1.75rem] border border-border/60 bg-white p-5 soft-shadow transition-opacity md:p-6 ${
+                        item.is_selected ? "opacity-100" : "opacity-70"
+                      }`}
                     >
-                      <div className="flex flex-col gap-5 md:flex-row">
-                        <Link
-                          to={`/shop/product/${item.product_unit_id}`}
-                          className="block w-full overflow-hidden rounded-2xl bg-gradient-nude md:w-44"
-                        >
-                          <img
-                            src={image}
-                            alt={item.product.product_name}
-                            className="aspect-square h-full w-full object-cover"
-                            loading="lazy"
+                      {/* <div className="mb-4 flex items-center gap-3">
+                        <Checkbox
+                          checked={item.is_selected}
+                          disabled={isPending}
+                          className="h-5 w-5 rounded-md data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                          onCheckedChange={(checked) => {
+                            void handleCartUpdate(item, {
+                              quantity: item.quantity,
+                              is_selected: checked === true,
+                            });
+                          }}
+                        />
+                        <p className="text-base font-semibold text-foreground md:text-lg">Kasta Beaute</p>
+                      </div> */}
+
+                      <div className="flex flex-col gap-4 md:flex-row md:items-start">
+                        <div className="flex min-w-0 flex-1 items-start gap-3 md:gap-4">
+                          <Checkbox
+                            checked={item.is_selected}
+                            disabled={isPending}
+                            className="mt-1.5 h-5 w-5 rounded-md data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                            onCheckedChange={(checked) => {
+                              void handleCartUpdate(item, {
+                                quantity: item.quantity,
+                                is_selected: checked === true,
+                              });
+                            }}
                           />
-                        </Link>
 
-                        <div className="flex min-w-0 flex-1 flex-col justify-between gap-4">
-                          <div className="space-y-3">
-                            <div className="flex flex-wrap items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="text-[11px] uppercase tracking-[0.24em] text-primary">
-                                  {item.product.category_name}
-                                </p>
-                                <Link to={`/shop/product/${item.product_unit_id}`}>
-                                  <h2 className="mt-1 line-clamp-2 text-xl font-semibold leading-tight text-foreground transition-colors hover:text-primary">
-                                    {item.product.product_name}
-                                  </h2>
-                                </Link>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-lg font-semibold text-foreground">
-                                  {formatRupiah(item.calculation.final_price)}
-                                </p>
-                                {item.calculation.discount_amount > 0 && (
-                                  <p className="text-xs text-muted-foreground">
-                                    Hemat {formatRupiah(item.calculation.discount_amount)}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
+                          <Link
+                            to={`/shop/product/${item.product_unit_id}`}
+                            className="block h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-border/60 bg-white md:h-28 md:w-28"
+                          >
+                            <img
+                              src={image}
+                              alt={item.product.product_name}
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                            />
+                          </Link>
 
-                            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                              <span className="rounded-full border border-border/60 bg-muted/30 px-3 py-1.5">
-                                Qty {item.quantity}
-                              </span>
+                          <div className="min-w-0 flex-1 pt-1">
+                            <Link to={`/shop/product/${item.product_unit_id}`}>
+                              <h2 className="line-clamp-2 text-base font-medium leading-snug text-foreground transition-colors hover:text-primary">
+                                {item.product.product_name}
+                              </h2>
+                            </Link>
+                            <p className="mt-2 text-sm text-muted-foreground">{item.product.unit_code}</p>
+                            <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground md:text-sm">
+                              <span>Tersisa {item.product.total_quantity}</span>
+                              {item.product.discount_flag && item.product.discount_amount > 0 ? (
+                                <span className="line-through">{formatRupiah(item.product.price)}</span>
+                              ) : null}
                             </div>
                           </div>
+                        </div>
 
-                          <div className="flex flex-wrap items-end justify-between gap-3 border-t border-border/60 pt-4">
-                            <div>
-                              <p className="text-sm text-muted-foreground">Harga per item</p>
-                              <div className="mt-1 flex items-center gap-2">
-                                <span className="font-medium text-foreground">
-                                  {formatRupiah(productPrice)}
-                                </span>
-                                {item.product.discount_flag && item.product.discount_amount > 0 && (
-                                  <span className="text-xs text-muted-foreground line-through">
-                                    {formatRupiah(item.product.price)}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <Link
-                              to={`/shop/product/${item.product_unit_id}`}
-                              className="text-sm font-medium text-primary transition-colors hover:text-primary/80"
+                        <div className="flex min-w-[180px] flex-col items-end gap-4 md:min-w-[200px] md:gap-5">
+                          <p className="text-base font-semibold text-foreground md:text-lg">
+                            {formatRupiah(item.calculation.final_price)}
+                          </p>
+
+                          <div className="flex items-center gap-3 md:gap-4">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="h-auto p-0 text-slate-400 hover:bg-transparent hover:text-destructive"
+                              disabled={isPending}
+                              onClick={() => {
+                                void handleRemoveCartItem(item.id);
+                              }}
                             >
-                              Lihat detail produk
-                            </Link>
+                              <Trash2 className="h-5 w-5" />
+                            </Button>
+
+                            <div className="flex h-10 items-center overflow-hidden rounded-full border border-border/60 bg-white">
+                              <button
+                                type="button"
+                                className="flex h-full w-10 items-center justify-center text-muted-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                                disabled={isPending || item.quantity <= 1}
+                                onClick={() => {
+                                  void handleCartUpdate(item, {
+                                    quantity: Math.max(1, item.quantity - 1),
+                                    is_selected: item.is_selected,
+                                  });
+                                }}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </button>
+                              <div className="flex h-full min-w-12 items-center justify-center px-3 text-sm font-medium text-foreground md:min-w-14 md:text-base">
+                                {item.quantity}
+                              </div>
+                              <button
+                                type="button"
+                                className="flex h-full w-10 items-center justify-center text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                                disabled={isPending || item.quantity >= maxQuantity}
+                                onClick={() => {
+                                  void handleCartUpdate(item, {
+                                    quantity: Math.min(maxQuantity, item.quantity + 1),
+                                    is_selected: item.is_selected,
+                                  });
+                                }}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -211,7 +486,7 @@ const CartPage = () => {
 
                   <div className="mt-8 space-y-4 text-sm">
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="text-muted-foreground">Subtotal terpilih</span>
                       <span className="font-medium text-foreground">
                         {formatRupiah(summary.total_price)}
                       </span>
@@ -232,9 +507,24 @@ const CartPage = () => {
                     </div>
                   </div>
 
-                  <Button asChild className="mt-8 h-12 w-full rounded-full text-sm uppercase tracking-[0.16em]">
-                    <Link to="/pre-checkout">Lanjut ke Checkout</Link>
-                  </Button>
+                  {hasSelectedItems ? (
+                    <Button asChild className="mt-8 h-12 w-full rounded-full text-sm uppercase tracking-[0.16em]">
+                      <Link to="/pre-checkout">Lanjut ke Checkout</Link>
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      disabled
+                      className="mt-8 h-12 w-full rounded-full text-sm uppercase tracking-[0.16em]"
+                    >
+                      Lanjut ke Checkout
+                    </Button>
+                  )}
+                  {!hasSelectedItems ? (
+                    <p className="mt-3 text-sm text-muted-foreground">
+                      Pilih minimal satu produk sebelum lanjut ke checkout.
+                    </p>
+                  ) : null}
                 </div>
               </aside>
             </div>

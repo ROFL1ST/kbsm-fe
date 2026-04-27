@@ -55,6 +55,20 @@ export async function getUserAddresses(userId: string): Promise<ApiAddress[]> {
   return payload.data;
 }
 
+export async function getDefaultUserAddress(userId: string): Promise<ApiAddress | null> {
+  const payload = await fetchAuth<ApiAddress | ApiAddress[]>(`/auth/user-addresses?user_id=${userId}&is_default=true`);
+
+  if (!payload.data) {
+    return null;
+  }
+
+  if (Array.isArray(payload.data)) {
+    return payload.data[0] ?? null;
+  }
+
+  return payload.data;
+}
+
 export async function createUserAddress(data: Omit<ApiAddress, "id" | "created_at" | "updated_at">): Promise<ApiAddress> {
   const payload = await fetchAuth<ApiAddress>("/auth/user-addresses", {
     method: "POST",
@@ -82,7 +96,7 @@ export async function updateUserAddress(data: Omit<ApiAddress, "created_at" | "u
 }
 
 export async function deleteUserAddress(userId: string, addressId: number | string): Promise<void> {
-  const payload = await fetchAuth<any>(`/auth/user-addresses?user_id=${userId}&id=${addressId}`, {
+  const payload = await fetchAuth<unknown>(`/auth/user-addresses?user_id=${userId}&id=${addressId}`, {
     method: "DELETE",
   });
 
