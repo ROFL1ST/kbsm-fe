@@ -1,5 +1,4 @@
-import { fetchAuth, getApiBaseUrl, getAuthToken } from "@/lib/auth";
-import type { ApiEnvelope } from "@/lib/auth";
+import { fetchAuth } from "@/lib/auth";
 
 export type ProgressTypeCode =
   | "REJECTED"
@@ -34,6 +33,16 @@ export type TransactionMeta = {
   total: number;
 };
 
+// Shape of the actual API envelope:
+// { status, message, data: Transaction[], meta: TransactionMeta, error }
+type TransactionApiEnvelope = {
+  status: boolean;
+  message: string;
+  data: Transaction[] | null;
+  meta: TransactionMeta | null;
+  error: string | null;
+};
+
 export type TransactionListResponse = {
   data: Transaction[];
   meta: TransactionMeta;
@@ -57,13 +66,20 @@ export async function getTransactions(
     query.set("progress_type_code", params.progress_type_code);
   }
 
-  const envelope = await fetchAuth<TransactionListResponse>(
+  // fetchAuth wraps the raw response — cast to the real envelope shape
+  const envelope = await fetchAuth<TransactionApiEnvelope>(
     `/transactions?${query.toString()}`
   );
 
-  if (!envelope.data) {
-    throw new Error(envelope.message || "Gagal mengambil data transaksi.");
+  // The API puts data & meta at root envelope level (not nested)
+  const raw = envelope as unknown as TransactionApiEnvelope;
+
+  if (!raw.status) {
+    throw new Error(raw.message || "Gagal mengambil data transaksi.");
   }
 
-  return envelope.data;
+  return {
+    data: Array.isArray(raw.data) ? raw.data : [],
+    meta: raw.meta ?? { page: 1, size: 10, total: 0 },
+  };
 }
