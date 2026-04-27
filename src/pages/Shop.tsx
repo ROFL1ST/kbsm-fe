@@ -14,18 +14,19 @@ import {
   PRODUCT_CACHE_TTL,
 } from "@/lib/products";
 
+type CategoryId = number | "";
+
 const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get("search") ?? "";
 
-  // Baca category_id dari URL, sync ke state
   const categoryIdParam = searchParams.get("category_id");
-  const [selectedCategory, setSelectedCategory] = useState<number | ">(
+  const [selectedCategory, setSelectedCategory] = useState<CategoryId>(
     categoryIdParam ? Number(categoryIdParam) : ""
   );
-  const [selectedStatus, setSelectedStatus] = useState<number | "">("");
+  const [selectedStatus, setSelectedStatus] = useState<CategoryId>("");
 
-  // Kalau URL berubah dari luar (misal navigasi dari Home), sync state
+  // Sync state saat URL berubah dari luar (navigasi dari Home)
   useEffect(() => {
     const id = searchParams.get("category_id");
     setSelectedCategory(id ? Number(id) : "");
@@ -43,7 +44,12 @@ const Shop = () => {
     isError,
   } = useQuery({
     queryKey: ["products", { search: searchQuery, category_id: selectedCategory, status: selectedStatus }],
-    queryFn: () => fetchProducts({ search: searchQuery, categoryId: selectedCategory, status: selectedStatus }),
+    queryFn: () =>
+      fetchProducts({
+        search: searchQuery,
+        categoryId: selectedCategory,
+        status: selectedStatus,
+      }),
     select: (items) => items.map(mapProductToCard),
     staleTime: PRODUCT_CACHE_TTL,
     gcTime: PRODUCT_CACHE_TTL * 2,
@@ -57,7 +63,7 @@ const Shop = () => {
     setSearchParams(next, { replace: true });
   };
 
-  const handleCategorySelect = (id: number | "") => {
+  const handleCategorySelect = (id: CategoryId) => {
     setSelectedCategory(id);
     const next = new URLSearchParams(searchParams);
     if (id === "") {
@@ -68,10 +74,9 @@ const Shop = () => {
     setSearchParams(next, { replace: true });
   };
 
-  // Cari nama category aktif untuk ditampilkan di banner
   const activeCategoryName =
     selectedCategory !== ""
-      ? categories.find((c) => c.id === selectedCategory)?.name ?? ""
+      ? (categories.find((c) => c.id === selectedCategory)?.name ?? "")
       : "";
 
   useEffect(() => {
@@ -114,7 +119,6 @@ const Shop = () => {
 
       <section className="py-16 md:py-20">
         <div className="container">
-          {/* Filters Section */}
           <div className="mb-10 space-y-5 animate-fade-in">
             {/* Search result banner */}
             {searchQuery && (
@@ -122,7 +126,7 @@ const Shop = () => {
                 <Search className="h-4 w-4 shrink-0 text-primary" />
                 <p className="flex-1 text-foreground">
                   Menampilkan hasil untuk{" "}
-                  <span className="font-semibold text-primary">"{searchQuery}"</span>
+                  <span className="font-semibold text-primary">&ldquo;{searchQuery}&rdquo;</span>
                 </p>
                 <button
                   onClick={clearSearch}
@@ -135,13 +139,13 @@ const Shop = () => {
               </div>
             )}
 
-            {/* Category filter banner (dari klik Home) */}
+            {/* Category filter banner */}
             {!searchQuery && activeCategoryName && (
               <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-accent/60 px-5 py-3.5 text-sm backdrop-blur-sm">
                 <Layers className="h-4 w-4 shrink-0 text-primary" />
                 <p className="flex-1 text-foreground">
                   Menampilkan kategori{" "}
-                  <span className="font-semibold text-primary">"{activeCategoryName}"</span>
+                  <span className="font-semibold text-primary">&ldquo;{activeCategoryName}&rdquo;</span>
                 </p>
                 <button
                   onClick={() => handleCategorySelect("")}
@@ -180,7 +184,7 @@ const Shop = () => {
               </button>
             </div>
 
-            {/* Category filter chips */}
+            {/* Category chips */}
             <ScrollArea className="w-full">
               <div className="flex w-max space-x-2 pb-3">
                 <button
