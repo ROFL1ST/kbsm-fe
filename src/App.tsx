@@ -18,6 +18,7 @@ import ResetPassword from "./pages/ResetPassword.tsx";
 import ProductDetail from "./pages/ProductDetail.tsx";
 import PreCheckoutPage from "./pages/PreCheckoutPage.tsx";
 import Shop from "./pages/Shop.tsx";
+import TransactionListPage from "./pages/TransactionListPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
           <Route path="/blog/:slug" element={<BlogDetailPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/addresses" element={<AddressPage />} />
+          <Route path="/transactions" element={<TransactionListPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

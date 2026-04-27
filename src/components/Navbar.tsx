@@ -11,6 +11,7 @@ import {
   ChevronDown,
   LogOut,
   Settings,
+  PackageSearch,
 } from "lucide-react";
 import {
   AUTH_STATE_CHANGE_EVENT,
@@ -318,7 +319,7 @@ const Navbar = () => {
                     <User className="h-5 w-5 text-foreground/70" />
                   </button>
                   {accountMenuOpen && (
-                    <div className="absolute right-0 top-full z-50 mt-3 w-44 overflow-hidden rounded-2xl border border-white/40 bg-white/90 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.25)] backdrop-blur-xl animate-fade-in">
+                    <div className="absolute right-0 top-full z-50 mt-3 w-48 overflow-hidden rounded-2xl border border-white/40 bg-white/90 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.25)] backdrop-blur-xl animate-fade-in">
                       <Link
                         to="/profile"
                         className="flex items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors hover:bg-accent/70"
@@ -326,6 +327,15 @@ const Navbar = () => {
                       >
                         <Settings className="h-4 w-4" />
                         Profile
+                      </Link>
+                      <div className="h-px bg-border/80" />
+                      <Link
+                        to="/transactions"
+                        className="flex items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors hover:bg-accent/70"
+                        onClick={() => setAccountMenuOpen(false)}
+                      >
+                        <PackageSearch className="h-4 w-4" />
+                        Transaksi Saya
                       </Link>
                       <div className="h-px bg-border/80" />
                       <button
@@ -359,14 +369,23 @@ const Navbar = () => {
                     <User className="h-5 w-5 text-foreground/70" />
                   </button>
                   {accountMenuOpen && (
-                    <div className="absolute right-0 top-full z-50 mt-3 w-44 overflow-hidden rounded-2xl border border-white/40 bg-white/90 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.25)] backdrop-blur-xl animate-fade-in">
+                    <div className="absolute right-0 top-full z-50 mt-3 w-48 overflow-hidden rounded-2xl border border-white/40 bg-white/90 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.25)] backdrop-blur-xl animate-fade-in">
                       <Link
-                        to="/"
+                        to="/profile"
                         className="flex items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors hover:bg-accent/70"
                         onClick={() => setAccountMenuOpen(false)}
                       >
                         <Settings className="h-4 w-4" />
-                        Settings
+                        Profile
+                      </Link>
+                      <div className="h-px bg-border/80" />
+                      <Link
+                        to="/transactions"
+                        className="flex items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors hover:bg-accent/70"
+                        onClick={() => setAccountMenuOpen(false)}
+                      >
+                        <PackageSearch className="h-4 w-4" />
+                        Transaksi Saya
                       </Link>
                       <div className="h-px bg-border/80" />
                       <button
@@ -478,6 +497,13 @@ const Navbar = () => {
                   onClick={() => setMobileOpen(false)}
                 >
                   My Profile
+                </Link>
+                <Link
+                  to="/transactions"
+                  className="text-base font-medium text-primary"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Transaksi Saya
                 </Link>
                 <button
                   type="button"

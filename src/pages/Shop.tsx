@@ -88,7 +88,7 @@ const Shop = () => {
       <section className="py-16 md:py-20">
         <div className="container">
           {/* Filters Section */}
-          <div className="mb-10 space-y-6 animate-fade-in">
+          <div className="mb-10 space-y-5 animate-fade-in">
             {/* Search result banner */}
             {searchQuery && (
               <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-accent/60 px-5 py-3.5 text-sm backdrop-blur-sm">
@@ -100,7 +100,7 @@ const Shop = () => {
                 <button
                   onClick={clearSearch}
                   aria-label="Hapus pencarian"
-                  className="flex items-center gap-1.5 rounded-full border border-border/60 bg-white/70 px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+                  className="flex items-center gap-1.5 rounded-full border border-border/60 bg-white/70 px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent active:bg-accent"
                 >
                   <X className="h-3 w-3" />
                   Hapus
@@ -108,41 +108,41 @@ const Shop = () => {
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-              <div className="flex gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 no-scrollbar">
-                <button
-                  onClick={() => setSelectedStatus("")}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap shadow-sm ${
-                    selectedStatus === ""
-                      ? "bg-foreground text-background"
-                      : "bg-white border border-border/60 text-foreground hover:bg-accent"
-                  }`}
-                >
-                  <Layers className="h-4 w-4" />
-                  Semua Produk
-                </button>
-                <button
-                  onClick={() => setSelectedStatus(1)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap shadow-sm ${
-                    selectedStatus === 1
-                      ? "bg-foreground text-background"
-                      : "bg-white border border-border/60 text-foreground hover:bg-accent"
-                  }`}
-                >
-                  <Star className="h-4 w-4" />
-                  Best Seller
-                </button>
-              </div>
+            {/* Status filter (Semua / Best Seller) */}
+            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+              <button
+                onClick={() => setSelectedStatus("")}
+                className={`min-h-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap shadow-sm ${
+                  selectedStatus === ""
+                    ? "bg-foreground text-background"
+                    : "bg-white border border-border/60 text-foreground hover:bg-accent active:bg-accent"
+                }`}
+              >
+                <Layers className="h-4 w-4" />
+                Semua Produk
+              </button>
+              <button
+                onClick={() => setSelectedStatus(1)}
+                className={`min-h-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap shadow-sm ${
+                  selectedStatus === 1
+                    ? "bg-foreground text-background"
+                    : "bg-white border border-border/60 text-foreground hover:bg-accent active:bg-accent"
+                }`}
+              >
+                <Star className="h-4 w-4" />
+                Best Seller
+              </button>
             </div>
 
-            <ScrollArea className="w-full whitespace-nowrap pb-4">
-              <div className="flex w-max space-x-2">
+            {/* Category filter */}
+            <ScrollArea className="w-full">
+              <div className="flex w-max space-x-2 pb-3">
                 <button
                   onClick={() => setSelectedCategory("")}
-                  className={`px-5 py-2 rounded-full text-sm font-medium transition-colors shadow-sm ${
+                  className={`min-h-[44px] px-5 py-2.5 rounded-full text-sm font-medium transition-colors shadow-sm whitespace-nowrap ${
                     selectedCategory === ""
                       ? "bg-primary text-primary-foreground"
-                      : "bg-white border border-border/60 text-foreground hover:bg-accent"
+                      : "bg-white border border-border/60 text-foreground hover:bg-accent active:bg-accent"
                   }`}
                 >
                   Semua Kategori
@@ -151,17 +151,17 @@ const Shop = () => {
                   <button
                     key={cat.id}
                     onClick={() => setSelectedCategory(cat.id)}
-                    className={`px-5 py-2 rounded-full text-sm font-medium transition-colors shadow-sm ${
+                    className={`min-h-[44px] px-5 py-2.5 rounded-full text-sm font-medium transition-colors shadow-sm whitespace-nowrap ${
                       selectedCategory === cat.id
                         ? "bg-primary text-primary-foreground"
-                        : "bg-white border border-border/60 text-foreground hover:bg-accent"
+                        : "bg-white border border-border/60 text-foreground hover:bg-accent active:bg-accent"
                     }`}
                   >
                     {cat.name}
                   </button>
                 ))}
               </div>
-              <ScrollBar orientation="horizontal" className="hidden sm:flex" />
+              <ScrollBar orientation="horizontal" />
             </ScrollArea>
           </div>
 
@@ -185,7 +185,7 @@ const Shop = () => {
                     setSelectedCategory("");
                     setSelectedStatus("");
                   }}
-                  className="mt-6 text-sm font-medium text-primary hover:underline"
+                  className="mt-6 min-h-[44px] px-6 text-sm font-medium text-primary hover:underline active:underline"
                 >
                   Reset Semua Filter
                 </button>
