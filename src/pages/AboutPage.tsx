@@ -190,7 +190,7 @@ export default function AboutPage() {
               <div className="aspect-[4/5] rounded-3xl overflow-hidden bg-gradient-nude">
                 <img
                   src="https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=800&q=80"
-                  alt="Kasta Beaut\u00e9 products flat lay"
+                  alt="Kasta Beauté products flat lay"
                   loading="lazy"
                   width={800}
                   height={1000}
