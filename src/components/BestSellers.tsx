@@ -56,14 +56,14 @@ const BestSellers = () => {
         </div>
 
         {/* Category Filter */}
-        <ScrollArea className="w-full whitespace-nowrap pb-4 mb-10">
-          <div className="flex w-max space-x-2">
+        <ScrollArea className="w-full mb-10">
+          <div className="flex w-max space-x-2 pb-3">
             <button
               onClick={() => setSelectedCategory("")}
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-colors shadow-sm ${
+              className={`min-h-[44px] px-5 py-2.5 rounded-full text-sm font-medium transition-colors shadow-sm whitespace-nowrap ${
                 selectedCategory === ""
                   ? "bg-primary text-primary-foreground"
-                  : "bg-white border border-border/60 text-foreground hover:bg-accent"
+                  : "bg-white border border-border/60 text-foreground hover:bg-accent active:bg-accent"
               }`}
             >
               Semua Kategori
@@ -72,17 +72,17 @@ const BestSellers = () => {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-5 py-2 rounded-full text-sm font-medium transition-colors shadow-sm ${
+                className={`min-h-[44px] px-5 py-2.5 rounded-full text-sm font-medium transition-colors shadow-sm whitespace-nowrap ${
                   selectedCategory === cat.id
                     ? "bg-primary text-primary-foreground"
-                    : "bg-white border border-border/60 text-foreground hover:bg-accent"
+                    : "bg-white border border-border/60 text-foreground hover:bg-accent active:bg-accent"
                 }`}
               >
                 {cat.name}
               </button>
             ))}
           </div>
-          <ScrollBar orientation="horizontal" className="hidden sm:flex" />
+          <ScrollBar orientation="horizontal" />
         </ScrollArea>
 
         {/* Product Grid */}
