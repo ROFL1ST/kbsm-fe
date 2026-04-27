@@ -19,6 +19,7 @@ import ProductDetail from "./pages/ProductDetail.tsx";
 import PreCheckoutPage from "./pages/PreCheckoutPage.tsx";
 import Shop from "./pages/Shop.tsx";
 import TransactionListPage from "./pages/TransactionListPage.tsx";
+import AboutPage from "./pages/AboutPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
         <ScrollToTop />
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/about" element={<AboutPage />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
