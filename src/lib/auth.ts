@@ -1,7 +1,7 @@
 const API_BASE_URL = import.meta.env.KBBU_API?.replace(/\/$/, "");
 
 export const AUTH_TOKEN_STORAGE_KEY = "kbbu_access_token";
-export const AUTH_USER_STORAGE_KEY = "kbbu_auth_user";
+export const AUTH_HASHED_USER_ID_STORAGE_KEY = "kbbu_auth";
 export const AUTH_STATE_CHANGE_EVENT = "kbbu-auth-state-change";
 
 export type ApiEnvelope<T> = {
@@ -27,6 +27,8 @@ type LoginResponseData = {
     created_at: string;
   };
 };
+
+export type AuthUser = LoginResponseData["user"];
 
 export type AuthCredentials = {
   email: string;
@@ -110,18 +112,41 @@ export async function loginUser(credentials: AuthCredentials) {
   return postJson<LoginResponseData>("/auth/login", credentials);
 }
 
+let authUserCache: AuthUser | null = null;
+
+async function hashValue(value: string) {
+  const data = new TextEncoder().encode(value);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 export function saveAccessToken(token: string) {
   localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
   window.dispatchEvent(new Event(AUTH_STATE_CHANGE_EVENT));
 }
 
-export function saveAuthUser(user: { id: string; email: string; created_at: string }) {
-  localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user));
+export async function saveHashedAuthUserId(userId: string) {
+  const hashedUserId = await hashValue(userId);
+  localStorage.setItem(AUTH_HASHED_USER_ID_STORAGE_KEY, hashedUserId);
+  return hashedUserId;
+}
+
+export async function saveAuthUser(user: AuthUser) {
+  authUserCache = user;
+  await saveHashedAuthUserId(user.id);
+}
+
+export function getHashedAuthUserId() {
+  return localStorage.getItem(AUTH_HASHED_USER_ID_STORAGE_KEY);
 }
 
 export function clearAccessToken() {
+  authUserCache = null;
   localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
-  localStorage.removeItem(AUTH_USER_STORAGE_KEY);
+  localStorage.removeItem(AUTH_HASHED_USER_ID_STORAGE_KEY);
   window.dispatchEvent(new Event(AUTH_STATE_CHANGE_EVENT));
 }
 
@@ -133,14 +158,57 @@ export function getAuthToken() {
   return localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
 }
 
-export function getAuthUser(): { id: string; email: string; created_at: string } | null {
-  const raw = localStorage.getItem(AUTH_USER_STORAGE_KEY);
-  if (!raw) return null;
+function decodeBase64Url(value: string) {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  return atob(padded);
+}
+
+function getAuthUserFromToken(): AuthUser | null {
+  const token = getAuthToken();
+
+  if (!token) {
+    return null;
+  }
+
+  const tokenParts = token.split(".");
+  if (tokenParts.length < 2) {
+    return null;
+  }
+
   try {
-    return JSON.parse(raw);
+    const payload = JSON.parse(decodeBase64Url(tokenParts[1])) as Record<string, unknown>;
+    const id =
+      typeof payload.user_id === "string"
+        ? payload.user_id
+        : typeof payload.id === "string"
+          ? payload.id
+          : typeof payload.sub === "string"
+            ? payload.sub
+            : null;
+
+    if (!id) {
+      return null;
+    }
+
+    return {
+      id,
+      email: typeof payload.email === "string" ? payload.email : "",
+      created_at: typeof payload.created_at === "string" ? payload.created_at : "",
+    };
   } catch {
     return null;
   }
+}
+
+export function getAuthUser(): AuthUser | null {
+  if (authUserCache) {
+    return authUserCache;
+  }
+
+  const decodedUser = getAuthUserFromToken();
+  authUserCache = decodedUser;
+  return decodedUser;
 }
 
 export async function fetchAuth<T>(path: string, options?: RequestInit): Promise<ApiEnvelope<T>> {

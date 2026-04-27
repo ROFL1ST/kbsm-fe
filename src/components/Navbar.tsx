@@ -167,8 +167,8 @@ const Navbar = () => {
       {/* ── Main row ── */}
       <div
         className={cn(
-          "container flex items-center justify-between gap-4",
-          !scrolled && !searchOpen && "md:mt-7",
+          "container flex items-center justify-between gap-4 ",
+          !scrolled  && "md:mt-7",
         )}
       >
         {/* Logo */}

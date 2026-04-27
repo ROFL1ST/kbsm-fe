@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/sonner";
-import { loginUser, registerUser, saveAccessToken } from "@/lib/auth";
+import { registerUser } from "@/lib/auth";
 import AuthShell from "@/components/AuthShell";
 
 const MIN_PASSWORD_LENGTH = 6;
@@ -46,16 +46,10 @@ const RegisterForm = () => {
         password: trimmedPassword,
       });
 
-      const loginResponse = await loginUser({
-        email: trimmedEmail,
-        password: trimmedPassword,
-      });
-
-      saveAccessToken(loginResponse.data.access_token);
-      toast.success("Registrasi berhasil.");
+      toast.success("Registrasi berhasil. Silakan login untuk melanjutkan.");
       setEmail("");
       setPassword("");
-      navigate("/");
+      navigate("/login");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Registrasi gagal.";
       toast.error(
