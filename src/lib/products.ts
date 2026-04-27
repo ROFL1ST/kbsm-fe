@@ -17,9 +17,27 @@ type ProductDetailApiResponse = {
 };
 
 type FetchProductsOptions = {
-  categoryId?: number;
+  search?: string;
+  categoryId?: number | string;
   size?: number;
-  status?: number;
+  page?: number;
+  status?: number | string;
+};
+
+export type CategoryApiItem = {
+  id: number;
+  name: string;
+  path: string;
+  type: number;
+  created_at: string;
+  updated_at: string | null;
+};
+
+type CategoriesApiResponse = {
+  status: boolean;
+  message: string;
+  data: CategoryApiItem[];
+  error: string | null;
 };
 
 export type ProductApiItem = {
@@ -80,16 +98,24 @@ export function getProductImages(product: ProductApiItem) {
 export async function fetchProducts(options: FetchProductsOptions = {}) {
   const query = new URLSearchParams();
 
-  if (typeof options.categoryId === "number" && Number.isFinite(options.categoryId)) {
+  if (options.search) {
+    query.set("search", options.search);
+  }
+
+  if (options.categoryId !== undefined && options.categoryId !== "") {
     query.set("category_id", String(options.categoryId));
   }
 
-  if (typeof options.status === "number" && Number.isFinite(options.status)) {
+  if (options.status !== undefined && options.status !== "") {
     query.set("status", String(options.status));
   }
 
   if (typeof options.size === "number" && Number.isFinite(options.size)) {
     query.set("size", String(options.size));
+  }
+
+  if (typeof options.page === "number" && Number.isFinite(options.page)) {
+    query.set("page", String(options.page));
   }
 
   const endpoint = query.size > 0
@@ -112,6 +138,18 @@ export async function fetchProductDetail(productUnitId: number) {
 
   if (!response.ok || !payload.status || !payload.data) {
     throw new Error(payload.error || payload.message || "Gagal mengambil detail produk.");
+  }
+
+  return payload.data;
+}
+
+export async function fetchCategories() {
+  const endpoint = `${getApiBaseUrl()}/categories`;
+  const response = await fetch(endpoint);
+  const payload = (await response.json()) as CategoriesApiResponse;
+
+  if (!response.ok || !payload.status || !Array.isArray(payload.data)) {
+    throw new Error(payload.error || payload.message || "Gagal mengambil kategori.");
   }
 
   return payload.data;
