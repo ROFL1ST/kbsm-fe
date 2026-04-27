@@ -141,113 +141,103 @@ const Navbar = () => {
 
       <div
         className={cn(
-          "container flex items-center justify-between gap-4",
+          "container flex items-center gap-4",
           !scrolled && !searchOpen && "md:mt-7",
         )}
       >
-        {/* Logo — always visible, never hidden */}
+        {/* Logo — always visible, shrink-0 so it never collapses */}
         <a
           href="/"
-          className="flex items-center gap-2 shrink-0 transition-opacity duration-300"
+          className="flex items-center gap-2 shrink-0"
         >
           <span className="font-display text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
             Kasta<span className="text-primary italic">Beuate</span>
           </span>
         </a>
 
-        {/* Desktop nav — hidden when search is open */}
-        <nav
-          className={cn(
-            "hidden lg:flex items-center gap-8 transition-all duration-300",
-            searchOpen && "opacity-0 pointer-events-none",
-          )}
-        >
-          {navLinks.map((link) => (
-            <div
-              key={link.label}
-              className="relative"
-              onMouseEnter={() => link.hasMega && setMegaOpen(true)}
-              onMouseLeave={() => link.hasMega && setMegaOpen(false)}
-            >
-              {link.isRoute ? (
-                <Link
-                  to={link.href}
-                  className="story-link text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-1"
-                >
-                  {link.label}
-                </Link>
-              ) : (
-                <a
-                  href={link.href}
-                  className="story-link text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-1"
-                >
-                  {link.label}
-                  {link.hasMega && <ChevronDown className="h-3 w-3" />}
-                </a>
-              )}
+        {/* Desktop nav — completely removed from flow when search is open */}
+        {!searchOpen && (
+          <nav className="hidden lg:flex items-center gap-8 flex-1 justify-center">
+            {navLinks.map((link) => (
+              <div
+                key={link.label}
+                className="relative"
+                onMouseEnter={() => link.hasMega && setMegaOpen(true)}
+                onMouseLeave={() => link.hasMega && setMegaOpen(false)}
+              >
+                {link.isRoute ? (
+                  <Link
+                    to={link.href}
+                    className="story-link text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-1"
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <a
+                    href={link.href}
+                    className="story-link text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-1"
+                  >
+                    {link.label}
+                    {link.hasMega && <ChevronDown className="h-3 w-3" />}
+                  </a>
+                )}
 
-              {link.hasMega && megaOpen && (
-                <div className="fixed left-0 right-0 top-full mt-2 px-6 animate-fade-in">
-                  <div className="container">
-                    <div className="glass-card p-8 grid grid-cols-3 lg:grid-cols-6 gap-6">
-                      {shopCategories.map((cat) => (
-                        <div key={cat.title}>
-                          <h4 className="font-display text-base text-primary mb-3">
-                            {cat.title}
-                          </h4>
-                          <ul className="space-y-2">
-                            {cat.items.map((it) => (
-                              <li key={it}>
-                                <a
-                                  href="#"
-                                  className="text-xs text-muted-foreground hover:text-primary story-link"
-                                >
-                                  {it}
-                                </a>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ))}
+                {link.hasMega && megaOpen && (
+                  <div className="fixed left-0 right-0 top-full mt-2 px-6 animate-fade-in">
+                    <div className="container">
+                      <div className="glass-card p-8 grid grid-cols-3 lg:grid-cols-6 gap-6">
+                        {shopCategories.map((cat) => (
+                          <div key={cat.title}>
+                            <h4 className="font-display text-base text-primary mb-3">
+                              {cat.title}
+                            </h4>
+                            <ul className="space-y-2">
+                              {cat.items.map((it) => (
+                                <li key={it}>
+                                  <a
+                                    href="#"
+                                    className="text-xs text-muted-foreground hover:text-primary story-link"
+                                  >
+                                    {it}
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </nav>
+                )}
+              </div>
+            ))}
+          </nav>
+        )}
 
-        {/* Search bar — expands when open, sits between logo and right icons */}
-        <div
-          className={cn(
-            "relative transition-all duration-300 ease-in-out",
-            searchOpen
-              ? "flex-1 opacity-100"
-              : "w-0 opacity-0 pointer-events-none overflow-hidden",
-          )}
-        >
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-          <Input
-            ref={searchInputRef}
-            type="search"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Cari produk Kasta Beaute..."
-            className="pl-11 pr-4 h-11 w-full rounded-full bg-background/80 border-border/60 focus-visible:ring-primary/40 shadow-sm backdrop-blur text-sm"
-            aria-label="Cari produk"
-          />
+        {/* Search bar — expands to fill all available space between logo and right icons */}
+        {searchOpen && (
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              ref={searchInputRef}
+              type="search"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Cari produk Kasta Beaute..."
+              className="pl-11 pr-4 h-11 w-full rounded-full bg-background/80 border-border/60 focus-visible:ring-primary/40 shadow-sm backdrop-blur text-sm"
+              aria-label="Cari produk"
+            />
 
-          {/* Dropdown */}
-          {searchOpen && (
+            {/* Dropdown */}
             <NavbarSearchDropdown
               query={debouncedSearch}
               onClose={handleCloseSearch}
             />
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Right icons — always visible */}
-        <div className="flex items-center gap-1 md:gap-2 shrink-0">
+        {/* Right icons — always visible, shrink-0 so they never collapse */}
+        <div className="flex items-center gap-1 md:gap-2 shrink-0 ml-auto">
           {/* Search toggle button */}
           <button
             className="p-2 rounded-full hover:bg-accent transition-colors"
