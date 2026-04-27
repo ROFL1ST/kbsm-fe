@@ -49,7 +49,7 @@ const navLinks = [
   { label: "Best Seller", href: "#bestseller" },
   { label: "New Arrivals", href: "#new" },
   { label: "Collections", href: "#collections" },
-  { label: "About", href: "#about" },
+  { label: "About", href: "/about" },
   { label: "Blog", href: "/blog", isRoute: true },
   { label: "Contact", href: "#contact" },
 ];
