@@ -45,11 +45,13 @@ export function useTransactions({
     getTransactions({ user_id, page, limit, progress_type_code })
       .then((res) => {
         if (cancelled) return;
-        setTransactions(res.data);
-        setMeta(res.meta);
+        // Guard: API might return undefined/null for data array
+        setTransactions(Array.isArray(res.data) ? res.data : []);
+        setMeta(res.meta ?? null);
       })
       .catch((err: unknown) => {
         if (cancelled) return;
+        setTransactions([]);
         setError(
           err instanceof Error ? err.message : "Gagal memuat transaksi."
         );

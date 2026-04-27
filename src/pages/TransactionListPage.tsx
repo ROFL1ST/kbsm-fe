@@ -4,7 +4,6 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Pagination,
   PaginationContent,
@@ -43,12 +42,15 @@ export default function TransactionListPage() {
   const progressFilter: ProgressTypeCode | null =
     activeTab === "ALL" ? null : activeTab;
 
-  const { transactions, meta, isLoading, error } = useTransactions({
+  const { transactions: rawTransactions, meta, isLoading, error } = useTransactions({
     user_id: user?.id ?? null,
     progress_type_code: progressFilter,
     page,
     limit: 10,
   });
+
+  // Defensive fallback — ensure transactions is always an array
+  const transactions = Array.isArray(rawTransactions) ? rawTransactions : [];
 
   const totalPages = meta ? Math.ceil(meta.total / meta.size) : 0;
 
