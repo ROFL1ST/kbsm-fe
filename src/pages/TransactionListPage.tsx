@@ -1,34 +1,26 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, PackageSearch } from "lucide-react";
+import { ArrowLeft, PackageSearch, ChevronLeft, ChevronRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis,
-} from "@/components/ui/pagination";
 import { TransactionCard } from "@/components/transaction/TransactionCard";
 import { TransactionSkeleton } from "@/components/transaction/TransactionSkeleton";
 import { useTransactions } from "@/hooks/use-transactions";
 import { getAuthUser } from "@/lib/auth";
+import { cn } from "@/lib/utils";
 import type { ProgressTypeCode } from "@/lib/transactions";
 import { PROGRESS_LABELS } from "@/lib/transactions";
 
 const FILTER_OPTIONS: { value: ProgressTypeCode | "ALL"; label: string }[] = [
-  { value: "ALL", label: "Semua" },
+  { value: "ALL",       label: "Semua" },
   { value: "FOLLOW_UP", label: PROGRESS_LABELS.FOLLOW_UP },
-  { value: "PACKING", label: PROGRESS_LABELS.PACKING },
-  { value: "SENDING", label: PROGRESS_LABELS.SENDING },
-  { value: "DONE", label: PROGRESS_LABELS.DONE },
-  { value: "REJECTED", label: PROGRESS_LABELS.REJECTED },
+  { value: "PACKING",   label: PROGRESS_LABELS.PACKING },
+  { value: "SENDING",   label: PROGRESS_LABELS.SENDING },
+  { value: "DONE",      label: PROGRESS_LABELS.DONE },
+  { value: "REJECTED",  label: PROGRESS_LABELS.REJECTED },
 ];
 
 export default function TransactionListPage() {
@@ -37,9 +29,13 @@ export default function TransactionListPage() {
   const user = getAuthUser();
 
   useEffect(() => {
-    document.title = "Pesanan Saya — Kasta Beauté";
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    document.title = "Pesanan Saya — Kasta Beau\u00e9";
   }, []);
+
+  // Scroll to content top on page change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [page]);
 
   const progressFilter: ProgressTypeCode | null =
     activeFilter === "ALL" ? null : activeFilter;
@@ -52,63 +48,23 @@ export default function TransactionListPage() {
   });
 
   const transactions = Array.isArray(rawTransactions) ? rawTransactions : [];
-  const totalPages = meta ? Math.ceil(meta.total / meta.size) : 0;
+  const totalPages   = meta ? Math.ceil(meta.total / meta.size) : 0;
 
   function handleFilterChange(value: ProgressTypeCode | "ALL") {
     setActiveFilter(value);
     setPage(1);
   }
 
-  function renderPagination() {
-    if (totalPages <= 1) return null;
-    const showEllipsis = totalPages > 5;
+  function goTo(p: number) {
+    setPage(Math.max(1, Math.min(totalPages, p)));
+  }
 
-    let visiblePages: (number | "...")[];
-    if (!showEllipsis) {
-      visiblePages = Array.from({ length: totalPages }, (_, i) => i + 1);
-    } else if (page <= 3) {
-      visiblePages = [1, 2, 3, "...", totalPages];
-    } else if (page >= totalPages - 2) {
-      visiblePages = [1, "...", totalPages - 2, totalPages - 1, totalPages];
-    } else {
-      visiblePages = [1, "...", page - 1, page, page + 1, "...", totalPages];
-    }
-
-    return (
-      <Pagination className="mt-8">
-        <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-            />
-          </PaginationItem>
-          {visiblePages.map((p, i) =>
-            p === "..." ? (
-              <PaginationItem key={`ellipsis-${i}`}>
-                <PaginationEllipsis />
-              </PaginationItem>
-            ) : (
-              <PaginationItem key={p}>
-                <PaginationLink
-                  isActive={p === page}
-                  onClick={() => setPage(p as number)}
-                  className="cursor-pointer"
-                >
-                  {p}
-                </PaginationLink>
-              </PaginationItem>
-            )
-          )}
-          <PaginationItem>
-            <PaginationNext
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className={page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-            />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
-    );
+  /* Build page number array with ellipsis */
+  function buildPages(): (number | "...")[] {
+    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (page <= 3)               return [1, 2, 3, "...", totalPages];
+    if (page >= totalPages - 2)  return [1, "...", totalPages - 2, totalPages - 1, totalPages];
+    return [1, "...", page - 1, page, page + 1, "...", totalPages];
   }
 
   const activeLabel =
@@ -123,9 +79,7 @@ export default function TransactionListPage() {
         <div className="absolute inset-0 bg-gradient-glow pointer-events-none" />
         <div className="container relative">
           <div className="max-w-3xl space-y-5">
-            <p className="text-xs uppercase tracking-[0.3em] text-primary">
-              My Orders
-            </p>
+            <p className="text-xs uppercase tracking-[0.3em] text-primary">My Orders</p>
             <h1 className="font-display text-4xl leading-tight text-balance md:text-5xl lg:text-6xl">
               Pesanan <em className="italic gradient-text">Saya</em>
             </h1>
@@ -141,7 +95,6 @@ export default function TransactionListPage() {
         <div className="container">
 
           {!user ? (
-            /* ── Not logged in ── */
             <div className="rounded-[2rem] border border-border/60 bg-white px-6 py-14 text-center soft-shadow md:px-12">
               <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <PackageSearch className="h-7 w-7" />
@@ -156,7 +109,8 @@ export default function TransactionListPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              {/* ── Top bar: back link + item count ── */}
+
+              {/* Top bar */}
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <Link
                   to="/shop"
@@ -174,18 +128,19 @@ export default function TransactionListPage() {
                 </span>
               </div>
 
-              {/* ── Pill Filter ── */}
+              {/* Pill filter */}
               <ScrollArea className="w-full">
                 <div className="flex w-max space-x-2 pb-3">
                   {FILTER_OPTIONS.map((opt) => (
                     <button
                       key={opt.value}
                       onClick={() => handleFilterChange(opt.value)}
-                      className={`min-h-[44px] px-5 py-2.5 rounded-full text-sm font-medium transition-colors shadow-sm whitespace-nowrap ${
+                      className={cn(
+                        "min-h-[44px] rounded-full px-5 py-2.5 text-sm font-medium transition-colors shadow-sm whitespace-nowrap",
                         activeFilter === opt.value
                           ? "bg-foreground text-background"
                           : "bg-white border border-border/60 text-foreground hover:bg-accent active:bg-accent"
-                      }`}
+                      )}
                     >
                       {opt.label}
                     </button>
@@ -194,7 +149,7 @@ export default function TransactionListPage() {
                 <ScrollBar orientation="horizontal" />
               </ScrollArea>
 
-              {/* ── List / States ── */}
+              {/* List / States */}
               {isLoading ? (
                 <TransactionSkeleton />
               ) : error ? (
@@ -217,7 +172,7 @@ export default function TransactionListPage() {
                   {activeFilter !== "ALL" && (
                     <button
                       onClick={() => handleFilterChange("ALL")}
-                      className="mt-6 min-h-[44px] px-6 text-sm font-medium text-primary hover:underline active:underline"
+                      className="mt-6 min-h-[44px] px-6 text-sm font-medium text-primary hover:underline"
                     >
                       Lihat semua pesanan
                     </button>
@@ -232,7 +187,69 @@ export default function TransactionListPage() {
               )}
 
               {/* ── Pagination ── */}
-              {!isLoading && transactions.length > 0 && renderPagination()}
+              {!isLoading && totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 pt-4">
+
+                  {/* Prev */}
+                  <button
+                    onClick={() => goTo(page - 1)}
+                    disabled={page === 1}
+                    aria-label="Halaman sebelumnya"
+                    className={cn(
+                      "flex h-10 w-10 items-center justify-center rounded-full border text-sm transition-colors",
+                      page === 1
+                        ? "border-border/40 text-muted-foreground/40 cursor-not-allowed"
+                        : "border-border bg-white text-foreground hover:bg-accent hover:border-primary/30 soft-shadow"
+                    )}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+
+                  {/* Page numbers */}
+                  {buildPages().map((p, i) =>
+                    p === "..." ? (
+                      <span
+                        key={`ellipsis-${i}`}
+                        className="flex h-10 w-10 items-center justify-center text-sm text-muted-foreground select-none"
+                      >
+                        &hellip;
+                      </span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => goTo(p as number)}
+                        aria-label={`Halaman ${p}`}
+                        aria-current={p === page ? "page" : undefined}
+                        className={cn(
+                          "flex h-10 w-10 items-center justify-center rounded-full border text-sm font-medium transition-all",
+                          p === page
+                            ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                            : "border-border bg-white text-foreground hover:bg-accent hover:border-primary/30 soft-shadow"
+                        )}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+
+                  {/* Next */}
+                  <button
+                    onClick={() => goTo(page + 1)}
+                    disabled={page === totalPages}
+                    aria-label="Halaman berikutnya"
+                    className={cn(
+                      "flex h-10 w-10 items-center justify-center rounded-full border text-sm transition-colors",
+                      page === totalPages
+                        ? "border-border/40 text-muted-foreground/40 cursor-not-allowed"
+                        : "border-border bg-white text-foreground hover:bg-accent hover:border-primary/30 soft-shadow"
+                    )}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+
+                </div>
+              )}
+
             </div>
           )}
         </div>
