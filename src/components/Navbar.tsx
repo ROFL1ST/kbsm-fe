@@ -55,7 +55,6 @@ const Navbar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
-  // Search states
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebounce(searchInput, 400);
@@ -116,7 +115,7 @@ const Navbar = () => {
         scrolled ? "glass border-b border-white/40 py-3" : "bg-transparent py-5",
       )}
     >
-      {/* Top bar */}
+      {/* Top bar — hidden on mobile & when searching */}
       {!scrolled && !searchOpen && (
         <div className="hidden md:block bg-foreground/95 text-background text-xs tracking-[0.2em] uppercase py-2 -mt-5 mb-3 absolute inset-x-0 top-0">
           <div className="container text-center">
@@ -125,20 +124,21 @@ const Navbar = () => {
         </div>
       )}
 
+      {/* ── Main row ── */}
       <div
         className={cn(
           "container flex items-center justify-between gap-4",
           !scrolled && !searchOpen && "md:mt-7",
         )}
       >
-        {/* Logo — always visible, never hidden */}
+        {/* Logo — always visible on all breakpoints */}
         <a href="/" className="flex items-center gap-2 shrink-0">
-          <span className="font-display text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
+          <span className="font-display text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
             Kasta<span className="text-primary italic">Beuate</span>
           </span>
         </a>
 
-        {/* Desktop nav — hidden when search open */}
+        {/* Desktop nav (lg+) — hidden when search open */}
         {!searchOpen && (
           <nav className="hidden lg:flex items-center gap-8">
             {navLinks.map((link) => (
@@ -192,13 +192,11 @@ const Navbar = () => {
         )}
 
         {/*
-          Search bar — always in DOM, animates via grid-template-columns.
-          overflow-hidden clips the Input during animation.
-          NavbarSearchDropdown is rendered OUTSIDE this div (see below)
-          so it is never clipped.
+          Desktop search bar (lg+) — always in DOM, animates 0fr → 1fr.
+          Mobile: hidden here; search renders as a full-width row below instead.
         */}
         <div
-          className="grid min-w-0"
+          className="hidden lg:grid min-w-0"
           style={{
             gridTemplateColumns: searchOpen ? "1fr" : "0fr",
             flex: searchOpen ? "1" : "0",
@@ -225,6 +223,7 @@ const Navbar = () => {
 
         {/* Right icons */}
         <div className="flex items-center gap-1 md:gap-2 shrink-0">
+          {/* Search toggle — visible on all breakpoints */}
           <button
             className="p-2 rounded-full hover:bg-accent transition-colors"
             aria-label={searchOpen ? "Tutup pencarian" : "Cari produk"}
@@ -358,9 +357,37 @@ const Navbar = () => {
       </div>
 
       {/*
-        NavbarSearchDropdown di luar flex row supaya tidak di-clip overflow-hidden.
-        position:absolute di dalam NavbarSearchDropdown relatif ke <header> ini.
+        Mobile/Tablet search bar (< lg) — full-width slide-down row.
+        Animates via grid-template-rows: 0fr → 1fr so it slides in smoothly
+        without affecting the main row above.
       */}
+      <div
+        className="lg:hidden grid"
+        style={{
+          gridTemplateRows: searchOpen ? "1fr" : "0fr",
+          transition: "grid-template-rows 350ms cubic-bezier(0.16,1,0.3,1)",
+        }}
+      >
+        <div className="overflow-hidden">
+          <div className="container pb-3 pt-2">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                ref={searchOpen ? searchInputRef : undefined}
+                type="search"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Cari produk Kasta Beaute..."
+                className="pl-11 pr-4 h-11 w-full rounded-full bg-background/80 border-border/60 focus-visible:ring-primary/40 shadow-sm backdrop-blur text-sm"
+                aria-label="Cari produk"
+                tabIndex={searchOpen ? 0 : -1}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Search dropdown — outside overflow-hidden, works for both desktop & mobile */}
       {searchOpen && (
         <NavbarSearchDropdown
           query={debouncedSearch}
