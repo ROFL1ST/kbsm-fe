@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Search, Star, Layers } from "lucide-react";
+import { ArrowRight, Search, Star, Layers, X } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
-import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { useDebounce } from "@/hooks/use-debounce";
 import {
   fetchProducts,
   fetchCategories,
@@ -17,8 +15,9 @@ import {
 } from "@/lib/products";
 
 const Shop = () => {
-  const [searchInput, setSearchInput] = useState("");
-  const debouncedSearch = useDebounce(searchInput, 500);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchQuery = searchParams.get("search") ?? "";
+
   const [selectedCategory, setSelectedCategory] = useState<number | "">("");
   const [selectedStatus, setSelectedStatus] = useState<number | "">("");
 
@@ -33,14 +32,20 @@ const Shop = () => {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["products", { search: debouncedSearch, category_id: selectedCategory, status: selectedStatus }],
-    queryFn: () => fetchProducts({ search: debouncedSearch, categoryId: selectedCategory, status: selectedStatus }),
+    queryKey: ["products", { search: searchQuery, category_id: selectedCategory, status: selectedStatus }],
+    queryFn: () => fetchProducts({ search: searchQuery, categoryId: selectedCategory, status: selectedStatus }),
     select: (items) => items.map(mapProductToCard),
     staleTime: PRODUCT_CACHE_TTL,
     gcTime: PRODUCT_CACHE_TTL * 2,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
+
+  const clearSearch = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("search");
+    setSearchParams(next, { replace: true });
+  };
 
   useEffect(() => {
     document.title = "Shop - Kasta Beaute";
@@ -84,27 +89,45 @@ const Shop = () => {
         <div className="container">
           {/* Filters Section */}
           <div className="mb-10 space-y-6 animate-fade-in">
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-              <div className="relative w-full sm:max-w-xs">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Cari produk..." 
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  className="pl-10 h-12 rounded-xl bg-background border-border/60 focus-visible:ring-primary/40 shadow-sm"
-                />
+            {/* Search result banner */}
+            {searchQuery && (
+              <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-accent/60 px-5 py-3.5 text-sm backdrop-blur-sm">
+                <Search className="h-4 w-4 shrink-0 text-primary" />
+                <p className="flex-1 text-foreground">
+                  Menampilkan hasil untuk{" "}
+                  <span className="font-semibold text-primary">"{searchQuery}"</span>
+                </p>
+                <button
+                  onClick={clearSearch}
+                  aria-label="Hapus pencarian"
+                  className="flex items-center gap-1.5 rounded-full border border-border/60 bg-white/70 px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+                >
+                  <X className="h-3 w-3" />
+                  Hapus
+                </button>
               </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
               <div className="flex gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 no-scrollbar">
                 <button
                   onClick={() => setSelectedStatus("")}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap shadow-sm ${selectedStatus === "" ? "bg-foreground text-background" : "bg-white border border-border/60 text-foreground hover:bg-accent"}`}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap shadow-sm ${
+                    selectedStatus === ""
+                      ? "bg-foreground text-background"
+                      : "bg-white border border-border/60 text-foreground hover:bg-accent"
+                  }`}
                 >
                   <Layers className="h-4 w-4" />
                   Semua Produk
                 </button>
                 <button
                   onClick={() => setSelectedStatus(1)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap shadow-sm ${selectedStatus === 1 ? "bg-foreground text-background" : "bg-white border border-border/60 text-foreground hover:bg-accent"}`}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap shadow-sm ${
+                    selectedStatus === 1
+                      ? "bg-foreground text-background"
+                      : "bg-white border border-border/60 text-foreground hover:bg-accent"
+                  }`}
                 >
                   <Star className="h-4 w-4" />
                   Best Seller
@@ -116,7 +139,11 @@ const Shop = () => {
               <div className="flex w-max space-x-2">
                 <button
                   onClick={() => setSelectedCategory("")}
-                  className={`px-5 py-2 rounded-full text-sm font-medium transition-colors shadow-sm ${selectedCategory === "" ? "bg-primary text-primary-foreground" : "bg-white border border-border/60 text-foreground hover:bg-accent"}`}
+                  className={`px-5 py-2 rounded-full text-sm font-medium transition-colors shadow-sm ${
+                    selectedCategory === ""
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-white border border-border/60 text-foreground hover:bg-accent"
+                  }`}
                 >
                   Semua Kategori
                 </button>
@@ -124,7 +151,11 @@ const Shop = () => {
                   <button
                     key={cat.id}
                     onClick={() => setSelectedCategory(cat.id)}
-                    className={`px-5 py-2 rounded-full text-sm font-medium transition-colors shadow-sm ${selectedCategory === cat.id ? "bg-primary text-primary-foreground" : "bg-white border border-border/60 text-foreground hover:bg-accent"}`}
+                    className={`px-5 py-2 rounded-full text-sm font-medium transition-colors shadow-sm ${
+                      selectedCategory === cat.id
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-white border border-border/60 text-foreground hover:bg-accent"
+                    }`}
                   >
                     {cat.name}
                   </button>
@@ -143,14 +174,14 @@ const Shop = () => {
               <Search className="h-12 w-12 text-muted-foreground/30 mb-4" />
               <h3 className="font-display text-xl mb-2">Produk Tidak Ditemukan</h3>
               <p className="text-muted-foreground max-w-md mx-auto">
-                {debouncedSearch 
-                  ? `Tidak ada produk yang cocok dengan kata kunci "${debouncedSearch}". Coba kata kunci lain atau hapus filter.`
+                {searchQuery
+                  ? `Tidak ada produk yang cocok dengan kata kunci "${searchQuery}". Coba kata kunci lain atau hapus filter.`
                   : "Belum ada produk yang tersedia untuk kategori ini."}
               </p>
-              {(debouncedSearch || selectedCategory !== "" || selectedStatus !== "") && (
+              {(searchQuery || selectedCategory !== "" || selectedStatus !== "") && (
                 <button
                   onClick={() => {
-                    setSearchInput("");
+                    clearSearch();
                     setSelectedCategory("");
                     setSelectedStatus("");
                   }}
