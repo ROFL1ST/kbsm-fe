@@ -15,6 +15,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { cn } from "@/lib/utils";
+import kastaLogo from "@/assets/kasta.png";
 
 /* --- Stat counter hook --- */
 function useCountUp(target: number, duration = 1800, start = false) {
@@ -34,7 +35,6 @@ function useCountUp(target: number, duration = 1800, start = false) {
   return count;
 }
 
-/* --- Stat card --- */
 const StatCard = ({
   value,
   suffix = "",
@@ -58,7 +58,6 @@ const StatCard = ({
   );
 };
 
-/* --- Testimonial data --- */
 const TESTIMONIALS = [
   {
     id: 1,
@@ -86,7 +85,6 @@ const TESTIMONIALS = [
   },
 ];
 
-/* --- Value pillars --- */
 const VALUES = [
   {
     icon: Leaf,
@@ -104,17 +102,16 @@ const VALUES = [
     icon: Heart,
     title: "Dibuat dengan Cinta",
     description:
-      "Setiap detail produk dirancang dengan penuh perhatian dari formula hingga kemasan karena kamu layak mendapatkan yang terbaik.",
+      "Setiap detail produk dirancang dengan penuh perhatian — dari formula hingga kemasan — karena kamu layak mendapatkan yang terbaik.",
   },
 ];
 
-/* --- AboutPage --- */
 export default function AboutPage() {
   const statsRef = useRef<HTMLElement>(null);
   const [statsStarted, setStatsStarted] = useState(false);
 
   useEffect(() => {
-    document.title = "Tentang Kami Kasta Beauté";
+    document.title = "Tentang Kami — Kasta Beauté";
     window.scrollTo({ top: 0, behavior: "smooth" });
 
     const observer = new IntersectionObserver(
@@ -131,9 +128,7 @@ export default function AboutPage() {
     <main className="min-h-screen bg-background">
       <Navbar />
 
-      {/* ══════════════════════════════════════════════════
-          1. HERO
-      ══════════════════════════════════════════════════ */}
+      {/* 1. HERO — clean, no logo */}
       <section className="relative pt-40 md:pt-48 pb-20 md:pb-28 overflow-hidden bg-gradient-luxury">
         <div className="absolute inset-0 bg-gradient-glow pointer-events-none" />
         <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
@@ -153,7 +148,7 @@ export default function AboutPage() {
 
           <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed animate-fade-up delay-75">
             Kasta Beauté hadir untuk merayakan kecantikan autentik setiap perempuan
-            Indonesia dengan produk perawatan kulit yang jujur, aman, dan efektif.
+            Indonesia — dengan produk perawatan kulit yang jujur, aman, dan efektif.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 animate-fade-up delay-100">
@@ -179,24 +174,38 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          2. BRAND STORY
-      ══════════════════════════════════════════════════ */}
+      {/* 2. BRAND STORY — logo besar di panel kiri dengan ornamen */}
       <section className="py-20 md:py-28">
         <div className="container">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
-            {/* Visual */}
+
+            {/* Visual panel — logo centered dengan treatment elegan */}
             <div className="relative order-2 md:order-1 animate-fade-in">
-              <div className="aspect-[4/5] rounded-3xl overflow-hidden bg-gradient-nude">
-                <img
-                  src="https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=800&q=80"
-                  alt="Kasta Beauté products flat lay"
-                  loading="lazy"
-                  width={800}
-                  height={1000}
-                  className="w-full h-full object-cover"
-                />
+              {/* Background panel */}
+              <div className="relative rounded-3xl overflow-hidden bg-gradient-luxury p-12 md:p-16 flex flex-col items-center justify-center gap-6 min-h-[420px]">
+                {/* Dekorasi lingkaran blur */}
+                <div className="absolute top-0 left-0 w-48 h-48 bg-primary/10 rounded-full blur-3xl" />
+                <div className="absolute bottom-0 right-0 w-48 h-48 bg-blush rounded-full blur-3xl" />
+
+                {/* Logo utama */}
+                <div className="relative z-10 flex flex-col items-center gap-4">
+                  <img
+                    src={kastaLogo}
+                    alt="Kasta Beauté"
+                    loading="lazy"
+                    width={200}
+                    height={200}
+                    className="w-[160px] md:w-[200px] object-contain drop-shadow-2xl"
+                  />
+                  {/* Divider tipis */}
+                  <div className="w-16 h-px bg-primary/40" />
+                  {/* Tagline kecil */}
+                  <p className="text-xs tracking-[0.3em] uppercase text-muted-foreground text-center">
+                    Est. 2020 · Bandung, Indonesia
+                  </p>
+                </div>
               </div>
+
               {/* Floating badge */}
               <div className="absolute -bottom-5 -right-5 md:bottom-8 md:-right-8 glass-card px-5 py-4 rounded-2xl space-y-0.5 shadow-lg animate-fade-up">
                 <p className="text-xs tracking-[0.15em] uppercase text-muted-foreground">Berdiri sejak</p>
@@ -204,7 +213,7 @@ export default function AboutPage() {
               </div>
             </div>
 
-            {/* Text */}
+            {/* Teks */}
             <div className="order-1 md:order-2 space-y-6 animate-fade-up">
               <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-xs tracking-[0.2em] uppercase text-primary">
                 <Sparkles className="h-3.5 w-3.5" />
@@ -224,7 +233,7 @@ export default function AboutPage() {
                 </p>
                 <p>
                   Berawal dari dapur kecil di Bandung pada 2020, kami meracik
-                  formula pertama kami dengan bahan-bahan alami lokal terbaik
+                  formula pertama kami dengan bahan-bahan alami lokal terbaik —
                   memastikan setiap tetes produk aman, efektif, dan teruji secara
                   dermatologi.
                 </p>
@@ -251,9 +260,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          3. STATS
-      ══════════════════════════════════════════════════ */}
+      {/* 3. STATS */}
       <section ref={statsRef} className="py-16 md:py-20 bg-gradient-luxury">
         <div className="container">
           <div className="text-center mb-12 space-y-3 animate-fade-up">
@@ -276,9 +283,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          4. VALUES
-      ══════════════════════════════════════════════════ */}
+      {/* 4. VALUES */}
       <section className="py-20 md:py-28">
         <div className="container">
           <div className="text-center mb-14 space-y-3 animate-fade-up">
@@ -315,9 +320,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          5. TESTIMONIALS
-      ══════════════════════════════════════════════════ */}
+      {/* 5. TESTIMONIALS */}
       <section className="py-20 md:py-28 bg-gradient-luxury">
         <div className="container">
           <div className="text-center mb-14 space-y-3 animate-fade-up">
@@ -362,21 +365,14 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          6. CTA BANNER
-      ══════════════════════════════════════════════════ */}
+      {/* 6. CTA — clean tanpa logo */}
       <section className="py-20 md:py-28">
         <div className="container">
           <div className="glass-card p-10 md:p-16 text-center space-y-7 max-w-3xl mx-auto relative overflow-hidden animate-fade-up">
             <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-blush rounded-full blur-3xl pointer-events-none" />
 
-            <div className="relative space-y-7">
-              <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-xs tracking-[0.2em] uppercase text-primary">
-                <Sparkles className="h-3.5 w-3.5" />
-                Mulai Sekarang
-              </div>
-
+            <div className="relative space-y-5">
               <h2 className="font-display text-4xl md:text-5xl leading-tight text-balance">
                 Siap Merasakan{" "}
                 <em className="italic gradient-text">Perbedaannya</em>?
@@ -384,7 +380,7 @@ export default function AboutPage() {
 
               <p className="text-muted-foreground leading-relaxed max-w-md mx-auto text-sm">
                 Temukan produk perawatan kulit yang tepat untuk kamu.
-                Ribuan perempuan Indonesia sudah merasakannya sekarang giliran kamu.
+                Ribuan perempuan Indonesia sudah merasakannya — sekarang giliran kamu.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
