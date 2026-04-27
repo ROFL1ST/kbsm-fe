@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { PackageSearch } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowLeft, PackageSearch } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
+import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Pagination,
@@ -109,49 +111,69 @@ export default function TransactionListPage() {
     );
   }
 
-  const activeLabel = FILTER_OPTIONS.find((f) => f.value === activeFilter)?.label ?? "Semua";
+  const activeLabel =
+    FILTER_OPTIONS.find((f) => f.value === activeFilter)?.label ?? "Semua";
 
   return (
     <main className="min-h-screen bg-background">
       <Navbar />
 
-      {/* ── Hero Header ── */}
-      <section className="relative pt-36 md:pt-44 pb-12 overflow-hidden bg-gradient-luxury">
+      {/* ── Hero ── */}
+      <section className="relative overflow-hidden bg-gradient-luxury pb-14 pt-36 md:pb-16 md:pt-44">
         <div className="absolute inset-0 bg-gradient-glow pointer-events-none" />
-        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-20 -left-40 w-[400px] h-[400px] bg-blush rounded-full blur-3xl" />
-
-        <div className="container relative flex flex-col items-center text-center gap-3 animate-fade-up">
-          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center ring-4 ring-primary/20 ring-offset-4 ring-offset-background">
-            <PackageSearch className="h-8 w-8 text-primary" />
-          </div>
-          <h1 className="font-display text-3xl md:text-4xl lg:text-5xl tracking-tight">
-            Pesanan Saya
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Lacak dan kelola semua pesananmu di sini
-          </p>
-          {meta && (
-            <p className="text-xs text-muted-foreground/60">
-              {meta.total} pesanan ditemukan
+        <div className="container relative">
+          <div className="max-w-3xl space-y-5">
+            <p className="text-xs uppercase tracking-[0.3em] text-primary">
+              My Orders
             </p>
-          )}
+            <h1 className="font-display text-4xl leading-tight text-balance md:text-5xl lg:text-6xl">
+              Pesanan <em className="italic gradient-text">Saya</em>
+            </h1>
+            <p className="max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
+              Lacak dan kelola semua pesananmu di satu tempat.
+            </p>
+          </div>
         </div>
       </section>
 
       {/* ── Content ── */}
-      <section className="py-10 md:py-14">
-        <div className="container max-w-3xl">
+      <section className="py-12 md:py-16">
+        <div className="container">
+
           {!user ? (
-            <div className="glass-card p-12 flex flex-col items-center gap-4 text-center">
-              <PackageSearch className="h-12 w-12 text-muted-foreground/40" />
-              <h3 className="font-display text-xl">Kamu belum login</h3>
-              <p className="text-sm text-muted-foreground max-w-xs">
+            /* ── Not logged in ── */
+            <div className="rounded-[2rem] border border-border/60 bg-white px-6 py-14 text-center soft-shadow md:px-12">
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <PackageSearch className="h-7 w-7" />
+              </div>
+              <h2 className="text-2xl font-semibold text-foreground">Kamu belum login</h2>
+              <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
                 Silakan login terlebih dahulu untuk melihat riwayat pesananmu.
               </p>
+              <Button asChild className="mt-6 h-12 rounded-full px-8">
+                <Link to="/login">Login sekarang</Link>
+              </Button>
             </div>
           ) : (
             <div className="space-y-6">
+              {/* ── Top bar: back link + item count ── */}
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <Link
+                  to="/shop"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-primary transition-colors hover:text-primary/80"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Lanjut belanja
+                </Link>
+                <span className="rounded-full border border-border/60 bg-white px-4 py-2 text-sm text-muted-foreground">
+                  {isLoading
+                    ? "Memuat pesanan..."
+                    : meta
+                    ? `${meta.total} pesanan ditemukan`
+                    : `${transactions.length} pesanan`}
+                </span>
+              </div>
+
               {/* ── Pill Filter ── */}
               <ScrollArea className="w-full">
                 <div className="flex w-max space-x-2 pb-3">
@@ -161,7 +183,7 @@ export default function TransactionListPage() {
                       onClick={() => handleFilterChange(opt.value)}
                       className={`min-h-[44px] px-5 py-2.5 rounded-full text-sm font-medium transition-colors shadow-sm whitespace-nowrap ${
                         activeFilter === opt.value
-                          ? "bg-primary text-primary-foreground"
+                          ? "bg-foreground text-background"
                           : "bg-white border border-border/60 text-foreground hover:bg-accent active:bg-accent"
                       }`}
                     >
@@ -172,27 +194,37 @@ export default function TransactionListPage() {
                 <ScrollBar orientation="horizontal" />
               </ScrollArea>
 
-              {/* ── Transaction List ── */}
+              {/* ── List / States ── */}
               {isLoading ? (
                 <TransactionSkeleton />
               ) : error ? (
-                <div className="glass-card p-10 flex flex-col items-center gap-3 text-center">
-                  <PackageSearch className="h-10 w-10 text-destructive/40" />
-                  <h3 className="font-medium">Gagal memuat pesanan</h3>
-                  <p className="text-sm text-muted-foreground">{error}</p>
+                <div className="rounded-[2rem] border border-border/60 bg-white p-8 text-center soft-shadow">
+                  <PackageSearch className="mx-auto mb-4 h-10 w-10 text-destructive/40" />
+                  <h3 className="font-semibold text-foreground">Gagal memuat pesanan</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{error}</p>
                 </div>
               ) : transactions.length === 0 ? (
-                <div className="glass-card p-12 flex flex-col items-center gap-4 text-center">
-                  <PackageSearch className="h-12 w-12 text-muted-foreground/30" />
-                  <h3 className="font-display text-xl">Belum ada pesanan</h3>
-                  <p className="text-sm text-muted-foreground max-w-xs">
+                <div className="rounded-[2rem] border border-border/60 bg-white px-6 py-14 text-center soft-shadow md:px-12">
+                  <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <PackageSearch className="h-7 w-7" />
+                  </div>
+                  <h2 className="text-2xl font-semibold text-foreground">Belum ada pesanan</h2>
+                  <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
                     {activeFilter === "ALL"
                       ? "Kamu belum pernah melakukan pembelian."
                       : `Tidak ada pesanan dengan status "${activeLabel}".`}
                   </p>
+                  {activeFilter !== "ALL" && (
+                    <button
+                      onClick={() => handleFilterChange("ALL")}
+                      className="mt-6 min-h-[44px] px-6 text-sm font-medium text-primary hover:underline active:underline"
+                    >
+                      Lihat semua pesanan
+                    </button>
+                  )}
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {transactions.map((trx) => (
                     <TransactionCard key={trx.id} transaction={trx} />
                   ))}
