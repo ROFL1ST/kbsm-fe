@@ -65,7 +65,7 @@ const TESTIMONIALS = [
     name: "Sari Dewi",
     location: "Jakarta",
     rating: 5,
-    text: "Produk Kasta Beaut\u00e9 benar-benar mengubah rutinitas skincare saya. Kulit terasa lebih lembut dan cerah hanya dalam 2 minggu!",
+    text: "Produk Kasta Beauté benar-benar mengubah rutinitas skincare saya. Kulit terasa lebih lembut dan cerah hanya dalam 2 minggu!",
     avatar: "SD",
   },
   {
@@ -73,7 +73,7 @@ const TESTIMONIALS = [
     name: "Andini Putri",
     location: "Bandung",
     rating: 5,
-    text: "Saya sudah coba banyak brand lokal, tapi Kasta Beaut\u00e9 tetap jadi favorit. Formulanya ringan, nggak bikin jerawat, dan wanginya enak banget.",
+    text: "Saya sudah coba banyak brand lokal, tapi Kasta Beauté tetap jadi favorit. Formulanya ringan, nggak bikin jerawat, dan wanginya enak banget.",
     avatar: "AP",
   },
   {
@@ -104,7 +104,7 @@ const VALUES = [
     icon: Heart,
     title: "Dibuat dengan Cinta",
     description:
-      "Setiap detail produk dirancang dengan penuh perhatian \u2014 dari formula hingga kemasan \u2014 karena kamu layak mendapatkan yang terbaik.",
+      "Setiap detail produk dirancang dengan penuh perhatian dari formula hingga kemasan karena kamu layak mendapatkan yang terbaik.",
   },
 ];
 
@@ -114,7 +114,7 @@ export default function AboutPage() {
   const [statsStarted, setStatsStarted] = useState(false);
 
   useEffect(() => {
-    document.title = "Tentang Kami \u2014 Kasta Beaut\u00e9";
+    document.title = "Tentang Kami Kasta Beauté";
     window.scrollTo({ top: 0, behavior: "smooth" });
 
     const observer = new IntersectionObserver(
@@ -152,8 +152,8 @@ export default function AboutPage() {
           </h1>
 
           <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed animate-fade-up delay-75">
-            Kasta Beaut\u00e9 hadir untuk merayakan kecantikan autentik setiap perempuan
-            Indonesia \u2014 dengan produk perawatan kulit yang jujur, aman, dan efektif.
+            Kasta Beauté hadir untuk merayakan kecantikan autentik setiap perempuan
+            Indonesia dengan produk perawatan kulit yang jujur, aman, dan efektif.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 animate-fade-up delay-100">
@@ -218,19 +218,19 @@ export default function AboutPage() {
 
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
-                  Kasta Beaut\u00e9 lahir dari satu keyakinan sederhana: setiap perempuan
+                  Kasta Beauté lahir dari satu keyakinan sederhana: setiap perempuan
                   berhak mendapatkan produk perawatan kulit yang berkualitas tanpa harus
                   menguras kantong.
                 </p>
                 <p>
                   Berawal dari dapur kecil di Bandung pada 2020, kami meracik
-                  formula pertama kami dengan bahan-bahan alami lokal terbaik \u2014
+                  formula pertama kami dengan bahan-bahan alami lokal terbaik
                   memastikan setiap tetes produk aman, efektif, dan teruji secara
                   dermatologi.
                 </p>
                 <p>
                   Kini ribuan perempuan Indonesia telah mempercayakan rutinitas
-                  kecantikan mereka kepada Kasta Beaut\u00e9, dan kami terus berinovasi
+                  kecantikan mereka kepada Kasta Beauté, dan kami terus berinovasi
                   untuk menghadirkan yang terbaik bagi kulit tropis Indonesia.
                 </p>
               </div>
@@ -288,7 +288,7 @@ export default function AboutPage() {
             </div>
             <h2 className="font-display text-4xl md:text-5xl">
               Mengapa Memilih{" "}
-              <em className="italic gradient-text">Kasta Beaut\u00e9</em>?
+              <em className="italic gradient-text">Kasta Beauté</em>?
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto text-sm leading-relaxed">
               Setiap produk yang kami hadirkan mencerminkan komitmen kami terhadap
@@ -384,7 +384,7 @@ export default function AboutPage() {
 
               <p className="text-muted-foreground leading-relaxed max-w-md mx-auto text-sm">
                 Temukan produk perawatan kulit yang tepat untuk kamu.
-                Ribuan perempuan Indonesia sudah merasakannya \u2014 sekarang giliran kamu.
+                Ribuan perempuan Indonesia sudah merasakannya sekarang giliran kamu.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
