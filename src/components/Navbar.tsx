@@ -17,7 +17,11 @@ import {
   clearAccessToken,
   hasAccessToken,
 } from "@/lib/auth";
-import { CART_STATE_CHANGE_EVENT, fetchCart, getCartItemCountFromItems } from "@/lib/cart";
+import {
+  CART_STATE_CHANGE_EVENT,
+  fetchCart,
+  getCartItemCountFromItems,
+} from "@/lib/cart";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -63,6 +67,7 @@ const Navbar = () => {
   const debouncedSearch = useDebounce(searchInput, 400);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Scroll
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
     onScroll();
@@ -70,6 +75,7 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Auth
   useEffect(() => {
     const syncAuthState = () => setIsLoggedIn(hasAccessToken());
     syncAuthState();
@@ -103,12 +109,12 @@ const Navbar = () => {
     };
   }, [isLoggedIn, refetchCart]);
 
-  // Auto-focus input when search opens
+  // Search — auto-focus when opens
   useEffect(() => {
     if (searchOpen) setTimeout(() => searchInputRef.current?.focus(), 50);
   }, [searchOpen]);
 
-  // Close search on Escape
+  // Search — close on Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && searchOpen) handleCloseSearch();
@@ -135,20 +141,25 @@ const Navbar = () => {
     navigate("/login");
   };
 
-  const cartItemCount = cartData ? getCartItemCountFromItems(cartData.items) : 0;
+  const cartItemCount = cartData
+    ? getCartItemCountFromItems(cartData.items)
+    : 0;
 
   return (
     <header
       className={cn(
         "fixed inset-x-0 top-0 z-50 transition-all duration-500",
-        scrolled ? "glass border-b border-white/40 py-3" : "bg-transparent py-5",
+        scrolled
+          ? "glass border-b border-white/40 py-3"
+          : "bg-transparent py-5",
       )}
     >
-      {/* Top bar — hidden on mobile & when searching */}
-      {!scrolled && !searchOpen && (
+      {/* Top bar — only when not scrolled */}
+      {!scrolled && (
         <div className="hidden md:block bg-foreground/95 text-background text-xs tracking-[0.2em] uppercase py-2 -mt-5 mb-3 absolute inset-x-0 top-0">
           <div className="container text-center">
-            ✦ Free Shipping for Orders Above Rp 500.000 • BPOM Certified • Cruelty Free ✦
+            ✦ Free Shipping for Orders Above Rp 500.000 • BPOM Certified •
+            Cruelty Free ✦
           </div>
         </div>
       )}
@@ -199,11 +210,16 @@ const Navbar = () => {
                       <div className="glass-card p-8 grid grid-cols-3 lg:grid-cols-6 gap-6">
                         {shopCategories.map((cat) => (
                           <div key={cat.title}>
-                            <h4 className="font-display text-base text-primary mb-3">{cat.title}</h4>
+                            <h4 className="font-display text-base text-primary mb-3">
+                              {cat.title}
+                            </h4>
                             <ul className="space-y-2">
                               {cat.items.map((it) => (
                                 <li key={it}>
-                                  <a href="#" className="text-xs text-muted-foreground hover:text-primary story-link">
+                                  <a
+                                    href="#"
+                                    className="text-xs text-muted-foreground hover:text-primary story-link"
+                                  >
                                     {it}
                                   </a>
                                 </li>
@@ -222,7 +238,7 @@ const Navbar = () => {
 
         {/*
           Desktop search bar (lg+) — animates 0fr → 1fr horizontally.
-          Mobile/tablet: hidden here; slide-down row renders below.
+          Mobile/tablet (<lg): hidden here; slide-down row renders below.
         */}
         <div
           className="hidden lg:grid min-w-0"
@@ -297,7 +313,7 @@ const Navbar = () => {
                     type="button"
                     className="p-2 rounded-full hover:bg-accent transition-colors"
                     aria-label="Account"
-                    onClick={() => setAccountMenuOpen((c) => !c)}
+                    onClick={() => setAccountMenuOpen((current) => !current)}
                   >
                     <User className="h-5 w-5 text-foreground/70" />
                   </button>
@@ -338,7 +354,7 @@ const Navbar = () => {
                     type="button"
                     className="p-2 rounded-full hover:bg-accent transition-colors"
                     aria-label="Account"
-                    onClick={() => setAccountMenuOpen((c) => !c)}
+                    onClick={() => setAccountMenuOpen((current) => !current)}
                   >
                     <User className="h-5 w-5 text-foreground/70" />
                   </button>
@@ -380,7 +396,11 @@ const Navbar = () => {
                 onClick={() => setMobileOpen(!mobileOpen)}
                 aria-label="Menu"
               >
-                {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                {mobileOpen ? (
+                  <X className="h-5 w-5" />
+                ) : (
+                  <Menu className="h-5 w-5" />
+                )}
               </button>
             </>
           )}
@@ -388,7 +408,7 @@ const Navbar = () => {
       </div>
 
       {/*
-        Mobile/Tablet search bar (< lg) — full-width slide-down.
+        Mobile/Tablet search bar (<lg) — full-width slide-down.
         Animates via grid-template-rows: 0fr → 1fr.
       */}
       <div
@@ -462,7 +482,10 @@ const Navbar = () => {
                 <button
                   type="button"
                   className="text-base font-medium text-left text-destructive mt-2"
-                  onClick={() => { handleLogout(); setMobileOpen(false); }}
+                  onClick={() => {
+                    handleLogout();
+                    setMobileOpen(false);
+                  }}
                 >
                   Logout
                 </button>
