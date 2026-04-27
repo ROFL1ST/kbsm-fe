@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Search,
@@ -17,6 +17,9 @@ import {
   hasAccessToken,
 } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { useDebounce } from "@/hooks/use-debounce";
+import NavbarSearchDropdown from "@/components/NavbarSearchDropdown";
 
 const shopCategories = [
   {
@@ -52,6 +55,12 @@ const Navbar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
+  // Search states
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const debouncedSearch = useDebounce(searchInput, 400);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
     onScroll();
@@ -63,16 +72,42 @@ const Navbar = () => {
     const syncAuthState = () => {
       setIsLoggedIn(hasAccessToken());
     };
-
     syncAuthState();
     window.addEventListener("storage", syncAuthState);
     window.addEventListener(AUTH_STATE_CHANGE_EVENT, syncAuthState);
-
     return () => {
       window.removeEventListener("storage", syncAuthState);
       window.removeEventListener(AUTH_STATE_CHANGE_EVENT, syncAuthState);
     };
   }, []);
+
+  // Auto-focus input when search opens
+  useEffect(() => {
+    if (searchOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    }
+  }, [searchOpen]);
+
+  // Close search on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && searchOpen) handleCloseSearch();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [searchOpen]);
+
+  const handleOpenSearch = () => {
+    setSearchOpen(true);
+    setMobileOpen(false);
+    setMegaOpen(false);
+    setAccountMenuOpen(false);
+  };
+
+  const handleCloseSearch = () => {
+    setSearchOpen(false);
+    setSearchInput("");
+  };
 
   const handleLogout = () => {
     clearAccessToken();
@@ -90,7 +125,7 @@ const Navbar = () => {
       )}
     >
       {/* Top bar */}
-      {!scrolled && (
+      {!scrolled && !searchOpen && (
         <div className="hidden md:block bg-foreground/95 text-background text-xs tracking-[0.2em] uppercase py-2 -mt-5 mb-3 absolute inset-x-0 top-0">
           <div className="container text-center">
             ✦ Free Shipping for Orders Above Rp 500.000 • BPOM Certified •
@@ -101,19 +136,30 @@ const Navbar = () => {
 
       <div
         className={cn(
-          "container flex items-center justify-between",
-          !scrolled && "md:mt-7",
+          "container flex items-center justify-between gap-4",
+          !scrolled && !searchOpen && "md:mt-7",
         )}
       >
-        {/* Logo */}
-        <a href="/" className="flex items-center gap-2 shrink-0">
+        {/* Logo — always visible */}
+        <a
+          href="/"
+          className={cn(
+            "flex items-center gap-2 shrink-0 transition-all duration-300",
+            searchOpen && "opacity-0 pointer-events-none w-0 overflow-hidden",
+          )}
+        >
           <span className="font-display text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
             Kasta<span className="text-primary italic">Beuate</span>
           </span>
         </a>
 
-        {/* Desktop nav */}
-        <nav className="hidden lg:flex items-center gap-8">
+        {/* Desktop nav — hidden when search is open */}
+        <nav
+          className={cn(
+            "hidden lg:flex items-center gap-8 transition-all duration-300",
+            searchOpen && "opacity-0 pointer-events-none",
+          )}
+        >
           {navLinks.map((link) => (
             <div
               key={link.label}
@@ -169,134 +215,177 @@ const Navbar = () => {
           ))}
         </nav>
 
+        {/* Search bar — expands when open */}
+        <div
+          className={cn(
+            "relative transition-all duration-300 ease-in-out",
+            searchOpen
+              ? "flex-1 opacity-100"
+              : "w-0 opacity-0 pointer-events-none overflow-hidden",
+          )}
+        >
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            ref={searchInputRef}
+            type="search"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Cari produk Kasta Beaute..."
+            className="pl-11 pr-4 h-11 w-full rounded-full bg-background/80 border-border/60 focus-visible:ring-primary/40 shadow-sm backdrop-blur text-sm"
+            aria-label="Cari produk"
+          />
+
+          {/* Dropdown */}
+          {searchOpen && (
+            <NavbarSearchDropdown
+              query={debouncedSearch}
+              onClose={handleCloseSearch}
+            />
+          )}
+        </div>
+
         {/* Right icons */}
         <div className="flex items-center gap-1 md:gap-2">
+          {/* Search toggle button */}
           <button
             className="p-2 rounded-full hover:bg-accent transition-colors"
-            aria-label="Search"
+            aria-label={searchOpen ? "Tutup pencarian" : "Cari produk"}
+            onClick={searchOpen ? handleCloseSearch : handleOpenSearch}
           >
-            <Search className="h-5 w-5 text-foreground/70" />
-          </button>
-          {isLoggedIn && (
-            <>
-              <Link
-                to="/"
-                className="p-2 rounded-full hover:bg-accent transition-colors hidden sm:block"
-                aria-label="Wishlist"
-              >
-                <Heart className="h-5 w-5 text-foreground/70" />
-              </Link>
-              <Link
-                to="/"
-                className="p-2 rounded-full hover:bg-accent transition-colors relative"
-                aria-label="Cart"
-              >
-                <ShoppingBag className="h-5 w-5 text-foreground/70" />
-                <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-semibold rounded-full h-4 w-4 flex items-center justify-center">
-                  2
-                </span>
-              </Link>
-            </>
-          )}
-          {isLoggedIn ? (
-            <div className="relative hidden sm:block">
-              <button
-                type="button"
-                className="p-2 rounded-full hover:bg-accent transition-colors"
-                aria-label="Account"
-                onClick={() => setAccountMenuOpen((current) => !current)}
-              >
-                <User className="h-5 w-5 text-foreground/70" />
-              </button>
-
-              {accountMenuOpen && (
-                <div className="absolute right-0 top-full z-50 mt-3 w-44 overflow-hidden rounded-2xl border border-white/40 bg-white/90 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.25)] backdrop-blur-xl animate-fade-in">
-                  <Link
-                    to="/profile"
-                    className="flex items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors hover:bg-accent/70"
-                    onClick={() => setAccountMenuOpen(false)}
-                  >
-                    <Settings className="h-4 w-4" />
-                    Profile
-                  </Link>
-                  <div className="h-px bg-border/80" />
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-3 px-4 py-3 text-sm text-destructive transition-colors hover:bg-destructive/5"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <Link
-              to="/login"
-              className="hidden sm:inline-flex h-10 items-center justify-center rounded-full border border-foreground/10 bg-white/60 px-5 text-sm font-medium text-foreground transition-colors hover:bg-primary hover:text-white"
-            >
-              Sign In
-            </Link>
-          )}
-          {isLoggedIn && (
-            <div className="relative sm:hidden">
-              <button
-                type="button"
-                className="p-2 rounded-full hover:bg-accent transition-colors"
-                aria-label="Account"
-                onClick={() => setAccountMenuOpen((current) => !current)}
-              >
-                <User className="h-5 w-5 text-foreground/70" />
-              </button>
-
-              {accountMenuOpen && (
-                <div className="absolute right-0 top-full z-50 mt-3 w-44 overflow-hidden rounded-2xl border border-white/40 bg-white/90 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.25)] backdrop-blur-xl animate-fade-in">
-                  <Link
-                    to="/"
-                    className="flex items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors hover:bg-accent/70"
-                    onClick={() => setAccountMenuOpen(false)}
-                  >
-                    <Settings className="h-4 w-4" />
-                    Settings
-                  </Link>
-                  <div className="h-px bg-border/80" />
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-3 px-4 py-3 text-sm text-destructive transition-colors hover:bg-destructive/5"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-          {!isLoggedIn && (
-            <Link
-              to="/login"
-              className="inline-flex sm:hidden h-10 items-center justify-center rounded-full border border-foreground/10 bg-white/60 px-4 text-sm font-medium text-foreground transition-colors hover:bg-primary hover:text-white"
-            >
-              Sign In
-            </Link>
-          )}
-          <button
-            className="p-2 rounded-full hover:bg-accent transition-colors lg:hidden"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label="Menu"
-          >
-            {mobileOpen ? (
-              <X className="h-5 w-5" />
+            {searchOpen ? (
+              <X className="h-5 w-5 text-foreground/70" />
             ) : (
-              <Menu className="h-5 w-5" />
+              <Search className="h-5 w-5 text-foreground/70" />
             )}
           </button>
+
+          {/* Other icons — hidden when search is open */}
+          {!searchOpen && (
+            <>
+              {isLoggedIn && (
+                <>
+                  <Link
+                    to="/"
+                    className="p-2 rounded-full hover:bg-accent transition-colors hidden sm:block"
+                    aria-label="Wishlist"
+                  >
+                    <Heart className="h-5 w-5 text-foreground/70" />
+                  </Link>
+                  <Link
+                    to="/"
+                    className="p-2 rounded-full hover:bg-accent transition-colors relative"
+                    aria-label="Cart"
+                  >
+                    <ShoppingBag className="h-5 w-5 text-foreground/70" />
+                    <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-semibold rounded-full h-4 w-4 flex items-center justify-center">
+                      2
+                    </span>
+                  </Link>
+                </>
+              )}
+
+              {isLoggedIn ? (
+                <div className="relative hidden sm:block">
+                  <button
+                    type="button"
+                    className="p-2 rounded-full hover:bg-accent transition-colors"
+                    aria-label="Account"
+                    onClick={() => setAccountMenuOpen((c) => !c)}
+                  >
+                    <User className="h-5 w-5 text-foreground/70" />
+                  </button>
+                  {accountMenuOpen && (
+                    <div className="absolute right-0 top-full z-50 mt-3 w-44 overflow-hidden rounded-2xl border border-white/40 bg-white/90 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.25)] backdrop-blur-xl animate-fade-in">
+                      <Link
+                        to="/profile"
+                        className="flex items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors hover:bg-accent/70"
+                        onClick={() => setAccountMenuOpen(false)}
+                      >
+                        <Settings className="h-4 w-4" />
+                        Profile
+                      </Link>
+                      <div className="h-px bg-border/80" />
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-destructive transition-colors hover:bg-destructive/5"
+                        onClick={handleLogout}
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link
+                  to="/login"
+                  className="hidden sm:inline-flex h-10 items-center justify-center rounded-full border border-foreground/10 bg-white/60 px-5 text-sm font-medium text-foreground transition-colors hover:bg-primary hover:text-white"
+                >
+                  Sign In
+                </Link>
+              )}
+
+              {isLoggedIn && (
+                <div className="relative sm:hidden">
+                  <button
+                    type="button"
+                    className="p-2 rounded-full hover:bg-accent transition-colors"
+                    aria-label="Account"
+                    onClick={() => setAccountMenuOpen((c) => !c)}
+                  >
+                    <User className="h-5 w-5 text-foreground/70" />
+                  </button>
+                  {accountMenuOpen && (
+                    <div className="absolute right-0 top-full z-50 mt-3 w-44 overflow-hidden rounded-2xl border border-white/40 bg-white/90 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.25)] backdrop-blur-xl animate-fade-in">
+                      <Link
+                        to="/"
+                        className="flex items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors hover:bg-accent/70"
+                        onClick={() => setAccountMenuOpen(false)}
+                      >
+                        <Settings className="h-4 w-4" />
+                        Settings
+                      </Link>
+                      <div className="h-px bg-border/80" />
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-destructive transition-colors hover:bg-destructive/5"
+                        onClick={handleLogout}
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!isLoggedIn && (
+                <Link
+                  to="/login"
+                  className="inline-flex sm:hidden h-10 items-center justify-center rounded-full border border-foreground/10 bg-white/60 px-4 text-sm font-medium text-foreground transition-colors hover:bg-primary hover:text-white"
+                >
+                  Sign In
+                </Link>
+              )}
+
+              <button
+                className="p-2 rounded-full hover:bg-accent transition-colors lg:hidden"
+                onClick={() => setMobileOpen(!mobileOpen)}
+                aria-label="Menu"
+              >
+                {mobileOpen ? (
+                  <X className="h-5 w-5" />
+                ) : (
+                  <Menu className="h-5 w-5" />
+                )}
+              </button>
+            </>
+          )}
         </div>
       </div>
 
       {/* Mobile menu */}
-      {mobileOpen && (
+      {mobileOpen && !searchOpen && (
         <div className="lg:hidden glass border-t border-white/40 mt-3 animate-fade-in">
           <nav className="container py-6 flex flex-col gap-4">
             {navLinks.map((l) =>
