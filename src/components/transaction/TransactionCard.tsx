@@ -6,8 +6,8 @@ import type { Transaction, ProgressTypeCode } from "@/lib/transactions";
 
 /* ── Status badge style — all using theme tokens only ── */
 const PROGRESS_PILL: Record<ProgressTypeCode, string> = {
-  FOLLOW_UP: "bg-accent text-accent-foreground",
-  PACKING:   "bg-secondary text-secondary-foreground",
+  FOLLOW_UP: "bg-primary text-primary-foreground",
+  PACKING:   "bg-accent text-accent-foreground",
   SENDING:   "bg-primary/10 text-primary",
   DONE:      "bg-primary text-primary-foreground",
   REJECTED:  "bg-destructive/10 text-destructive",
@@ -49,7 +49,7 @@ export function TransactionCard({ transaction }: Props) {
     <article className="group relative overflow-hidden rounded-3xl bg-card soft-shadow hover-lift cursor-pointer">
 
       {/* Top decorative band — blush gradient like bg-gradient-nude on ProductCard image area */}
-      <div className="flex items-center justify-between gap-3 bg-gradient-luxury px-5 py-4">
+      <div className="flex items-center justify-between gap-3 bg-secondary px-5 py-4">
         {/* Icon + order code */}
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/70 text-primary shadow-sm">
