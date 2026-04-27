@@ -1,4 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CATEGORY_CACHE_TTL, fetchCategories } from "@/lib/categories";
 
@@ -42,9 +43,9 @@ const Categories = () => {
                   />
                 ))
               : categories.map((category) => (
-                  <a
+                  <Link
                     key={category.id}
-                    href="#shop"
+                    to={`/shop?category_id=${category.id}`}
                     className="group relative aspect-[4/5] rounded-3xl overflow-hidden soft-shadow hover-lift"
                   >
                     <img
@@ -70,7 +71,7 @@ const Categories = () => {
                         </div>
                       </div>
                     </div>
-                  </a>
+                  </Link>
                 ))}
           </div>
         )}
