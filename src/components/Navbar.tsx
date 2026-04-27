@@ -72,9 +72,7 @@ const Navbar = () => {
   }, []);
 
   useEffect(() => {
-    const syncAuthState = () => {
-      setIsLoggedIn(hasAccessToken());
-    };
+    const syncAuthState = () => setIsLoggedIn(hasAccessToken());
     syncAuthState();
     window.addEventListener("storage", syncAuthState);
     window.addEventListener(AUTH_STATE_CHANGE_EVENT, syncAuthState);
@@ -91,7 +89,7 @@ const Navbar = () => {
     }
   }, [searchOpen]);
 
-  // Close search on Escape
+  // Close on Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && searchOpen) handleCloseSearch();
@@ -101,7 +99,6 @@ const Navbar = () => {
   }, [searchOpen]);
 
   const handleOpenSearch = () => {
-    // Pre-fill input from current URL search param (e.g. ?search=air)
     setSearchInput(urlSearchQuery);
     setSearchOpen(true);
     setMobileOpen(false);
@@ -124,121 +121,130 @@ const Navbar = () => {
     <header
       className={cn(
         "fixed inset-x-0 top-0 z-50 transition-all duration-500",
-        scrolled
-          ? "glass border-b border-white/40 py-3"
-          : "bg-transparent py-5",
+        scrolled ? "glass border-b border-white/40 py-3" : "bg-transparent py-5",
       )}
     >
       {/* Top bar */}
       {!scrolled && !searchOpen && (
         <div className="hidden md:block bg-foreground/95 text-background text-xs tracking-[0.2em] uppercase py-2 -mt-5 mb-3 absolute inset-x-0 top-0">
           <div className="container text-center">
-            ✦ Free Shipping for Orders Above Rp 500.000 • BPOM Certified •
-            Cruelty Free ✦
+            ✦ Free Shipping for Orders Above Rp 500.000 • BPOM Certified • Cruelty Free ✦
           </div>
         </div>
       )}
 
       <div
         className={cn(
-          "container flex items-center gap-4",
+          "container flex items-center gap-3",
           !scrolled && !searchOpen && "md:mt-7",
         )}
       >
-        {/* Logo — always visible, shrink-0 so it never collapses */}
-        <a
-          href="/"
-          className="flex items-center gap-2 shrink-0"
-        >
+        {/* Logo — always visible, never collapses */}
+        <a href="/" className="shrink-0">
           <span className="font-display text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
             Kasta<span className="text-primary italic">Beuate</span>
           </span>
         </a>
 
-        {/* Desktop nav — completely removed from flow when search is open */}
-        {!searchOpen && (
-          <nav className="hidden lg:flex items-center gap-8 flex-1 justify-center">
-            {navLinks.map((link) => (
-              <div
-                key={link.label}
-                className="relative"
-                onMouseEnter={() => link.hasMega && setMegaOpen(true)}
-                onMouseLeave={() => link.hasMega && setMegaOpen(false)}
-              >
-                {link.isRoute ? (
-                  <Link
-                    to={link.href}
-                    className="story-link text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-1"
-                  >
-                    {link.label}
-                  </Link>
-                ) : (
-                  <a
-                    href={link.href}
-                    className="story-link text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-1"
-                  >
-                    {link.label}
-                    {link.hasMega && <ChevronDown className="h-3 w-3" />}
-                  </a>
-                )}
+        {/*
+          Middle area: uses CSS grid-template-columns trick to animate
+          between nav visible (1fr 0fr) and search visible (0fr 1fr).
+          Both children are always in DOM — only their allocated width changes.
+          overflow-hidden on each child clips the content during transition.
+        */}
+        <div
+          className="hidden lg:grid flex-1 min-w-0"
+          style={{
+            gridTemplateColumns: searchOpen ? "0fr 1fr" : "1fr 0fr",
+            transition: "grid-template-columns 350ms cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
+        >
+          {/* Nav column — collapses to 0 when search opens */}
+          <div className="overflow-hidden">
+            <nav className="flex items-center justify-center gap-6 xl:gap-8 px-4">
+              {navLinks.map((link) => (
+                <div
+                  key={link.label}
+                  className="relative shrink-0"
+                  onMouseEnter={() => link.hasMega && setMegaOpen(true)}
+                  onMouseLeave={() => link.hasMega && setMegaOpen(false)}
+                >
+                  {link.isRoute ? (
+                    <Link
+                      to={link.href}
+                      className="story-link text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-1 whitespace-nowrap"
+                    >
+                      {link.label}
+                    </Link>
+                  ) : (
+                    <a
+                      href={link.href}
+                      className="story-link text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-1 whitespace-nowrap"
+                    >
+                      {link.label}
+                      {link.hasMega && <ChevronDown className="h-3 w-3" />}
+                    </a>
+                  )}
 
-                {link.hasMega && megaOpen && (
-                  <div className="fixed left-0 right-0 top-full mt-2 px-6 animate-fade-in">
-                    <div className="container">
-                      <div className="glass-card p-8 grid grid-cols-3 lg:grid-cols-6 gap-6">
-                        {shopCategories.map((cat) => (
-                          <div key={cat.title}>
-                            <h4 className="font-display text-base text-primary mb-3">
-                              {cat.title}
-                            </h4>
-                            <ul className="space-y-2">
-                              {cat.items.map((it) => (
-                                <li key={it}>
-                                  <a
-                                    href="#"
-                                    className="text-xs text-muted-foreground hover:text-primary story-link"
-                                  >
-                                    {it}
-                                  </a>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
+                  {link.hasMega && megaOpen && (
+                    <div className="fixed left-0 right-0 top-full mt-2 px-6 animate-fade-in">
+                      <div className="container">
+                        <div className="glass-card p-8 grid grid-cols-3 lg:grid-cols-6 gap-6">
+                          {shopCategories.map((cat) => (
+                            <div key={cat.title}>
+                              <h4 className="font-display text-base text-primary mb-3">
+                                {cat.title}
+                              </h4>
+                              <ul className="space-y-2">
+                                {cat.items.map((it) => (
+                                  <li key={it}>
+                                    <a
+                                      href="#"
+                                      className="text-xs text-muted-foreground hover:text-primary story-link"
+                                    >
+                                      {it}
+                                    </a>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </nav>
-        )}
-
-        {/* Search bar — expands to fill all available space between logo and right icons */}
-        {searchOpen && (
-          <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-            <Input
-              ref={searchInputRef}
-              type="search"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Cari produk Kasta Beaute..."
-              className="pl-11 pr-4 h-11 w-full rounded-full bg-background/80 border-border/60 focus-visible:ring-primary/40 shadow-sm backdrop-blur text-sm"
-              aria-label="Cari produk"
-            />
-
-            {/* Dropdown */}
-            <NavbarSearchDropdown
-              query={debouncedSearch}
-              onClose={handleCloseSearch}
-            />
+                  )}
+                </div>
+              ))}
+            </nav>
           </div>
-        )}
 
-        {/* Right icons — always visible, shrink-0 so they never collapse */}
+          {/* Search column — expands from 0 when search opens */}
+          <div className="overflow-hidden">
+            <div className="relative px-2">
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                ref={searchInputRef}
+                type="search"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Cari produk Kasta Beaute..."
+                className="pl-11 pr-4 h-11 w-full rounded-full bg-background/80 border-border/60 focus-visible:ring-primary/40 shadow-sm backdrop-blur text-sm"
+                aria-label="Cari produk"
+                tabIndex={searchOpen ? 0 : -1}
+              />
+              {searchOpen && (
+                <NavbarSearchDropdown
+                  query={debouncedSearch}
+                  onClose={handleCloseSearch}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right icons — always visible, never collapses */}
         <div className="flex items-center gap-1 md:gap-2 shrink-0 ml-auto">
-          {/* Search toggle button */}
+          {/* Search toggle */}
           <button
             className="p-2 rounded-full hover:bg-accent transition-colors"
             aria-label={searchOpen ? "Tutup pencarian" : "Cari produk"}
@@ -251,7 +257,6 @@ const Navbar = () => {
             )}
           </button>
 
-          {/* Other icons — always visible */}
           {isLoggedIn && (
             <>
               <Link
@@ -363,11 +368,7 @@ const Navbar = () => {
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Menu"
           >
-            {mobileOpen ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <Menu className="h-5 w-5" />
-            )}
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </div>
@@ -409,10 +410,7 @@ const Navbar = () => {
                 <button
                   type="button"
                   className="text-base font-medium text-left text-destructive mt-2"
-                  onClick={() => {
-                    handleLogout();
-                    setMobileOpen(false);
-                  }}
+                  onClick={() => { handleLogout(); setMobileOpen(false); }}
                 >
                   Logout
                 </button>
