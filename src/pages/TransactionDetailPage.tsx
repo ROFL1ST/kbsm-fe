@@ -34,9 +34,13 @@ export default function TransactionDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
+  // State untuk upload pertama kali
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // State untuk update bukti yang sudah ada
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const [isRepeating, setIsRepeating] = useState(false);
 
@@ -61,6 +65,7 @@ export default function TransactionDetailPage() {
 
   useEffect(() => { load(); }, [id, userId]);
 
+  /** Upload pertama kali (path masih null) */
   async function handleUpload(file: File) {
     if (!transaction) return;
     setIsUploading(true);
@@ -68,7 +73,7 @@ export default function TransactionDetailPage() {
     try {
       await uploadTransactionProof({ transactionId: transaction.id, file });
       setUploadSuccess(true);
-      load(); // refresh data agar TransactionProofCard langsung tampil
+      load();
     } catch (err: unknown) {
       setUploadError(
         err instanceof Error ? err.message : "Gagal mengunggah bukti pembayaran."
@@ -76,6 +81,19 @@ export default function TransactionDetailPage() {
     } finally {
       setIsUploading(false);
     }
+  }
+
+  /** Update bukti yang sudah ada (path ada, belum diverifikasi) — endpoint sama */
+  async function handleUpdate(file: File) {
+    if (!transaction) return;
+    setIsUpdating(true);
+    try {
+      await uploadTransactionProof({ transactionId: transaction.id, file });
+      load(); // refresh agar gambar terbaru langsung tampil
+    } finally {
+      setIsUpdating(false);
+    }
+    // error dilempar ke TransactionProofCard untuk ditampilkan inline
   }
 
   async function handleRepeatOrder() {
@@ -96,10 +114,9 @@ export default function TransactionDetailPage() {
     : [];
 
   /**
-   * Tampilkan form upload jika:
-   * - transaction_proof ada (objeknya selalu ada dari API)
-   * - TAPI path-nya null  → bukti belum diunggah
-   * - DAN transaksi belum CANCELLED
+   * Tampilkan form upload pertama kali jika:
+   * - transaksi tidak CANCELLED
+   * - transaction_proof tidak ada ATAU path-nya null
    */
   const showUpload =
     transaction !== null &&
@@ -163,7 +180,7 @@ export default function TransactionDetailPage() {
                 {/* Right */}
                 <div className="space-y-6">
                   {showUpload ? (
-                    /* path === null → belum ada bukti, tampilkan form upload */
+                    /* path === null → belum ada bukti, form upload pertama */
                     <TransactionProofUpload
                       transactionId={transaction.id}
                       isUploading={isUploading}
@@ -172,15 +189,21 @@ export default function TransactionDetailPage() {
                       onSubmit={handleUpload}
                     />
                   ) : (
-                    /* path sudah ada → tampilkan kartu bukti */
+                    /* path sudah ada → tampilkan kartu bukti + opsi ganti jika belum diverifikasi */
                     transaction.transaction_proof && (
                       <TransactionProofCard
                         proof={transaction.transaction_proof}
+                        onUpdate={
+                          transaction.transaction_proof.finance_callback_at === null
+                            ? handleUpdate
+                            : undefined
+                        }
+                        isUpdating={isUpdating}
                       />
                     )
                   )}
 
-                  {/* Repeat Order — hanya untuk transaksi DONE */}
+                  {/* Repeat Order */}
                   {transaction.status_trx_code === "DONE" && (
                     <div className="rounded-[2rem] border border-border/60 bg-white px-6 py-8 soft-shadow md:px-8 space-y-4">
                       <h2 className="font-display text-xl">Pesan Lagi</h2>
@@ -195,15 +218,9 @@ export default function TransactionDetailPage() {
                         onClick={handleRepeatOrder}
                       >
                         {isRepeating ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Memproses...
-                          </>
+                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Memproses...</>
                         ) : (
-                          <>
-                            <RotateCcw className="mr-2 h-4 w-4" />
-                            Repeat Order
-                          </>
+                          <><RotateCcw className="mr-2 h-4 w-4" />Repeat Order</>
                         )}
                       </Button>
                     </div>
