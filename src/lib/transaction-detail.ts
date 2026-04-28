@@ -18,7 +18,7 @@ export async function fetchTransactionDetail(params: {
   });
 
   const result = await fetchAuth<TransactionDetailData>(
-    `/transactions/detail?${query}`
+    `/transaction/detail?${query}`
   );
 
   const raw = result as unknown as TransactionDetailResponse;
