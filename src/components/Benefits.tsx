@@ -29,7 +29,7 @@ const Benefits = () => {
       <div className="container">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <p className="text-xs tracking-[0.3em] uppercase text-primary mb-4">
-            Why Choose BelleAura
+            Why Choose KastaBeaute
           </p>
           <h2 className="font-display text-4xl md:text-5xl text-balance">
             Crafted with <em className="italic gradient-text">care</em>,

@@ -13,6 +13,13 @@ type AddToCartResponse = {
   id?: number | string;
 };
 
+type UpdateCartItemRequest = {
+  id: number;
+  quantity?: number;
+  is_selected?: boolean;
+  user_id?: string;
+};
+
 export type CartSummary = {
   total_price: number;
   discount_amount: number;
@@ -35,6 +42,8 @@ type CartResponseData = {
   summary: CartSummary;
   items: CartItem[];
 };
+
+type UpdateCartItemResponse = CartItem | CartResponseData | { id?: number | string };
 
 export function dispatchCartStateChange() {
   window.dispatchEvent(new Event(CART_STATE_CHANGE_EVENT));
@@ -71,6 +80,47 @@ export async function addToCart(request: AddToCartRequest) {
 
   dispatchCartStateChange();
   return payload as ApiEnvelope<AddToCartResponse>;
+}
+
+export async function updateCartItem(request: UpdateCartItemRequest) {
+  const authUser = getAuthUser();
+  const userId = request.user_id ?? authUser?.id;
+
+  if (!userId) {
+    throw new Error("Token otentikasi tidak ditemukan. Silakan login kembali.");
+  }
+
+  if (!Number.isFinite(request.id) || request.id <= 0) {
+    throw new Error("Item keranjang tidak valid.");
+  }
+
+  if (
+    request.quantity !== undefined &&
+    (!Number.isFinite(request.quantity) || request.quantity <= 0)
+  ) {
+    throw new Error("Quantity produk harus lebih dari 0.");
+  }
+
+  const body: Record<string, unknown> = {
+    id: request.id,
+    user_id: userId,
+  };
+
+  if (request.quantity !== undefined) {
+    body.quantity = request.quantity;
+  }
+
+  if (request.is_selected !== undefined) {
+    body.is_selected = request.is_selected;
+  }
+
+  const payload = await fetchAuth<UpdateCartItemResponse>("/carts", {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+
+  dispatchCartStateChange();
+  return payload as ApiEnvelope<UpdateCartItemResponse>;
 }
 
 export async function fetchCart() {

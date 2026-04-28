@@ -64,14 +64,19 @@ const BlogCard = ({ post, featured = false }: { post: BlogPost; featured?: boole
       </span>
 
       {/* Title */}
-      <h3
-        className={cn(
-          "font-display leading-tight group-hover:text-primary transition-colors duration-300",
-          featured ? "text-2xl md:text-3xl" : "text-lg line-clamp-2"
-        )}
+      <Link
+        to={`/blog/${post.slug}`}
+        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-4"
       >
-        {post.title}
-      </h3>
+        <h3
+          className={cn(
+            "font-display leading-tight transition-colors duration-300 hover:text-primary group-hover:text-primary",
+            featured ? "text-2xl md:text-3xl" : "line-clamp-2 text-lg"
+          )}
+        >
+          {post.title}
+        </h3>
+      </Link>
 
       {/* Excerpt */}
       <p className={cn("text-sm text-muted-foreground leading-relaxed", featured ? "line-clamp-3" : "line-clamp-2")}>

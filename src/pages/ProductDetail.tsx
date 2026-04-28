@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   ChevronRight,
@@ -12,6 +12,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
+import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 import { hasAccessToken } from "@/lib/auth";
@@ -26,12 +27,12 @@ import {
 } from "@/lib/products";
 
 const ProductDetail = () => {
-  const navigate = useNavigate();
   const params = useParams();
   const productUnitId = Number(params.productUnitId);
   const mobileGalleryRef = useRef<HTMLDivElement | null>(null);
   const [activeMobileSlide, setActiveMobileSlide] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [loginPromptOpen, setLoginPromptOpen] = useState(false);
 
   const {
     data: product,
@@ -118,10 +119,19 @@ const ProductDetail = () => {
       const message = error instanceof Error ? error.message : "Gagal menambahkan produk ke keranjang.";
       toast.error(message);
       if (message.includes("login")) {
-        navigate("/login");
+        setLoginPromptOpen(true);
       }
     },
   });
+
+  const handleAddToCart = () => {
+    if (!hasAccessToken()) {
+      setLoginPromptOpen(true);
+      return;
+    }
+
+    addToCartMutation.mutate();
+  };
 
   const handleMobileGalleryScroll = () => {
     if (!mobileGalleryRef.current) {
@@ -378,7 +388,7 @@ const ProductDetail = () => {
                     </Button>
                     <Button
                       className="h-12 w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
-                      onClick={() => addToCartMutation.mutate()}
+                      onClick={handleAddToCart}
                       disabled={addToCartMutation.isPending || product.total_quantity <= 0}
                     >
                       {addToCartMutation.isPending ? "Menambahkan..." : "+ Tambahkan ke Keranjang"}
@@ -522,7 +532,7 @@ const ProductDetail = () => {
             </Button>
             <Button
               className="h-12 w-full rounded-xl bg-primary px-5 text-base font-semibold text-primary-foreground hover:bg-primary/90"
-              onClick={() => addToCartMutation.mutate()}
+              onClick={handleAddToCart}
               disabled={addToCartMutation.isPending || product.total_quantity <= 0}
             >
               {addToCartMutation.isPending ? "Menambahkan..." : "+ Keranjang"}
@@ -530,6 +540,11 @@ const ProductDetail = () => {
           </div>
         </div>
       ) : null}
+      <LoginRequiredDialog
+        open={loginPromptOpen}
+        onOpenChange={setLoginPromptOpen}
+        productName={cardProduct?.name}
+      />
       <WhatsAppFloat className="bottom-24 md:bottom-6" />
     </main>
   );

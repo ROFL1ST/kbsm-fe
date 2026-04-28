@@ -1,4 +1,3 @@
-import { ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CATEGORY_CACHE_TTL, fetchCategories } from "@/lib/categories";
@@ -46,7 +45,7 @@ const Categories = () => {
                   <Link
                     key={category.id}
                     to={`/shop?category_id=${category.id}`}
-                    className="group relative aspect-[4/5] rounded-3xl overflow-hidden soft-shadow hover-lift"
+                    className="group relative aspect-[4/5] overflow-hidden rounded-3xl soft-shadow hover-lift"
                   >
                     <img
                       src={category.path}
@@ -58,17 +57,11 @@ const Categories = () => {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-foreground/10 to-transparent" />
 
-                    <div className="absolute inset-0 p-6 flex flex-col justify-end text-background">
-                      <p className="text-[10px] tracking-[0.3em] uppercase opacity-80 mb-1">
-                        Shop Collection
-                      </p>
-                      <div className="flex items-end justify-between gap-2">
-                        <h3 className="font-display text-2xl md:text-3xl">
+                    <div className="absolute inset-0 flex flex-col justify-end p-4 text-background sm:p-6">
+                      <div className="flex items-end">
+                        <h3 className="inline-flex max-w-full rounded-full border border-white/35 bg-white/15 px-3.5 py-2 font-display text-xl leading-none shadow-sm backdrop-blur-md transition-all duration-300 group-hover:border-primary group-hover:bg-primary group-hover:text-white sm:px-4 sm:py-2.5 sm:text-2xl md:text-3xl">
                           {category.name}
                         </h3>
-                        <div className="h-10 w-10 rounded-full glass flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all duration-500 group-hover:rotate-45">
-                          <ArrowUpRight className="h-4 w-4" />
-                        </div>
                       </div>
                     </div>
                   </Link>
