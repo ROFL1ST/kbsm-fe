@@ -28,6 +28,10 @@ export interface TransactionShipping {
   phone_number: string;
   address: string;
   label: string;
+  province_id?: number;
+  city_id?: number;
+  district_id?: number;
+  subdistrict_id?: number;
   province_name: string;
   city_name: string;
   district_name: string;
@@ -57,16 +61,20 @@ export interface TransactionProof {
   purchase_order_client_id: string;
   user_id: string;
   price: number;
-  path: string;
+  /** null = bukti belum diunggah, string = URL bukti pembayaran */
+  path: string | null;
   finance_callback_by: string | null;
-  transaction_code: string;
+  transaction_code: string | null;
   type: number;
   finance_callback_reason: string | null;
   finance_callback_at: string | null;
   payment_type: string;
   created_at: string;
+  created_by: string | null;
   updated_at: string;
+  updated_by: string | null;
   deleted_at: string | null;
+  deleted_by?: string | null;
 }
 
 export interface TransactionDetailData {
@@ -81,6 +89,7 @@ export interface TransactionDetailData {
   created_at: string;
   shippings: TransactionShipping;
   products: TransactionProduct[];
+  /** Selalu ada di response, tapi path-nya bisa null jika bukti belum diunggah */
   transaction_proof: TransactionProof | null;
 }
 
@@ -100,7 +109,7 @@ export interface TransactionProgressStep {
   isFailed: boolean;
 }
 
-// userId dihapus — endpoint upload-proof tidak memerlukan user_id di body
+/** userId dihapus — endpoint upload-proof tidak memerlukan user_id di body */
 export interface UploadTransactionProofPayload {
   transactionId: string;
   file: File;

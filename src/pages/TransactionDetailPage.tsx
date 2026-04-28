@@ -66,10 +66,9 @@ export default function TransactionDetailPage() {
     setIsUploading(true);
     setUploadError(null);
     try {
-      // userId tidak dikirim — endpoint hanya butuh transaction_id + file
       await uploadTransactionProof({ transactionId: transaction.id, file });
       setUploadSuccess(true);
-      load();
+      load(); // refresh data agar TransactionProofCard langsung tampil
     } catch (err: unknown) {
       setUploadError(
         err instanceof Error ? err.message : "Gagal mengunggah bukti pembayaran."
@@ -96,11 +95,17 @@ export default function TransactionDetailPage() {
     ? getTransactionProgressSteps(transaction)
     : [];
 
+  /**
+   * Tampilkan form upload jika:
+   * - transaction_proof ada (objeknya selalu ada dari API)
+   * - TAPI path-nya null  → bukti belum diunggah
+   * - DAN transaksi belum CANCELLED
+   */
   const showUpload =
     transaction !== null &&
-    (transaction.status_trx_code === "PENDING" ||
-      transaction.transaction_proof === null) &&
-    transaction.status_trx_code !== "CANCELLED";
+    transaction.status_trx_code !== "CANCELLED" &&
+    (transaction.transaction_proof === null ||
+      transaction.transaction_proof.path === null);
 
   return (
     <main className="min-h-screen bg-background">
@@ -136,11 +141,7 @@ export default function TransactionDetailPage() {
           {!isLoading && fetchError && (
             <div className="rounded-[2rem] border border-border/60 bg-white p-8 text-center soft-shadow space-y-4">
               <p className="text-muted-foreground">{fetchError}</p>
-              <Button
-                onClick={load}
-                variant="outline"
-                className="rounded-full"
-              >
+              <Button onClick={load} variant="outline" className="rounded-full">
                 Coba Lagi
               </Button>
             </div>
@@ -162,6 +163,7 @@ export default function TransactionDetailPage() {
                 {/* Right */}
                 <div className="space-y-6">
                   {showUpload ? (
+                    /* path === null → belum ada bukti, tampilkan form upload */
                     <TransactionProofUpload
                       transactionId={transaction.id}
                       isUploading={isUploading}
@@ -170,6 +172,7 @@ export default function TransactionDetailPage() {
                       onSubmit={handleUpload}
                     />
                   ) : (
+                    /* path sudah ada → tampilkan kartu bukti */
                     transaction.transaction_proof && (
                       <TransactionProofCard
                         proof={transaction.transaction_proof}
@@ -177,7 +180,7 @@ export default function TransactionDetailPage() {
                     )
                   )}
 
-                  {/* Repeat Order */}
+                  {/* Repeat Order — hanya untuk transaksi DONE */}
                   {transaction.status_trx_code === "DONE" && (
                     <div className="rounded-[2rem] border border-border/60 bg-white px-6 py-8 soft-shadow md:px-8 space-y-4">
                       <h2 className="font-display text-xl">Pesan Lagi</h2>
