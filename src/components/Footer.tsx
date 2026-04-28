@@ -28,7 +28,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="lg:col-span-4 space-y-5">
             <a href="#home" className="font-display text-3xl font-semibold inline-block">
-              Belle<span className="text-primary-glow italic">Aura</span>
+              Kasta<span className="text-primary-glow italic">Beaute</span>
             </a>
             <p className="text-background/60 text-sm leading-relaxed max-w-sm">
               Premium skincare yang menggabungkan ilmu pengetahuan modern dengan
@@ -103,7 +103,7 @@ const Footer = () => {
 
         {/* Bottom */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-3 pt-8 text-xs text-background/40">
-          <p>© 2026 BelleAura. All Rights Reserved.</p>
+          <p>© 2026 KastaBeaute. All Rights Reserved.</p>
           <p>Crafted with care in Indonesia ✦ BPOM Certified ✦ Cruelty Free</p>
         </div>
       </div>

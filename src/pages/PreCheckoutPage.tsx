@@ -56,8 +56,7 @@ const COURIERS = [
 ];
 
 function resolveReviewItems(items: CartItem[]) {
-  const selectedItems = items.filter((item) => item.is_selected);
-  return selectedItems.length > 0 ? selectedItems : items;
+  return items.filter((item) => item.is_selected);
 }
 
 const PreCheckoutPage = () => {
@@ -169,7 +168,10 @@ const PreCheckoutPage = () => {
     shippingOptions.find((option) => option.id === selectedShippingId) ??
     shippingOptions[0] ??
     null;
-  const subtotal = cart?.summary.final_price ?? 0;
+  const subtotal = reviewItems.reduce(
+    (total, item) => total + item.calculation.final_price,
+    0
+  );
   const shippingCost = selectedShippingOption?.cost ?? 0;
   const grandTotal = subtotal + shippingCost;
 
