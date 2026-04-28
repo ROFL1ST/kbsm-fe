@@ -82,7 +82,7 @@ export default function TransactionProofCard({ proof, onUpdate, isUpdating = fal
             {isVerified ? (
               <><CheckCircle2 className="h-3.5 w-3.5" />Terverifikasi</>
             ) : (
-              <><Clock className="h-3.5 w-3.5" />Menunggu Verifikasi</>
+              <><Clock className="h-3.5 w-3.5" />Menunggu</>
             )}
           </span>
         )}
