@@ -17,8 +17,12 @@ import {
 const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get("search") ?? "";
+  const categoryIdParam = searchParams.get("category_id");
+  const parsedCategoryId = categoryIdParam ? Number(categoryIdParam) : NaN;
+  const initialCategory =
+    Number.isFinite(parsedCategoryId) && parsedCategoryId > 0 ? parsedCategoryId : "";
 
-  const [selectedCategory, setSelectedCategory] = useState<number | "">("");
+  const [selectedCategory, setSelectedCategory] = useState<number | "">(initialCategory);
   const [selectedStatus, setSelectedStatus] = useState<number | "">("");
 
   const { data: categories = [] } = useQuery({
@@ -46,6 +50,24 @@ const Shop = () => {
     next.delete("search");
     setSearchParams(next, { replace: true });
   };
+
+  useEffect(() => {
+    setSelectedCategory(initialCategory);
+  }, [initialCategory]);
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+
+    if (selectedCategory === "") {
+      next.delete("category_id");
+    } else {
+      next.set("category_id", String(selectedCategory));
+    }
+
+    if (next.toString() !== searchParams.toString()) {
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, selectedCategory, setSearchParams]);
 
   useEffect(() => {
     document.title = "Shop - Kasta Beaute";

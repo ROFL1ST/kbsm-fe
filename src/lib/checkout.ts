@@ -24,6 +24,30 @@ export type ShippingOption = {
   etd: string;
 };
 
+export type CheckoutShippingPayload = {
+  name: string;
+  code: string;
+  service: string;
+  description: string;
+  cost: number;
+  etd: string;
+};
+
+export type CheckoutItemPayload = {
+  product_id: number;
+  product_detail_id: number;
+  product_unit_id: number;
+  quantity: number;
+};
+
+export type CheckoutRequest = {
+  user_address_id: number;
+  user_id: string;
+  payment_method_code: string;
+  shipping: CheckoutShippingPayload;
+  items: CheckoutItemPayload[];
+};
+
 function parseShippingOptions(input: unknown, courier: string): ShippingOption[] {
   const source = Array.isArray(input)
     ? input
@@ -98,4 +122,11 @@ export async function fetchDeliveryCost(request: DeliveryCostRequest) {
   }) as DeliveryCostApiEnvelope;
 
   return parseShippingOptions(payload.data, request.courier);
+}
+
+export async function checkoutTransaction(request: CheckoutRequest) {
+  return fetchAuth<unknown>("/transactions/checkout", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
 }

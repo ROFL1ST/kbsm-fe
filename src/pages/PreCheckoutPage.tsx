@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate, useLocation } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
-  CheckCircle2,
   ChevronRight,
   CreditCard,
   Loader2,
@@ -23,7 +22,7 @@ import { toast } from "@/components/ui/sonner";
 import { getAuthUser, hasAccessToken } from "@/lib/auth";
 import { getDefaultUserAddress } from "@/lib/address";
 import { calculateCartSummary, fetchCart, type CartItem, type DirectCheckoutState } from "@/lib/cart";
-import { fetchDeliveryCost } from "@/lib/checkout";
+import { checkoutTransaction, fetchDeliveryCost } from "@/lib/checkout";
 import { formatRupiah, getProductImages } from "@/lib/products";
 
 const ORIGIN_SUBDISTRICT_ID = 19043;
@@ -33,18 +32,21 @@ const DEFAULT_ITEM_WEIGHT = 1000;
 const PAYMENT_METHODS = [
   {
     id: "bank-transfer",
+    code: "TRANSFER",
     label: "Bank Transfer",
     description: "Konfirmasi cepat untuk pembayaran via transfer bank.",
     icon: CreditCard,
   },
   {
     id: "virtual-account",
+    code: "VIRTUAL_ACCOUNT",
     label: "Virtual Account",
     description: "Bayar praktis dengan nomor VA unik dari bank pilihan.",
     icon: ShieldCheck,
   },
   {
     id: "e-wallet",
+    code: "E_WALLET",
     label: "E-Wallet",
     description: "Gunakan dompet digital favoritmu saat checkout final.",
     icon: Store,
@@ -62,6 +64,8 @@ function resolveReviewItems(items: CartItem[]) {
 
 const PreCheckoutPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isLoggedIn = hasAccessToken();
   const authUser = getAuthUser();
   const directCheckoutState = location.state as DirectCheckoutState | null;
@@ -168,9 +172,9 @@ const PreCheckoutPage = () => {
     });
   }, [shippingOptions]);
 
-  if (!isLoggedIn || !authUser?.id) {
-    return <Navigate to="/login" replace />;
-  }
+  const selectedPaymentMethodOption =
+    PAYMENT_METHODS.find((method) => method.id === selectedPaymentMethod) ??
+    PAYMENT_METHODS[0];
 
   const selectedShippingOption =
     shippingOptions.find((option) => option.id === selectedShippingId) ??
@@ -179,6 +183,61 @@ const PreCheckoutPage = () => {
   const subtotal = calculateCartSummary(reviewItems).final_price;
   const shippingCost = selectedShippingOption?.cost ?? 0;
   const grandTotal = subtotal + shippingCost;
+
+  const checkoutMutation = useMutation({
+    mutationFn: async () => {
+      if (!primaryAddress?.id) {
+        throw new Error("Alamat pengiriman belum tersedia.");
+      }
+
+      if (!selectedShippingOption) {
+        throw new Error("Pilih layanan pengiriman terlebih dahulu.");
+      }
+
+      if (!selectedPaymentMethodOption?.code) {
+        throw new Error("Metode pembayaran belum tersedia.");
+      }
+
+      if (reviewItems.length === 0) {
+        throw new Error("Tidak ada item yang bisa di-checkout.");
+      }
+
+      return checkoutTransaction({
+        user_address_id: primaryAddress.id,
+        user_id: authUser.id,
+        payment_method_code: selectedPaymentMethodOption.code,
+        shipping: {
+          name: selectedShippingOption.courierName,
+          code: selectedShippingOption.courier,
+          service: selectedShippingOption.service,
+          description: selectedShippingOption.description,
+          cost: selectedShippingOption.cost,
+          etd: selectedShippingOption.etd,
+        },
+        items: reviewItems.map((item) => ({
+          product_id: item.product_id,
+          product_detail_id: item.product_detail_id,
+          product_unit_id: item.product_unit_id,
+          quantity: item.quantity,
+        })),
+      });
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["pre-checkout-cart"] }),
+        queryClient.invalidateQueries({ queryKey: ["cart"] }),
+      ]);
+      toast.success("Checkout berhasil dibuat.");
+      navigate("/transactions");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Checkout gagal diproses.");
+    },
+  });
+
+  if (!isLoggedIn || !authUser?.id) {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <main className="min-h-screen bg-background">
@@ -577,9 +636,10 @@ const PreCheckoutPage = () => {
                       </Button>
                       <Button
                         className="h-12 flex-1 rounded-full text-sm uppercase tracking-[0.16em]"
-                        disabled={!primaryAddress || !selectedShippingOption}
+                        disabled={!primaryAddress || !selectedShippingOption || checkoutMutation.isPending}
+                        onClick={() => checkoutMutation.mutate()}
                       >
-                        Lanjut Bayar
+                        {checkoutMutation.isPending ? "Memproses..." : "Lanjut Bayar"}
                       </Button>
                     </div>
                   )}
