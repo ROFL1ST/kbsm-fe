@@ -41,7 +41,7 @@ export default function TransactionDetailPage() {
   const [isRepeating, setIsRepeating] = useState(false);
 
   useEffect(() => {
-    document.title = "Detail Transaksi — Kasta Beau\u00e9";
+    document.title = "Detail Transaksi \u2014 Kasta Beau\u00e9";
   }, []);
 
   function load() {
@@ -66,7 +66,8 @@ export default function TransactionDetailPage() {
     setIsUploading(true);
     setUploadError(null);
     try {
-      await uploadTransactionProof({ transactionId: transaction.id, userId, file });
+      // userId tidak dikirim — endpoint hanya butuh transaction_id + file
+      await uploadTransactionProof({ transactionId: transaction.id, file });
       setUploadSuccess(true);
       load();
     } catch (err: unknown) {

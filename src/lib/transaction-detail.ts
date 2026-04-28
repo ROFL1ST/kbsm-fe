@@ -1,4 +1,4 @@
-import { fetchAuth, getApiBaseUrl } from "@/lib/auth";
+import { fetchAuth, getApiBaseUrl, getAuthToken } from "@/lib/auth";
 import type {
   TransactionDetailData,
   TransactionDetailResponse,
@@ -32,10 +32,8 @@ export async function fetchTransactionDetail(params: {
 
 export async function uploadTransactionProof({
   transactionId,
-  userId,
   file,
 }: UploadTransactionProofPayload): Promise<UploadTransactionProofResponse> {
-  const { getAuthToken } = await import("@/lib/auth");
   const token = getAuthToken();
 
   if (!token) {
@@ -43,19 +41,19 @@ export async function uploadTransactionProof({
   }
 
   const formData = new FormData();
-  formData.append("user_id", userId);
   formData.append("transaction_id", transactionId);
   formData.append("file", file);
 
-  const response = await fetch(`${getApiBaseUrl()}/transactions/upload-proof`, {
-    method: "POST",
+  const response = await fetch(`${getApiBaseUrl()}/transaction/upload-proof`, {
+    method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
+      // Jangan set Content-Type — browser otomatis isi boundary multipart/form-data
     },
     body: formData,
   });
 
-  const payload = await response.json() as UploadTransactionProofResponse;
+  const payload = (await response.json()) as UploadTransactionProofResponse;
 
   if (!response.ok || !payload.status) {
     throw new Error(
@@ -71,7 +69,7 @@ export async function repeatOrder({
   userId,
 }: RepeatOrderPayload): Promise<RepeatOrderResponse> {
   const result = await fetchAuth<RepeatOrderResponse>(
-    `/transactions/repeat-order`,
+    `/transaction/repeat-order`,
     {
       method: "POST",
       body: JSON.stringify({ user_id: userId, transaction_id: transactionId }),

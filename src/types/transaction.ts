@@ -100,9 +100,9 @@ export interface TransactionProgressStep {
   isFailed: boolean;
 }
 
+// userId dihapus — endpoint upload-proof tidak memerlukan user_id di body
 export interface UploadTransactionProofPayload {
   transactionId: string;
-  userId: string;
   file: File;
 }
 
