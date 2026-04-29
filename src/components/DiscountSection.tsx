@@ -31,13 +31,11 @@ function useCountdown(validUntil: string) {
 /* ── Countdown box ─────────────────────────────────────────── */
 const Box = ({ v, l, compact }: { v: number; l: string; compact?: boolean }) => (
   <div className="text-center">
-    <div
-      className={`glass-card tabular-nums font-display font-semibold text-foreground ${
-        compact
-          ? "px-3 py-2 min-w-[48px] text-xl"
-          : "px-3 py-2 min-w-[52px] text-2xl sm:px-4 sm:py-3 sm:min-w-[68px] sm:text-3xl md:px-6 md:py-4 md:min-w-[88px] md:text-5xl"
-      }`}
-    >
+    <div className={`glass-card tabular-nums font-display font-semibold text-foreground ${
+      compact
+        ? "px-3 py-2 min-w-[48px] text-xl"
+        : "px-4 md:px-6 py-3 md:py-4 min-w-[68px] md:min-w-[88px] text-3xl md:text-5xl"
+    }`}>
       {String(v).padStart(2, "0")}
     </div>
     <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mt-1.5">{l}</div>
@@ -141,8 +139,8 @@ const CompactSlideInfo = ({
   );
 };
 
-/* ── Full slide info (Index page, desktop only — kanan kolom) ─ */
-const FullSlideInfo = ({
+/* ── Full slide info (Index page) ──────────────────────────── */
+const SlideInfo = ({
   item, visible,
   prev, next, total, active, goTo,
 }: {
@@ -165,12 +163,13 @@ const FullSlideInfo = ({
       }}
     >
       <div className="space-y-7">
-        <p className="text-xs uppercase tracking-[0.3em] text-primary">Penawaran Terbatas</p>
-        <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-balance leading-[1.05]">
+        {/* label + judul: hidden di mobile (sudah dirender di atas gambar) */}
+        <p className="hidden lg:block text-xs uppercase tracking-[0.3em] text-primary">Penawaran Terbatas</p>
+        <h2 className="hidden lg:block font-display text-4xl md:text-5xl lg:text-6xl text-balance leading-[1.05]">
           <em className="italic gradient-text">Diskon {item.discount_percentage}%</em>
           <br />{item.name}
         </h2>
-        <p className="text-muted-foreground max-w-md">
+        <p className="hidden lg:block text-muted-foreground max-w-md">
           Dapatkan <span className="font-semibold text-foreground">{item.category}</span> premium Kasta Beauté dengan harga terbaik. Stok terbatas — jangan sampai kehabisan!
         </p>
         <div className="flex items-baseline gap-3">
@@ -261,23 +260,25 @@ const FullDiscountSlider = () => {
 
   return (
     <div
-      className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-6 xl:gap-12 items-center"
+      className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-6 xl:gap-12 items-center"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
       {/*
-        MOBILE (< lg): urutan DOM = label/diskon → gambar → info lainnya
-        Ini dicapai dengan satu kolom penuh:
-        - Blok "label + judul diskon" di atas (order-1)
-        - Gambar di tengah (order-2)
-        - Sisa info (harga, countdown, CTA) di bawah (order-3)
-        DESKTOP (≥ lg): 2 kolom — gambar kiri, info kanan (layout asli)
+        Layout strategy:
+        - Mobile: col-span-1 seluruhnya
+          order-1 = label mobile (lg:hidden)
+          order-2 = gambar
+          order-3 = SlideInfo (harga, countdown, CTA)
+        - Desktop (lg+): grid 2 kolom, order diabaikan karena grid-cols-2
+          kolom 1 = gambar  (lg:col-start-1 lg:row-start-1)
+          kolom 2 = SlideInfo (lg:col-start-2 lg:row-start-1)
+          label mobile = hidden
       */}
 
-      {/* ─ Label + judul: tampil di mobile di atas gambar, di desktop hidden (sudah ada di FullSlideInfo) ─ */}
-      <div className="lg:hidden order-1 space-y-2">
-        <p className="text-xs uppercase tracking-[0.3em] text-primary">Penawaran Terbatas</p>
-        <div className="relative" style={{ minHeight: 80 }}>
+      {/* Label + judul — hanya tampil di mobile, di atas gambar */}
+      <div className="lg:hidden order-1 space-y-3">
+        <div className="relative" style={{ minHeight: 96 }}>
           {discounts.map((item, i) => (
             <div
               key={item.product_unit_id}
@@ -288,7 +289,8 @@ const FullDiscountSlider = () => {
                 pointerEvents: i === active ? "auto" : "none",
               }}
             >
-              <h2 className="font-display text-3xl sm:text-4xl leading-[1.05]">
+              <p className="text-xs uppercase tracking-[0.3em] text-primary mb-2">Penawaran Terbatas</p>
+              <h2 className="font-display text-4xl leading-[1.05]">
                 <em className="italic gradient-text">Diskon {item.discount_percentage}%</em>
                 <br />{item.name}
               </h2>
@@ -297,8 +299,8 @@ const FullDiscountSlider = () => {
         </div>
       </div>
 
-      {/* ─ Gambar: order-2 di mobile, order-1 di desktop ─ */}
-      <div className={`relative overflow-hidden rounded-3xl luxury-shadow order-2 lg:order-1 aspect-square lg:aspect-[4/5]`}>
+      {/* Gambar */}
+      <div className="relative overflow-hidden rounded-3xl luxury-shadow order-2 lg:order-1 aspect-square lg:aspect-[4/5]">
         <div
           className="flex h-full"
           style={{
@@ -319,17 +321,16 @@ const FullDiscountSlider = () => {
             </div>
           ))}
         </div>
-        {/* Badge diskon */}
         <div className="absolute top-4 left-4 bg-foreground text-background rounded-full px-4 py-2 text-xs tracking-[0.2em] uppercase flex items-center gap-1.5">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
           -{discounts[active].discount_percentage}% Off
         </div>
       </div>
 
-      {/* ─ Info kolom kanan (desktop) / bawah gambar (mobile) ─ */}
+      {/* Info: harga + countdown + CTA + dots */}
       <div className="relative order-3 lg:order-2" style={{ minHeight: 500 }}>
         {discounts.map((item, i) => (
-          <FullSlideInfo
+          <SlideInfo
             key={item.product_unit_id}
             item={item}
             visible={i === active}
