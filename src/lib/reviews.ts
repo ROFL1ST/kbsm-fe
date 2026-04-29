@@ -22,10 +22,40 @@ interface ReviewsResponse {
   error: string | null;
 }
 
-export async function fetchReviews(): Promise<Review[]> {
+export interface FetchReviewsOptions {
+  page?: number;
+  perPage?: number;
+}
+
+export interface ReviewsPage {
+  reviews: Review[];
+  /** true kalau API masih punya data di halaman berikutnya */
+  hasMore: boolean;
+  nextPage: number;
+}
+
+/**
+ * Fetch reviews dengan pagination.
+ * API endpoint: GET /reviews?page=1&per_page=10
+ *
+ * hasMore = true  kalau jumlah data yang dikembalikan == perPage
+ * (asumsi standar: kalau data < perPage berarti sudah halaman terakhir)
+ */
+export async function fetchReviews(
+  { page = 1, perPage = 10 }: FetchReviewsOptions = {}
+): Promise<ReviewsPage> {
   if (!BASE_URL) throw new Error("KBBU_API belum dikonfigurasi.");
-  const res = await fetch(`${BASE_URL}/reviews`);
+
+  const url = `${BASE_URL}/reviews?page=${page}&per_page=${perPage}`;
+  const res = await fetch(url);
   if (!res.ok) throw new Error("Failed to fetch reviews");
+
   const json: ReviewsResponse = await res.json();
-  return json.data;
+  const reviews = json.data ?? [];
+
+  return {
+    reviews,
+    hasMore: reviews.length === perPage,
+    nextPage: page + 1,
+  };
 }
