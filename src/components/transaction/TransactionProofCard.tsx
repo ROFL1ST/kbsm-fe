@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { ExternalLink, CheckCircle2, Clock, Pencil, Upload, Loader2, X } from "lucide-react";
+import {
+  ExternalLink,
+  CheckCircle2,
+  Clock,
+  Pencil,
+  Upload,
+  Loader2,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { TransactionProof } from "@/types/transaction";
 
@@ -13,16 +21,22 @@ interface Props {
 }
 
 function formatDate(iso: string) {
-  return format(new Date(iso), "dd MMM yyyy \u00b7 HH:mm", { locale: idLocale });
+  return format(new Date(iso), "dd MMM yyyy \u00b7 HH:mm", {
+    locale: idLocale,
+  });
 }
 
 const PAYMENT_LABEL: Record<string, string> = {
   TRANSFER: "Transfer Bank",
-  CASH: "Tunai",
-  COD: "Bayar di Tempat",
+  // CASH: "Tunai",
+  // COD: "Bayar di Tempat",
 };
 
-export default function TransactionProofCard({ proof, onUpdate, isUpdating = false }: Props) {
+export default function TransactionProofCard({
+  proof,
+  onUpdate,
+  isUpdating = false,
+}: Props) {
   const hasProof = proof.path !== null;
   const isVerified = proof.finance_callback_at !== null;
   /** Bisa update jika sudah upload tapi belum diverifikasi */
@@ -61,7 +75,9 @@ export default function TransactionProofCard({ proof, onUpdate, isUpdating = fal
       setPreview(null);
     } catch (err: unknown) {
       setUpdateError(
-        err instanceof Error ? err.message : "Gagal memperbarui bukti pembayaran."
+        err instanceof Error
+          ? err.message
+          : "Gagal memperbarui bukti pembayaran.",
       );
     }
   }
@@ -80,9 +96,15 @@ export default function TransactionProofCard({ proof, onUpdate, isUpdating = fal
             }
           >
             {isVerified ? (
-              <><CheckCircle2 className="h-3.5 w-3.5" />Terverifikasi</>
+              <>
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Terverifikasi
+              </>
             ) : (
-              <><Clock className="h-3.5 w-3.5" />Menunggu</>
+              <>
+                <Clock className="h-3.5 w-3.5" />
+                Menunggu
+              </>
             )}
           </span>
         )}
@@ -92,7 +114,8 @@ export default function TransactionProofCard({ proof, onUpdate, isUpdating = fal
       {isEditMode ? (
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            Pilih file baru untuk mengganti bukti yang sudah diunggah sebelumnya.
+            Pilih file baru untuk mengganti bukti yang sudah diunggah
+            sebelumnya.
           </p>
 
           <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-background/70 px-6 py-8 text-center transition-colors hover:border-primary/50 hover:bg-primary/5">
@@ -133,7 +156,10 @@ export default function TransactionProofCard({ proof, onUpdate, isUpdating = fal
               onClick={handleSubmit}
             >
               {isUpdating ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Menyimpan...</>
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Menyimpan...
+                </>
               ) : (
                 "Simpan Bukti Baru"
               )}
