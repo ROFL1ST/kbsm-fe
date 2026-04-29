@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = import.meta.env.KBBU_API?.replace(/\/$/, "");
 
 export interface Review {
   id: number;
@@ -23,6 +23,7 @@ interface ReviewsResponse {
 }
 
 export async function fetchReviews(): Promise<Review[]> {
+  if (!BASE_URL) throw new Error("KBBU_API belum dikonfigurasi.");
   const res = await fetch(`${BASE_URL}/reviews`);
   if (!res.ok) throw new Error("Failed to fetch reviews");
   const json: ReviewsResponse = await res.json();
