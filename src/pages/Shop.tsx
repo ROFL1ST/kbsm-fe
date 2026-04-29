@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
+import DiscountSection from "@/components/DiscountSection";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   fetchProducts,
@@ -26,7 +27,6 @@ const Shop = () => {
   );
   const [selectedStatus, setSelectedStatus] = useState<CategoryId>("");
 
-  // Sync state saat URL berubah dari luar (navigasi dari Home)
   useEffect(() => {
     const id = searchParams.get("category_id");
     setSelectedCategory(id ? Number(id) : "");
@@ -87,6 +87,7 @@ const Shop = () => {
     <main className="min-h-screen bg-background">
       <Navbar />
 
+      {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-luxury pb-16 pt-40 md:pb-20 md:pt-48">
         <div className="absolute inset-0 bg-gradient-glow pointer-events-none" />
         <div className="container relative">
@@ -117,6 +118,10 @@ const Shop = () => {
         </div>
       </section>
 
+      {/* Discount Section */}
+      <DiscountSection />
+
+      {/* Product Grid */}
       <section className="py-16 md:py-20">
         <div className="container">
           <div className="mb-10 space-y-5 animate-fade-in">
