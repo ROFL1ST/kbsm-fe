@@ -1,22 +1,104 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Search, Star, Layers, X } from "lucide-react";
+import { ArrowRight, Search, Star, Layers, X, Tag, Clock } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
-import DiscountSection from "@/components/DiscountSection";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   fetchProducts,
   fetchCategories,
   mapProductToCard,
   PRODUCT_CACHE_TTL,
+  formatRupiah,
 } from "@/lib/products";
+import discounts from "@/data/discounts";
 
 type CategoryId = number | "";
 
+/* ── Countdown hook (inline, no extra file needed) ───────── */
+function useCountdown(validUntil: string) {
+  const calc = () => {
+    const diff = Math.max(0, new Date(validUntil).getTime() - Date.now());
+    return {
+      d: Math.floor(diff / (1000 * 60 * 60 * 24)),
+      h: Math.floor((diff / (1000 * 60 * 60)) % 24),
+      m: Math.floor((diff / (1000 * 60)) % 60),
+      s: Math.floor((diff / 1000) % 60),
+    };
+  };
+  const [t, setT] = useState(calc);
+  useEffect(() => {
+    const id = setInterval(() => setT(calc()), 1000);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [validUntil]);
+  return t;
+}
+
+/* ── Mini discount card for hero right panel ───────────── */
+const HeroDiscountCard = ({
+  item,
+  index,
+}: {
+  item: (typeof discounts)[number];
+  index: number;
+}) => {
+  const t = useCountdown(item.valid_until);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return (
+    <Link
+      to={`/shop/product/${item.product_unit_id}`}
+      className="group flex items-center gap-3 glass-card rounded-2xl p-3 hover-lift transition-all animate-fade-up"
+      style={{ animationDelay: `${index * 80}ms` }}
+    >
+      {/* Thumbnail */}
+      <div className="relative shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-gradient-nude">
+        <span className="absolute top-1 left-1 z-10 rounded-full bg-foreground px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-background leading-none">
+          -{item.discount_percentage}%
+        </span>
+        {item.image ? (
+          <img
+            src={item.image}
+            alt={item.name}
+            loading="lazy"
+            width={64}
+            height={64}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Tag className="h-5 w-5 text-primary/30" />
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0 space-y-0.5">
+        <p className="text-[10px] uppercase tracking-[0.15em] text-primary">{item.category}</p>
+        <p className="text-sm font-display leading-tight line-clamp-1 group-hover:text-primary transition-colors">
+          {item.name}
+        </p>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold font-display">{formatRupiah(item.final_price)}</span>
+          <span className="text-xs text-muted-foreground line-through">{formatRupiah(item.original_price)}</span>
+        </div>
+        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <Clock className="h-2.5 w-2.5 shrink-0 text-primary" />
+          <span className="tabular-nums">
+            {t.d > 0 && `${t.d}d `}{pad(t.h)}:{pad(t.m)}:{pad(t.s)}
+          </span>
+        </div>
+      </div>
+
+      <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+    </Link>
+  );
+};
+
+/* ── Page ────────────────────────────────────────────────── */
 const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get("search") ?? "";
@@ -87,45 +169,62 @@ const Shop = () => {
     <main className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero */}
+      {/* Hero — 2 col on lg+: kiri teks (unchanged), kanan discount list */}
       <section className="relative overflow-hidden bg-gradient-luxury pb-16 pt-40 md:pb-20 md:pt-48">
         <div className="absolute inset-0 bg-gradient-glow pointer-events-none" />
         <div className="container relative">
-          <div className="max-w-3xl space-y-5">
-            <p className="text-xs uppercase tracking-[0.3em] text-primary">
-              Complete Collection
-            </p>
-            <h1 className="font-display text-5xl leading-tight text-balance md:text-6xl lg:text-7xl">
-              Shop <em className="italic gradient-text">All</em> Products
-            </h1>
-            <p className="max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
-              Jelajahi seluruh katalog produk Kasta Beaute, termasuk best seller,
-              produk diskon, dan koleksi terbaru dari endpoint produk utama.
-            </p>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-              <span className="rounded-full border border-border/60 bg-white/60 px-4 py-2 backdrop-blur">
-                {isLoading ? "Memuat produk..." : `${products.length} produk tersedia`}
-              </span>
-              <Link
-                to="/"
-                className="story-link inline-flex items-center gap-2 font-medium uppercase tracking-[0.15em] text-primary"
-              >
-                Kembali ke Home
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+
+            {/* Left col — teks (tidak berubah) */}
+            <div className="max-w-3xl space-y-5">
+              <p className="text-xs uppercase tracking-[0.3em] text-primary">
+                Complete Collection
+              </p>
+              <h1 className="font-display text-5xl leading-tight text-balance md:text-6xl lg:text-7xl">
+                Shop <em className="italic gradient-text">All</em> Products
+              </h1>
+              <p className="max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
+                Jelajahi seluruh katalog produk Kasta Beaute, termasuk best seller,
+                produk diskon, dan koleksi terbaru dari endpoint produk utama.
+              </p>
+              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                <span className="rounded-full border border-border/60 bg-white/60 px-4 py-2 backdrop-blur">
+                  {isLoading ? "Memuat produk..." : `${products.length} produk tersedia`}
+                </span>
+                <Link
+                  to="/"
+                  className="story-link inline-flex items-center gap-2 font-medium uppercase tracking-[0.15em] text-primary"
+                >
+                  Kembali ke Home
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
             </div>
+
+            {/* Right col — discount cards */}
+            <div className="hidden lg:flex flex-col gap-3">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs uppercase tracking-[0.2em] text-primary font-medium">Diskon Spesial</p>
+                <Link
+                  to="/shop"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
+                >
+                  Lihat Semua <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+              {discounts.map((item, i) => (
+                <HeroDiscountCard key={item.product_unit_id} item={item} index={i} />
+              ))}
+            </div>
+
           </div>
         </div>
       </section>
-
-      {/* Discount Section */}
-      <DiscountSection />
 
       {/* Product Grid */}
       <section className="py-16 md:py-20">
         <div className="container">
           <div className="mb-10 space-y-5 animate-fade-in">
-            {/* Search result banner */}
             {searchQuery && (
               <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-accent/60 px-5 py-3.5 text-sm backdrop-blur-sm">
                 <Search className="h-4 w-4 shrink-0 text-primary" />
@@ -144,7 +243,6 @@ const Shop = () => {
               </div>
             )}
 
-            {/* Category filter banner */}
             {!searchQuery && activeCategoryName && (
               <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-accent/60 px-5 py-3.5 text-sm backdrop-blur-sm">
                 <Layers className="h-4 w-4 shrink-0 text-primary" />
@@ -163,7 +261,6 @@ const Shop = () => {
               </div>
             )}
 
-            {/* Status filter */}
             <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
               <button
                 onClick={() => setSelectedStatus("")}
@@ -189,7 +286,6 @@ const Shop = () => {
               </button>
             </div>
 
-            {/* Category chips */}
             <ScrollArea className="w-full">
               <div className="flex w-max space-x-2 pb-3">
                 <button
@@ -250,10 +346,7 @@ const Shop = () => {
             <div className="grid grid-cols-2 gap-5 md:gap-6 lg:grid-cols-4">
               {isLoading && products.length === 0
                 ? Array.from({ length: 8 }).map((_, index) => (
-                    <div
-                      key={index}
-                      className="aspect-[3/4] rounded-3xl bg-muted animate-pulse"
-                    />
+                    <div key={index} className="aspect-[3/4] rounded-3xl bg-muted animate-pulse" />
                   ))
                 : products.map((product) => (
                     <ProductCard key={product.id} p={product} />
