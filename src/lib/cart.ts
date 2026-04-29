@@ -38,6 +38,11 @@ export type CartItem = {
   calculation: CartSummary;
 };
 
+export type DirectCheckoutState = {
+  mode: "direct";
+  item: CartItem;
+};
+
 type CartResponseData = {
   summary: CartSummary;
   items: CartItem[];
@@ -51,6 +56,33 @@ export function dispatchCartStateChange() {
 
 export function getCartItemCountFromItems(items: CartItem[]) {
   return items.reduce((total, item) => total + item.quantity, 0);
+}
+
+export function createCartItemFromProduct(
+  product: ProductApiItem,
+  quantity: number,
+  userId: string,
+): CartItem {
+  const unitPrice = product.discount_flag ? product.final_price : product.price;
+  const totalPrice = product.price * quantity;
+  const discountAmount = product.discount_flag ? product.discount_amount * quantity : 0;
+  const finalPrice = unitPrice * quantity;
+
+  return {
+    id: 0,
+    user_id: userId,
+    product_id: product.product_id,
+    product_detail_id: product.product_detail_id,
+    product_unit_id: product.product_unit_id,
+    quantity,
+    is_selected: true,
+    product,
+    calculation: {
+      total_price: totalPrice,
+      discount_amount: discountAmount,
+      final_price: finalPrice,
+    },
+  };
 }
 
 export async function addToCart(request: AddToCartRequest) {
