@@ -112,6 +112,23 @@ export async function loginUser(credentials: AuthCredentials) {
   return postJson<LoginResponseData>("/auth/login", credentials);
 }
 
+// ---------- Forgot Password ----------
+export async function forgotPassword(email: string): Promise<ApiEnvelope<null>> {
+  return postAnyJson<null, { email: string }>("/auth/forgot-password", { email });
+}
+
+// ---------- Reset Password ----------
+export async function resetPassword(
+  token: string,
+  newPassword: string,
+  confirmPassword: string,
+): Promise<ApiEnvelope<null>> {
+  return postAnyJson<null, { token: string; new_password: string; confirm_password: string }>(
+    "/auth/reset-password",
+    { token, new_password: newPassword, confirm_password: confirmPassword },
+  );
+}
+
 let authUserCache: AuthUser | null = null;
 
 async function hashValue(value: string) {
