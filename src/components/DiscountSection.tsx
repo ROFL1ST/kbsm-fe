@@ -83,7 +83,7 @@ const SlideInfo = ({
                 display: "-webkit-box",
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: "vertical",
-                minHeight: "calc(1.25 * 2em)",
+                minHeight: "calc(1.2 * 2em)",
               }}
             >
               {item.name}
@@ -205,12 +205,12 @@ const DiscountSlider = ({ compact }: { compact?: boolean }) => {
 
   return (
     <div
-      className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-6 xl:gap-12 items-center"
+      className="grid grid-cols-1 lg:grid-cols-2 gap-2 lg:gap-6 xl:gap-12 items-center"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
       {/* ─ KIRI: Gambar — horizontal slide ─ */}
-      <div className={`relative overflow-hidden rounded-3xl luxury-shadow order-2 lg:order-1 ${
+      <div className={`relative overflow-hidden rounded-3xl luxury-shadow order-1 lg:order-1 ${
         compact ? "aspect-square" : "aspect-square lg:aspect-[4/5]"
       }`}>
         {/* Image track */}
@@ -233,8 +233,8 @@ const DiscountSlider = ({ compact }: { compact?: boolean }) => {
                   src={item.image}
                   alt={item.name}
                   loading="lazy"
-                  width={compact ? 600 : 900}
-                  height={compact ? 600 : 900}
+                  width={compact ? 400 : 900}
+                  height={compact ? 400 : 900}
                   className="w-full h-full object-cover"
                 />
               ) : (
