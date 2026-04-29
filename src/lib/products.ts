@@ -19,6 +19,7 @@ type ProductDetailApiResponse = {
 type FetchProductsOptions = {
   search?: string;
   categoryId?: number | string;
+  productUnitId?: number;
   size?: number;
   page?: number;
   status?: number | string;
@@ -104,6 +105,10 @@ export async function fetchProducts(options: FetchProductsOptions = {}) {
 
   if (options.categoryId !== undefined && options.categoryId !== "") {
     query.set("category_id", String(options.categoryId));
+  }
+
+  if (typeof options.productUnitId === "number" && Number.isFinite(options.productUnitId)) {
+    query.set("product_unit_id", String(options.productUnitId));
   }
 
   if (options.status !== undefined && options.status !== "") {
