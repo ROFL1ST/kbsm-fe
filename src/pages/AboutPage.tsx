@@ -6,13 +6,14 @@ import {
   ShieldCheck,
   Leaf,
   ArrowRight,
+  Star,
+  Quote,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
-import Testimonials from "@/components/Testimonials";
 import { cn } from "@/lib/utils";
 import kastaLogo from "@/assets/kasta.png";
 
@@ -57,6 +58,33 @@ const StatCard = ({
   );
 };
 
+const TESTIMONIALS = [
+  {
+    id: 1,
+    name: "Sari Dewi",
+    location: "Jakarta",
+    rating: 5,
+    text: "Produk Kasta BeautÃ© benar-benar mengubah rutinitas skincare saya. Kulit terasa lebih lembut dan cerah hanya dalam 2 minggu!",
+    avatar: "SD",
+  },
+  {
+    id: 2,
+    name: "Andini Putri",
+    location: "Bandung",
+    rating: 5,
+    text: "Saya sudah coba banyak brand lokal, tapi Kasta BeautÃ© tetap jadi favorit. Formulanya ringan, nggak bikin jerawat, dan wanginya enak banget.",
+    avatar: "AP",
+  },
+  {
+    id: 3,
+    name: "Maya Setiawan",
+    location: "Surabaya",
+    rating: 5,
+    text: "Pengiriman cepat, packaging premium, dan yang paling penting produknya memang terbukti hasilnya. Sudah langganan 1 tahun lebih!",
+    avatar: "MS",
+  },
+];
+
 const VALUES = [
   {
     icon: Leaf,
@@ -74,7 +102,7 @@ const VALUES = [
     icon: Heart,
     title: "Dibuat dengan Cinta",
     description:
-      "Setiap detail produk dirancang dengan penuh perhatian — dari formula hingga kemasan — karena kamu layak mendapatkan yang terbaik.",
+      "Setiap detail produk dirancang dengan penuh perhatian â€” dari formula hingga kemasan â€” karena kamu layak mendapatkan yang terbaik.",
   },
 ];
 
@@ -83,7 +111,7 @@ export default function AboutPage() {
   const [statsStarted, setStatsStarted] = useState(false);
 
   useEffect(() => {
-    document.title = "Tentang Kami — Kasta Beauté";
+    document.title = "Tentang Kami â€” Kasta BeautÃ©";
     window.scrollTo({ top: 0, behavior: "smooth" });
 
     const observer = new IntersectionObserver(
@@ -100,7 +128,7 @@ export default function AboutPage() {
     <main className="min-h-screen bg-background">
       <Navbar />
 
-      {/* 1. HERO */}
+      {/* 1. HERO â€” clean, no logo */}
       <section className="relative pt-40 md:pt-48 pb-20 md:pb-28 overflow-hidden bg-gradient-luxury">
         <div className="absolute inset-0 bg-gradient-glow pointer-events-none" />
         <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
@@ -119,8 +147,8 @@ export default function AboutPage() {
           </h1>
 
           <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed animate-fade-up delay-75">
-            Kasta Beauté hadir untuk merayakan kecantikan autentik setiap perempuan
-            Indonesia — dengan produk perawatan kulit yang jujur, aman, dan efektif.
+            Kasta BeautÃ© hadir untuk merayakan kecantikan autentik setiap perempuan
+            Indonesia â€” dengan produk perawatan kulit yang jujur, aman, dan efektif.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 animate-fade-up delay-100">
@@ -146,62 +174,76 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 2. BRAND STORY */}
+      {/* 2. BRAND STORY â€” logo besar di panel kiri dengan ornamen */}
       <section className="py-20 md:py-28">
         <div className="container">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
+
+            {/* Visual panel â€” logo centered dengan treatment elegan */}
             <div className="relative order-2 md:order-1 animate-fade-in">
+              {/* Background panel */}
               <div className="relative rounded-3xl overflow-hidden bg-gradient-luxury p-12 md:p-16 flex flex-col items-center justify-center gap-6 min-h-[420px]">
+                {/* Dekorasi lingkaran blur */}
                 <div className="absolute top-0 left-0 w-48 h-48 bg-primary/10 rounded-full blur-3xl" />
                 <div className="absolute bottom-0 right-0 w-48 h-48 bg-blush rounded-full blur-3xl" />
+
+                {/* Logo utama */}
                 <div className="relative z-10 flex flex-col items-center gap-4">
                   <img
                     src={kastaLogo}
-                    alt="Kasta Beauté"
+                    alt="Kasta BeautÃ©"
                     loading="lazy"
                     width={200}
                     height={200}
                     className="w-[160px] md:w-[200px] object-contain drop-shadow-2xl"
                   />
+                  {/* Divider tipis */}
                   <div className="w-16 h-px bg-primary/40" />
+                  {/* Tagline kecil */}
                   <p className="text-xs tracking-[0.3em] uppercase text-muted-foreground text-center">
-                    Est. 2020 · Bandung, Indonesia
+                    Est. 2020 Â· Bandung, Indonesia
                   </p>
                 </div>
               </div>
+
+              {/* Floating badge */}
               <div className="absolute -bottom-5 -right-5 md:bottom-8 md:-right-8 glass-card px-5 py-4 rounded-2xl space-y-0.5 shadow-lg animate-fade-up">
                 <p className="text-xs tracking-[0.15em] uppercase text-muted-foreground">Berdiri sejak</p>
                 <p className="font-display text-3xl">2020</p>
               </div>
             </div>
 
+            {/* Teks */}
             <div className="order-1 md:order-2 space-y-6 animate-fade-up">
               <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-xs tracking-[0.2em] uppercase text-primary">
                 <Sparkles className="h-3.5 w-3.5" />
                 Cerita Kami
               </div>
+
               <h2 className="font-display text-4xl md:text-5xl leading-tight">
                 Lahir dari{" "}
                 <em className="italic gradient-text">Kebutuhan Nyata</em>
               </h2>
+
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
-                  Kasta Beauté lahir dari satu keyakinan sederhana: setiap perempuan
+                  Kasta BeautÃ© lahir dari satu keyakinan sederhana: setiap perempuan
                   berhak mendapatkan produk perawatan kulit yang berkualitas tanpa harus
                   menguras kantong.
                 </p>
                 <p>
                   Berawal dari dapur kecil di Bandung pada 2020, kami meracik
-                  formula pertama kami dengan bahan-bahan alami lokal terbaik —
+                  formula pertama kami dengan bahan-bahan alami lokal terbaik â€”
                   memastikan setiap tetes produk aman, efektif, dan teruji secara
                   dermatologi.
                 </p>
                 <p>
                   Kini ribuan perempuan Indonesia telah mempercayakan rutinitas
-                  kecantikan mereka kepada Kasta Beauté, dan kami terus berinovasi
+                  kecantikan mereka kepada Kasta BeautÃ©, dan kami terus berinovasi
                   untuk menghadirkan yang terbaik bagi kulit tropis Indonesia.
                 </p>
               </div>
+
               <div className="flex flex-wrap gap-2 pt-2">
                 {["BPOM Certified", "Cruelty Free", "Vegan Friendly", "Made in Indonesia"].map((tag) => (
                   <Badge
@@ -231,6 +273,7 @@ export default function AboutPage() {
               <em className="italic gradient-text">Pelanggan</em>
             </h2>
           </div>
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <StatCard value={5000} suffix="+" label="Pelanggan Puas" started={statsStarted} />
             <StatCard value={50}   suffix="+" label="Produk Tersedia" started={statsStarted} />
@@ -250,13 +293,14 @@ export default function AboutPage() {
             </div>
             <h2 className="font-display text-4xl md:text-5xl">
               Mengapa Memilih{" "}
-              <em className="italic gradient-text">Kasta Beauté</em>?
+              <em className="italic gradient-text">Kasta BeautÃ©</em>?
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto text-sm leading-relaxed">
               Setiap produk yang kami hadirkan mencerminkan komitmen kami terhadap
               kualitas, keamanan, dan kecantikan yang berkelanjutan.
             </p>
           </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {VALUES.map(({ icon: Icon, title, description }, idx) => (
               <div
@@ -276,26 +320,69 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 5. CUSTOMER STORIES — shared component */}
-      <div className="bg-gradient-luxury">
-        <Testimonials />
-      </div>
+      {/* 5. TESTIMONIALS */}
+      <section className="py-20 md:py-28 bg-gradient-luxury">
+        <div className="container">
+          <div className="text-center mb-14 space-y-3 animate-fade-up">
+            <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-xs tracking-[0.2em] uppercase text-primary">
+              <Sparkles className="h-3.5 w-3.5" />
+              Kata Mereka
+            </div>
+            <h2 className="font-display text-4xl md:text-5xl">
+              Yang Pelanggan Kami{" "}
+              <em className="italic gradient-text">Rasakan</em>
+            </h2>
+          </div>
 
-      {/* 6. CTA */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {TESTIMONIALS.map((t, idx) => (
+              <div
+                key={t.id}
+                className="glass-card p-7 space-y-5 flex flex-col animate-fade-up"
+                style={{ animationDelay: `${idx * 120}ms` }}
+              >
+                <div className="flex gap-0.5">
+                  {Array.from({ length: t.rating }).map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-primary text-primary" />
+                  ))}
+                </div>
+                <div className="relative flex-1">
+                  <Quote className="h-6 w-6 text-primary/20 absolute -top-1 -left-1" />
+                  <p className="text-sm text-muted-foreground leading-relaxed pl-5">{t.text}</p>
+                </div>
+                <div className="flex items-center gap-3 pt-3 border-t border-border">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-semibold text-primary">{t.avatar}</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{t.name}</p>
+                    <p className="text-xs text-muted-foreground">{t.location}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 6. CTA â€” clean tanpa logo */}
       <section className="py-20 md:py-28">
         <div className="container">
           <div className="glass-card p-10 md:p-16 text-center space-y-7 max-w-3xl mx-auto relative overflow-hidden animate-fade-up">
             <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-blush rounded-full blur-3xl pointer-events-none" />
+
             <div className="relative space-y-5">
               <h2 className="font-display text-4xl md:text-5xl leading-tight text-balance">
                 Siap Merasakan{" "}
                 <em className="italic gradient-text">Perbedaannya</em>?
               </h2>
+
               <p className="text-muted-foreground leading-relaxed max-w-md mx-auto text-sm">
                 Temukan produk perawatan kulit yang tepat untuk kamu.
-                Ribuan perempuan Indonesia sudah merasakannya — sekarang giliran kamu.
+                Ribuan perempuan Indonesia sudah merasakannya â€” sekarang giliran kamu.
               </p>
+
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
                 <Button
                   asChild
