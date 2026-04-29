@@ -48,7 +48,38 @@ export type CheckoutRequest = {
   items: CheckoutItemPayload[];
 };
 
-type CheckoutResponse = ApiEnvelope<unknown> | null;
+export type CheckoutResponseData = {
+  purchase_order_id: string;
+  total: number;
+  ongkir: number;
+  final_total: number;
+};
+
+type CheckoutResponseEnvelope = ApiEnvelope<CheckoutResponseData>;
+type RawCheckoutResponse = ApiEnvelope<unknown> | null;
+
+function parseCheckoutResponseData(input: unknown): CheckoutResponseData | null {
+  if (!input || typeof input !== "object") {
+    return null;
+  }
+
+  const candidate = input as Record<string, unknown>;
+  const purchaseOrderId = candidate.purchase_order_id;
+  const total = Number(candidate.total ?? 0);
+  const ongkir = Number(candidate.ongkir ?? 0);
+  const finalTotal = Number(candidate.final_total ?? 0);
+
+  if (typeof purchaseOrderId !== "string" || purchaseOrderId.trim().length === 0) {
+    return null;
+  }
+
+  return {
+    purchase_order_id: purchaseOrderId,
+    total: Number.isFinite(total) ? total : 0,
+    ongkir: Number.isFinite(ongkir) ? ongkir : 0,
+    final_total: Number.isFinite(finalTotal) ? finalTotal : 0,
+  };
+}
 
 function parseShippingOptions(input: unknown, courier: string): ShippingOption[] {
   const source = Array.isArray(input)
@@ -143,7 +174,7 @@ export async function checkoutTransaction(request: CheckoutRequest) {
   });
 
   const rawText = await response.text();
-  let payload: CheckoutResponse = null;
+  let payload: RawCheckoutResponse = null;
 
   if (rawText) {
     try {
@@ -162,18 +193,18 @@ export async function checkoutTransaction(request: CheckoutRequest) {
     }
   }
 
-  if (!response.ok) {
+  if (!response.ok || !payload?.status) {
     throw new Error(
       payload?.error || payload?.message || rawText || "Checkout gagal diproses."
     );
   }
 
-  return (
-    payload ?? {
-      status: true,
-      message: "Checkout berhasil.",
-      data: null,
-      error: null,
-    }
-  );
+  const data = parseCheckoutResponseData(payload.data);
+
+  return {
+    status: payload.status,
+    message: payload.message,
+    data,
+    error: payload.error,
+  } satisfies CheckoutResponseEnvelope;
 }

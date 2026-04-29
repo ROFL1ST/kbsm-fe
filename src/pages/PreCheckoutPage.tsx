@@ -259,7 +259,7 @@ const PreCheckoutPage = () => {
         })),
       });
     },
-    onSuccess: async () => {
+    onSuccess: async (checkoutResult) => {
       const checkedOutCartItems = directItem
         ? []
         : reviewItems.filter((item) => item.id > 0);
@@ -296,10 +296,12 @@ const PreCheckoutPage = () => {
         queryClient.invalidateQueries({ queryKey: ["navbar-cart"] }),
       ]);
 
-      toast.success(
-        "Checkout berhasil dibuat. Lanjutkan pembayaran dari daftar transaksi.",
+      const purchaseOrderId = checkoutResult.data?.purchase_order_id?.trim();
+
+      toast.success("Checkout berhasil dibuat. Lanjutkan ke halaman pembayaran.");
+      navigate(
+        purchaseOrderId ? `/transactions/${purchaseOrderId}` : "/transactions",
       );
-      navigate("/transactions");
     },
     onError: (error) => {
       toast.error(

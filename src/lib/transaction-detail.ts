@@ -12,22 +12,39 @@ export async function fetchTransactionDetail(params: {
   userId: string;
   transactionId: string;
 }): Promise<TransactionDetailData> {
+  async function requestDetail(query: URLSearchParams) {
+    const result = await fetchAuth<TransactionDetailData>(
+      `/transaction/detail?${query.toString()}`
+    );
+
+    const raw = result as unknown as TransactionDetailResponse;
+
+    if (!raw.status) {
+      throw new Error(raw.message || "Gagal mengambil detail transaksi.");
+    }
+
+    return raw.data;
+  }
+
   const query = new URLSearchParams({
     user_id: params.userId,
     transaction_id: params.transactionId,
   });
 
-  const result = await fetchAuth<TransactionDetailData>(
-    `/transaction/detail?${query}`
-  );
+  try {
+    return await requestDetail(query);
+  } catch (error) {
+    const fallbackQuery = new URLSearchParams({
+      user_id: params.userId,
+      purchase_order_id: params.transactionId,
+    });
 
-  const raw = result as unknown as TransactionDetailResponse;
-
-  if (!raw.status) {
-    throw new Error(raw.message || "Gagal mengambil detail transaksi.");
+    try {
+      return await requestDetail(fallbackQuery);
+    } catch {
+      throw error;
+    }
   }
-
-  return raw.data;
 }
 
 export async function uploadTransactionProof({
