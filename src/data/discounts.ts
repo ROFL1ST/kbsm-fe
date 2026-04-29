@@ -1,3 +1,8 @@
+import productSerum from "@/assets/product-serum.jpg";
+import productCream from "@/assets/product-cream.jpg";
+import productSunscreen from "@/assets/product-sunscreen.jpg";
+import productCleanser from "@/assets/product-cleanser.jpg";
+
 export interface DiscountItem {
   product_id: number;
   product_detail_id: number;
@@ -18,7 +23,7 @@ const discounts: DiscountItem[] = [
     product_unit_id: 1,
     name: "Brightening Serum Vitamin C",
     category: "Serum",
-    image: "",
+    image: productSerum,
     original_price: 189000,
     discount_percentage: 30,
     final_price: 132300,
@@ -30,7 +35,7 @@ const discounts: DiscountItem[] = [
     product_unit_id: 2,
     name: "Hydrating Toner Rose Water",
     category: "Toner",
-    image: "",
+    image: productCream,
     original_price: 145000,
     discount_percentage: 25,
     final_price: 108750,
@@ -42,7 +47,7 @@ const discounts: DiscountItem[] = [
     product_unit_id: 3,
     name: "Nourishing Face Cream SPF 30",
     category: "Moisturizer",
-    image: "",
+    image: productSunscreen,
     original_price: 220000,
     discount_percentage: 20,
     final_price: 176000,
@@ -54,7 +59,7 @@ const discounts: DiscountItem[] = [
     product_unit_id: 4,
     name: "Gentle Foam Cleanser",
     category: "Cleanser",
-    image: "",
+    image: productCleanser,
     original_price: 99000,
     discount_percentage: 15,
     final_price: 84150,
