@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { Calendar, Clock, ArrowRight, BookOpen, Sparkles } from "lucide-react";
+import { useEffect, useMemo } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowRight, BookOpen, Calendar, Clock, Search, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Pagination,
   PaginationContent,
@@ -16,83 +16,79 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import {
-  blogPosts,
-  BLOG_CATEGORIES,
-  POSTS_PER_PAGE,
-  formatDate,
-  type BlogPost,
+  BLOGS_CACHE_TTL,
+  DEFAULT_BLOG_PAGE_SIZE,
+  fetchBlogCategories,
+  fetchBlogs,
+  formatBlogDate,
   type BlogCategory,
-} from "@/data/blogData";
+  type BlogPost,
+} from "@/lib/blogs";
 import { cn } from "@/lib/utils";
 
-/* ───────────────────────────── BlogCard ───────────────────────────── */
+const EMPTY_BLOGS: BlogPost[] = [];
 
 const BlogCard = ({ post, featured = false }: { post: BlogPost; featured?: boolean }) => (
   <article
     className={cn(
-      "group bg-card rounded-3xl overflow-hidden soft-shadow hover-lift flex flex-col",
-      featured && "md:col-span-2 md:flex-row"
+      "group flex flex-col overflow-hidden rounded-3xl bg-card soft-shadow hover-lift",
+      featured && "md:col-span-2 md:flex-row",
     )}
   >
-    {/* Image */}
     <div
       className={cn(
-        "relative overflow-hidden bg-gradient-nude shrink-0",
-        featured ? "md:w-1/2 aspect-video md:aspect-auto" : "aspect-video"
+        "relative shrink-0 overflow-hidden bg-gradient-nude",
+        featured ? "aspect-video md:w-1/2 md:aspect-auto" : "aspect-video",
       )}
     >
-      {post.featured && (
-        <span className="absolute top-4 left-4 z-10 bg-foreground text-background text-[10px] tracking-[0.2em] uppercase px-3 py-1.5 rounded-full">
+      {post.featured ? (
+        <span className="absolute left-4 top-4 z-10 rounded-full bg-foreground px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] text-background">
           Featured
         </span>
-      )}
+      ) : null}
       <img
         src={post.image}
         alt={post.title}
         loading="lazy"
-        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
       />
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
     </div>
 
-    {/* Content */}
-    <div className={cn("p-6 flex flex-col gap-3 flex-1", featured && "md:p-8 md:justify-center")}>
-      {/* Category */}
-      <span className="text-[11px] tracking-[0.2em] uppercase text-primary font-medium">
+    <div className={cn("flex flex-1 flex-col gap-3 p-6", featured && "md:justify-center md:p-8")}>
+      <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-primary">
         {post.category}
       </span>
-
-      {/* Title */}
       <h3
         className={cn(
-          "font-display leading-tight group-hover:text-primary transition-colors duration-300",
-          featured ? "text-2xl md:text-3xl" : "text-lg line-clamp-2"
+          "font-display leading-tight transition-colors duration-300 group-hover:text-primary",
+          featured ? "text-2xl md:text-3xl" : "line-clamp-2 text-lg",
         )}
       >
         {post.title}
       </h3>
-
-      {/* Excerpt */}
-      <p className={cn("text-sm text-muted-foreground leading-relaxed", featured ? "line-clamp-3" : "line-clamp-2")}>
+      <p
+        className={cn(
+          "text-sm leading-relaxed text-muted-foreground",
+          featured ? "line-clamp-3" : "line-clamp-2",
+        )}
+      >
         {post.excerpt}
       </p>
-
-      {/* Meta */}
-      <div className="flex items-center gap-4 mt-auto pt-3 border-t border-border">
+      <div className="mt-auto flex items-center gap-4 border-t border-border pt-3">
         <img
           src={post.authorAvatar}
           alt={post.author}
           className="h-8 w-8 rounded-full object-cover ring-2 ring-primary/20"
         />
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-foreground truncate">{post.author}</p>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-xs font-medium text-foreground">{post.author}</p>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
-              {formatDate(post.date)}
+              {formatBlogDate(post.date)}
             </span>
-            <span>·</span>
+            <span>•</span>
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               {post.readTime} min read
@@ -100,8 +96,8 @@ const BlogCard = ({ post, featured = false }: { post: BlogPost; featured?: boole
           </div>
         </div>
         <Link
-          to={`/blog/${post.slug}`}
-          className="shrink-0 h-9 w-9 rounded-full bg-foreground/5 hover:bg-primary hover:text-white flex items-center justify-center transition-colors duration-300"
+          to={`/blog/${post.id}`}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-foreground/5 transition-colors duration-300 hover:bg-primary hover:text-white"
           aria-label={`Read ${post.title}`}
         >
           <ArrowRight className="h-4 w-4" />
@@ -111,69 +107,119 @@ const BlogCard = ({ post, featured = false }: { post: BlogPost; featured?: boole
   </article>
 );
 
-/* ───────────────────────────── BlogPage ───────────────────────────── */
-
 const BlogPage = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [activeCategory, setActiveCategory] = useState<BlogCategory | "All">("All");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const page = Math.max(1, Number(searchParams.get("page") ?? 1) || 1);
+  const size = DEFAULT_BLOG_PAGE_SIZE;
+  const nameFilter = searchParams.get("name") ?? "";
+  const categoryBlogIdFilter = searchParams.get("category_blog_id") ?? "";
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ["blog-categories"],
+    queryFn: fetchBlogCategories,
+    staleTime: BLOGS_CACHE_TTL,
+    gcTime: BLOGS_CACHE_TTL * 2,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+
+  const {
+    data: blogResponse,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["blogs", { page, size, category_blog_id: categoryBlogIdFilter }],
+    queryFn: () => fetchBlogs({
+      page,
+      size,
+      category_blog_id: categoryBlogIdFilter || undefined,
+    }),
+    staleTime: BLOGS_CACHE_TTL,
+    gcTime: BLOGS_CACHE_TTL * 2,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+
+  const blogs = blogResponse?.data ?? EMPTY_BLOGS;
+  const meta = blogResponse?.meta ?? {
+    page,
+    size,
+    total: blogs.length,
+    totalPages: 1,
+  };
+
+  const activeCategoryName = useMemo(() => {
+    if (!categoryBlogIdFilter) {
+      return "All";
+    }
+
+    const category = categories.find((item) => String(item.id) === categoryBlogIdFilter);
+    return category?.name ?? "All";
+  }, [categories, categoryBlogIdFilter]);
+
+  const filteredBlogs = useMemo(() => {
+    if (!nameFilter.trim()) {
+      return blogs;
+    }
+
+    const keyword = nameFilter.trim().toLowerCase();
+    return blogs.filter((post) => post.title.toLowerCase().includes(keyword));
+  }, [blogs, nameFilter]);
+
+  const featuredPost = page === 1 && !nameFilter && !categoryBlogIdFilter ? filteredBlogs[0] ?? null : null;
+  const gridPosts = featuredPost
+    ? filteredBlogs.filter((post) => post.id !== featuredPost.id)
+    : filteredBlogs;
 
   useEffect(() => {
-    document.title = "Blog — Kasta Beauté | Tips & Inspirasi Kecantikan";
-    const meta = document.querySelector('meta[name="description"]');
+    document.title = "Blog - Kasta Beaute | Tips & Inspirasi Kecantikan";
+    const metaTag = document.querySelector('meta[name="description"]');
     const desc =
-      "Temukan tips skincare, panduan bahan aktif, tutorial kecantikan, dan inspirasi gaya hidup sehat dari para ahli kecantikan Kasta Beauté.";
-    if (meta) meta.setAttribute("content", desc);
-    else {
-      const m = document.createElement("meta");
-      m.name = "description";
-      m.content = desc;
-      document.head.appendChild(m);
+      "Temukan tips skincare, panduan bahan aktif, tutorial kecantikan, dan inspirasi gaya hidup sehat dari Kasta Beaute.";
+    if (metaTag) {
+      metaTag.setAttribute("content", desc);
+    } else {
+      const next = document.createElement("meta");
+      next.name = "description";
+      next.content = desc;
+      document.head.appendChild(next);
     }
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  // Reset to page 1 when category changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [activeCategory]);
+  const updateSearchParams = (updates: Record<string, string | null>) => {
+    const next = new URLSearchParams(searchParams);
 
-  const filteredPosts = useMemo(
-    () =>
-      activeCategory === "All"
-        ? blogPosts
-        : blogPosts.filter((p) => p.category === activeCategory),
-    [activeCategory]
-  );
+    Object.entries(updates).forEach(([key, value]) => {
+      if (!value) {
+        next.delete(key);
+      } else {
+        next.set(key, value);
+      }
+    });
 
-  const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE);
-  const paginatedPosts = filteredPosts.slice(
-    (currentPage - 1) * POSTS_PER_PAGE,
-    currentPage * POSTS_PER_PAGE
-  );
+    setSearchParams(next, { replace: true });
+  };
 
-  const featuredPost = currentPage === 1 && activeCategory === "All" ? blogPosts[0] : null;
-  const gridPosts = featuredPost
-    ? paginatedPosts.filter((p) => p.id !== featuredPost.id)
-    : paginatedPosts;
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+  const handlePageChange = (nextPage: number) => {
+    updateSearchParams({ page: String(nextPage) });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const getPageNumbers = () => {
     const pages: (number | "ellipsis")[] = [];
-    if (totalPages <= 5) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      pages.push(1);
-      if (currentPage > 3) pages.push("ellipsis");
-      const start = Math.max(2, currentPage - 1);
-      const end = Math.min(totalPages - 1, currentPage + 1);
-      for (let i = start; i <= end; i++) pages.push(i);
-      if (currentPage < totalPages - 2) pages.push("ellipsis");
-      pages.push(totalPages);
+    if (meta.totalPages <= 5) {
+      for (let i = 1; i <= meta.totalPages; i += 1) pages.push(i);
+      return pages;
     }
+
+    pages.push(1);
+    if (page > 3) pages.push("ellipsis");
+    const start = Math.max(2, page - 1);
+    const end = Math.min(meta.totalPages - 1, page + 1);
+    for (let i = start; i <= end; i += 1) pages.push(i);
+    if (page < meta.totalPages - 2) pages.push("ellipsis");
+    pages.push(meta.totalPages);
     return pages;
   };
 
@@ -181,33 +227,29 @@ const BlogPage = () => {
     <main className="min-h-screen bg-background">
       <Navbar />
 
-      {/* ── Hero Section ── */}
-      <section className="relative pt-40 md:pt-48 pb-16 md:pb-20 overflow-hidden bg-gradient-luxury">
+      <section className="relative overflow-hidden bg-gradient-luxury pb-16 pt-40 md:pb-20 md:pt-48">
         <div className="absolute inset-0 bg-gradient-glow pointer-events-none" />
-        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-20 -left-40 w-[400px] h-[400px] bg-blush rounded-full blur-3xl" />
+        <div className="absolute -right-40 -top-40 h-[500px] w-[500px] rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -bottom-20 -left-40 h-[400px] w-[400px] rounded-full bg-blush blur-3xl" />
 
-        <div className="container relative text-center space-y-6">
-          <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-xs tracking-[0.2em] uppercase text-primary animate-fade-in">
+        <div className="container relative space-y-6 text-center">
+          <div className="glass inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs uppercase tracking-[0.2em] text-primary animate-fade-in">
             <Sparkles className="h-3.5 w-3.5" />
             Beauty & Wellness
           </div>
 
-          <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-tight animate-fade-up">
-            Our Beauty{" "}
-            <em className="italic font-medium gradient-text">Blog</em>
+          <h1 className="animate-fade-up font-display text-5xl leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
+            Our Beauty <em className="gradient-text italic font-medium">Blog</em>
           </h1>
 
-          <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed animate-fade-up">
-            Tips skincare, panduan bahan aktif, tutorial kecantikan, dan inspirasi
-            gaya hidup sehat dari para ahli kami.
+          <p className="mx-auto max-w-xl animate-fade-up text-base leading-relaxed text-muted-foreground md:text-lg">
+            Tips skincare, panduan bahan aktif, tutorial kecantikan, dan inspirasi gaya hidup sehat dari para ahli kami.
           </p>
 
-          {/* Stats */}
-          <div className="flex justify-center gap-8 pt-4 animate-fade-up">
+          <div className="animate-fade-up flex justify-center gap-8 pt-4">
             {[
-              { icon: BookOpen, label: `${blogPosts.length} Articles` },
-              { icon: Calendar, label: "Updated Weekly" },
+              { icon: BookOpen, label: `${meta.total} Articles` },
+              { icon: Calendar, label: `Page ${meta.page}` },
               { icon: Sparkles, label: "Expert Verified" },
             ].map(({ icon: Icon, label }) => (
               <div key={label} className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -219,146 +261,195 @@ const BlogPage = () => {
         </div>
       </section>
 
-      {/* ── Category Filter ── */}
-      <section className="sticky top-[72px] z-40 bg-background/80 backdrop-blur-md border-b border-border py-4">
-        <div className="container">
+      <section className="sticky top-[72px] z-40 border-b border-border bg-background/80 py-4 backdrop-blur-md">
+        <div className="container space-y-4">
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {(["All", ...BLOG_CATEGORIES] as const).map((cat) => (
+            <button
+              onClick={() => updateSearchParams({ category_blog_id: null, page: "1" })}
+              className={cn(
+                "shrink-0 rounded-full px-5 py-2 text-sm font-medium transition-all duration-300",
+                !categoryBlogIdFilter
+                  ? "bg-foreground text-background"
+                  : "bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground",
+              )}
+            >
+              All
+            </button>
+            {categories.map((category: BlogCategory) => (
               <button
-                key={cat}
-                onClick={() => setActiveCategory(cat as BlogCategory | "All")}
+                key={category.id}
+                onClick={() => updateSearchParams({ category_blog_id: String(category.id), page: "1" })}
                 className={cn(
-                  "shrink-0 px-5 py-2 rounded-full text-sm font-medium transition-all duration-300",
-                  activeCategory === cat
+                  "shrink-0 rounded-full px-5 py-2 text-sm font-medium transition-all duration-300",
+                  categoryBlogIdFilter === String(category.id)
                     ? "bg-foreground text-background"
-                    : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-accent"
+                    : "bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
               >
-                {cat}
+                {category.name}
               </button>
             ))}
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-[minmax(0,220px)_minmax(0,220px)_auto]">
+            <input
+              type="text"
+              value={nameFilter}
+              onChange={(event) => updateSearchParams({ name: event.target.value || null, page: "1" })}
+              placeholder="Filter by nama artikel"
+              className="h-11 rounded-full border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+            <select
+              value={categoryBlogIdFilter}
+              onChange={(event) => updateSearchParams({ category_blog_id: event.target.value || null, page: "1" })}
+              className="h-11 rounded-full border border-border bg-background px-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+            >
+              <option value="">Semua kategori</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+            <div className="flex items-center justify-end">
+              <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={() => setSearchParams(new URLSearchParams(), { replace: true })}
+              >
+                Reset Filter
+              </Button>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── Blog Grid ── */}
       <section className="py-16 md:py-20">
         <div className="container space-y-12">
-          {/* Featured Post (only on page 1, no filter) */}
-          {featuredPost && (
-            <div className="animate-fade-in">
-              <BlogCard post={featuredPost} featured />
-            </div>
-          )}
-
-          {/* Grid */}
-          {gridPosts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-              {gridPosts.map((post) => (
-                <BlogCard key={post.id} post={post} />
+          {isLoading ? (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: size }).map((_, index) => (
+                <div key={index} className="aspect-[4/5] animate-pulse rounded-3xl bg-muted" />
               ))}
             </div>
-          ) : (
-            <div className="text-center py-20">
+          ) : isError ? (
+            <div className="py-20 text-center">
               <p className="font-display text-2xl text-muted-foreground">
-                Belum ada artikel di kategori ini.
+                {error instanceof Error ? error.message : "Gagal memuat artikel."}
               </p>
             </div>
-          )}
+          ) : (
+            <>
+              {featuredPost ? (
+                <div className="animate-fade-in">
+                  <BlogCard post={featuredPost} featured />
+                </div>
+              ) : null}
 
-          {/* ── Pagination ── */}
-          {totalPages > 1 && (
-            <div className="pt-8 animate-fade-in">
-              <Pagination>
-                <PaginationContent className="gap-1">
-                  <PaginationItem>
-                    <PaginationPrevious
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (currentPage > 1) handlePageChange(currentPage - 1);
-                      }}
-                      className={cn(
-                        "rounded-full transition-colors",
-                        currentPage === 1 && "pointer-events-none opacity-40"
-                      )}
-                    />
-                  </PaginationItem>
+              {gridPosts.length > 0 ? (
+                <div className="animate-fade-in grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {gridPosts.map((post) => (
+                    <BlogCard key={post.id} post={post} />
+                  ))}
+                </div>
+              ) : (
+                <div className="py-20 text-center">
+                  <Search className="mx-auto mb-4 h-10 w-10 text-muted-foreground/40" />
+                  <p className="font-display text-2xl text-muted-foreground">
+                    Belum ada artikel untuk filter ini.
+                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Filter aktif: kategori {activeCategoryName}, nama {nameFilter || "semua"}.
+                  </p>
+                </div>
+              )}
 
-                  {getPageNumbers().map((page, idx) =>
-                    page === "ellipsis" ? (
-                      <PaginationItem key={`ellipsis-${idx}`}>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    ) : (
-                      <PaginationItem key={page}>
-                        <PaginationLink
+              {meta.totalPages > 1 ? (
+                <div className="animate-fade-in pt-8">
+                  <Pagination>
+                    <PaginationContent className="gap-1">
+                      <PaginationItem>
+                        <PaginationPrevious
                           href="#"
-                          isActive={currentPage === page}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handlePageChange(page);
+                          onClick={(event) => {
+                            event.preventDefault();
+                            if (page > 1) handlePageChange(page - 1);
+                          }}
+                          className={cn("rounded-full transition-colors", page === 1 && "pointer-events-none opacity-40")}
+                        />
+                      </PaginationItem>
+
+                      {getPageNumbers().map((item, index) => (
+                        item === "ellipsis" ? (
+                          <PaginationItem key={`ellipsis-${index}`}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        ) : (
+                          <PaginationItem key={item}>
+                            <PaginationLink
+                              href="#"
+                              isActive={page === item}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                handlePageChange(item);
+                              }}
+                              className={cn(
+                                "h-10 w-10 rounded-full transition-colors",
+                                page === item && "border-foreground bg-foreground text-background hover:border-primary hover:bg-primary",
+                              )}
+                            >
+                              {item}
+                            </PaginationLink>
+                          </PaginationItem>
+                        )
+                      ))}
+
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            if (page < meta.totalPages) handlePageChange(page + 1);
                           }}
                           className={cn(
-                            "rounded-full w-10 h-10 transition-colors",
-                            currentPage === page &&
-                              "bg-foreground text-background border-foreground hover:bg-primary hover:border-primary"
+                            "rounded-full transition-colors",
+                            page === meta.totalPages && "pointer-events-none opacity-40",
                           )}
-                        >
-                          {page}
-                        </PaginationLink>
+                        />
                       </PaginationItem>
-                    )
-                  )}
+                    </PaginationContent>
+                  </Pagination>
 
-                  <PaginationItem>
-                    <PaginationNext
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (currentPage < totalPages) handlePageChange(currentPage + 1);
-                      }}
-                      className={cn(
-                        "rounded-full transition-colors",
-                        currentPage === totalPages && "pointer-events-none opacity-40"
-                      )}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-
-              <p className="text-center text-xs text-muted-foreground mt-3">
-                Halaman {currentPage} dari {totalPages} •{" "}
-                {filteredPosts.length} artikel
-              </p>
-            </div>
+                  <p className="mt-3 text-center text-xs text-muted-foreground">
+                    Halaman {meta.page} dari {meta.totalPages} • {meta.total} artikel
+                  </p>
+                </div>
+              ) : null}
+            </>
           )}
         </div>
       </section>
 
-      {/* ── Newsletter Banner ── */}
-      <section className="py-16 md:py-20 bg-gradient-luxury">
+      <section className="bg-gradient-luxury py-16 md:py-20">
         <div className="container">
-          <div className="glass-card p-10 md:p-14 text-center space-y-6 max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-xs tracking-[0.2em] uppercase text-primary">
+          <div className="glass-card mx-auto max-w-3xl space-y-6 p-10 text-center md:p-14">
+            <div className="glass inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs uppercase tracking-[0.2em] text-primary">
               <Sparkles className="h-3.5 w-3.5" />
               Weekly Tips
             </div>
-            <h2 className="font-display text-3xl md:text-4xl text-balance">
-              Dapatkan Tips Kecantikan{" "}
-              <em className="italic gradient-text">Langsung</em> ke Inbox-mu
+            <h2 className="font-display text-3xl text-balance md:text-4xl">
+              Dapatkan Tips Kecantikan <em className="gradient-text italic">Langsung</em> ke Inbox-mu
             </h2>
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              Subscribe dan dapatkan artikel eksklusif, tips skincare terbaru, dan
-              penawaran spesial setiap minggu.
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Subscribe dan dapatkan artikel eksklusif, tips skincare terbaru, dan penawaran spesial setiap minggu.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+            <div className="mx-auto flex max-w-md flex-col gap-3 sm:flex-row">
               <input
                 type="email"
                 placeholder="Email kamu..."
-                className="flex-1 px-5 py-3 rounded-full bg-background border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className="flex-1 rounded-full border border-border bg-background px-5 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
               />
-              <Button className="rounded-full bg-foreground text-background hover:bg-primary px-6 text-sm tracking-[0.1em] uppercase whitespace-nowrap">
+              <Button className="rounded-full bg-foreground px-6 text-sm uppercase tracking-[0.1em] text-background hover:bg-primary">
                 Subscribe
               </Button>
             </div>

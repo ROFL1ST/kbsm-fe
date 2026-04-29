@@ -21,7 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/sonner";
 import { getAuthUser, hasAccessToken } from "@/lib/auth";
 import { getDefaultUserAddress } from "@/lib/address";
-import { calculateCartSummary, fetchCart, type CartItem, type DirectCheckoutState } from "@/lib/cart";
+import { calculateCartSummary, fetchCart, removeCartItem, type CartItem, type CartResponseData, type DirectCheckoutState } from "@/lib/cart";
 import { checkoutTransaction, fetchDeliveryCost } from "@/lib/checkout";
 import { formatRupiah, getProductImages } from "@/lib/products";
 
@@ -60,6 +60,20 @@ const COURIERS = [
 
 function resolveReviewItems(items: CartItem[]) {
   return items.filter((item) => item.is_selected);
+}
+
+function removeCheckedOutItemsFromCartCache(currentCart: CartResponseData | undefined, checkedOutItemIds: number[]) {
+  if (!currentCart) {
+    return currentCart;
+  }
+
+  const nextItems = currentCart.items.filter((item) => !checkedOutItemIds.includes(item.id));
+
+  return {
+    ...currentCart,
+    items: nextItems,
+    summary: calculateCartSummary(nextItems),
+  };
 }
 
 const PreCheckoutPage = () => {
@@ -212,7 +226,7 @@ const PreCheckoutPage = () => {
           service: selectedShippingOption.service,
           description: selectedShippingOption.description,
           cost: selectedShippingOption.cost,
-          etd: selectedShippingOption.etd,
+          etd: selectedShippingOption.etd.trim() || "-",
         },
         items: reviewItems.map((item) => ({
           product_id: item.product_id,
@@ -223,6 +237,26 @@ const PreCheckoutPage = () => {
       });
     },
     onSuccess: async () => {
+      const checkedOutCartItems = directCheckoutItem
+        ? []
+        : reviewItems.filter((item) => item.id > 0);
+      const checkedOutCartItemIds = checkedOutCartItems.map((item) => item.id);
+
+      if (checkedOutCartItems.length > 0) {
+        await Promise.all(checkedOutCartItems.map((item) => removeCartItem(item.id)));
+      }
+
+      if (checkedOutCartItemIds.length > 0) {
+        queryClient.setQueryData<CartResponseData | undefined>(
+          ["pre-checkout-cart"],
+          (currentCart) => removeCheckedOutItemsFromCartCache(currentCart, checkedOutCartItemIds),
+        );
+        queryClient.setQueryData<CartResponseData | undefined>(
+          ["cart"],
+          (currentCart) => removeCheckedOutItemsFromCartCache(currentCart, checkedOutCartItemIds),
+        );
+      }
+
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["pre-checkout-cart"] }),
         queryClient.invalidateQueries({ queryKey: ["cart"] }),
