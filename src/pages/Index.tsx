@@ -35,10 +35,10 @@ const Index = () => {
       {/* <About /> */}
       <Marquee />
       <Benefits />
+      <Testimonials />
       <BestSellers />
       <Categories />
       <FlashSale />
-      <Testimonials />
       {/* <Newsletter /> */}
       <Footer />
       <WhatsAppFloat />
