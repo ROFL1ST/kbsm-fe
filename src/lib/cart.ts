@@ -14,8 +14,8 @@ type AddToCartResponse = {
 };
 
 type UpdateCartItemRequest = {
-  id: number;
-  quantity?: number;
+  cart_id: number;
+  quantity: number;
   is_selected?: boolean;
   user_id?: string;
 };
@@ -43,7 +43,7 @@ export type DirectCheckoutState = {
   item: CartItem;
 };
 
-type CartResponseData = {
+export type CartResponseData = {
   summary: CartSummary;
   items: CartItem[];
 };
@@ -58,15 +58,52 @@ export function getCartItemCountFromItems(items: CartItem[]) {
   return items.reduce((total, item) => total + item.quantity, 0);
 }
 
+export function calculateCartSummary(items: CartItem[]): CartSummary {
+  return items.reduce(
+    (summary, item) => ({
+      total_price: summary.total_price + item.calculation.total_price,
+      discount_amount: summary.discount_amount + item.calculation.discount_amount,
+      final_price: summary.final_price + item.calculation.final_price,
+    }),
+    {
+      total_price: 0,
+      discount_amount: 0,
+      final_price: 0,
+    },
+  );
+}
+
+export function calculateCartItemSummary(
+  product: ProductApiItem,
+  quantity: number,
+): CartSummary {
+  const unitPrice = product.discount_flag ? product.final_price : product.price;
+
+  return {
+    total_price: product.price * quantity,
+    discount_amount: product.discount_flag ? product.discount_amount * quantity : 0,
+    final_price: unitPrice * quantity,
+  };
+}
+
+export function updateCartItemLocally(
+  item: CartItem,
+  patch: Pick<UpdateCartItemRequest, "quantity" | "is_selected">,
+): CartItem {
+  return {
+    ...item,
+    quantity: patch.quantity,
+    is_selected: patch.is_selected ?? item.is_selected,
+    calculation: calculateCartItemSummary(item.product, patch.quantity),
+  };
+}
+
 export function createCartItemFromProduct(
   product: ProductApiItem,
   quantity: number,
   userId: string,
 ): CartItem {
   const unitPrice = product.discount_flag ? product.final_price : product.price;
-  const totalPrice = product.price * quantity;
-  const discountAmount = product.discount_flag ? product.discount_amount * quantity : 0;
-  const finalPrice = unitPrice * quantity;
 
   return {
     id: 0,
@@ -78,9 +115,9 @@ export function createCartItemFromProduct(
     is_selected: true,
     product,
     calculation: {
-      total_price: totalPrice,
-      discount_amount: discountAmount,
-      final_price: finalPrice,
+      total_price: product.price * quantity,
+      discount_amount: product.discount_flag ? product.discount_amount * quantity : 0,
+      final_price: unitPrice * quantity,
     },
   };
 }
@@ -122,31 +159,25 @@ export async function updateCartItem(request: UpdateCartItemRequest) {
     throw new Error("Token otentikasi tidak ditemukan. Silakan login kembali.");
   }
 
-  if (!Number.isFinite(request.id) || request.id <= 0) {
+  if (!Number.isFinite(request.cart_id) || request.cart_id <= 0) {
     throw new Error("Item keranjang tidak valid.");
   }
 
-  if (
-    request.quantity !== undefined &&
-    (!Number.isFinite(request.quantity) || request.quantity <= 0)
-  ) {
+  if (!Number.isFinite(request.quantity) || request.quantity <= 0) {
     throw new Error("Quantity produk harus lebih dari 0.");
   }
 
   const body: Record<string, unknown> = {
-    id: request.id,
+    cart_id: request.cart_id,
     user_id: userId,
+    quantity: request.quantity,
   };
-
-  if (request.quantity !== undefined) {
-    body.quantity = request.quantity;
-  }
 
   if (request.is_selected !== undefined) {
     body.is_selected = request.is_selected;
   }
 
-  const payload = await fetchAuth<UpdateCartItemResponse>("/carts", {
+  const payload = await fetchAuth<UpdateCartItemResponse>("/carts/update", {
     method: "PATCH",
     body: JSON.stringify(body),
   });
@@ -165,4 +196,17 @@ export async function fetchCart() {
   }
 
   return payload.data;
+}
+
+export async function removeCartItem(id: number) {
+  if (!Number.isFinite(id) || id <= 0) {
+    throw new Error("Item keranjang tidak valid.");
+  }
+
+  const payload = await fetchAuth<unknown>(`/carts/remove?cart_id=${encodeURIComponent(String(id))}`, {
+    method: "DELETE",
+  });
+
+  dispatchCartStateChange();
+  return payload;
 }
