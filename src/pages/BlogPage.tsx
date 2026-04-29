@@ -27,18 +27,24 @@ import { cn } from "@/lib/utils";
 
 /* ───────────────────────────── BlogCard ───────────────────────────── */
 
-const BlogCard = ({ post, featured = false }: { post: BlogPost; featured?: boolean }) => (
+const BlogCard = ({
+  post,
+  featured = false,
+}: {
+  post: BlogPost;
+  featured?: boolean;
+}) => (
   <article
     className={cn(
       "group bg-card rounded-3xl overflow-hidden soft-shadow hover-lift flex flex-col",
-      featured && "md:col-span-2 md:flex-row"
+      featured && "md:col-span-2 md:flex-row",
     )}
   >
     {/* Image */}
     <div
       className={cn(
         "relative overflow-hidden bg-gradient-nude shrink-0",
-        featured ? "md:w-1/2 aspect-video md:aspect-auto" : "aspect-video"
+        featured ? "md:w-1/2 aspect-video md:aspect-auto" : "aspect-video",
       )}
     >
       {post.featured && (
@@ -57,24 +63,39 @@ const BlogCard = ({ post, featured = false }: { post: BlogPost; featured?: boole
     </div>
 
     {/* Content */}
-    <div className={cn("p-6 flex flex-col gap-3 flex-1", featured && "md:p-8 md:justify-center")}>
+    <div
+      className={cn(
+        "p-6 flex flex-col gap-3 flex-1",
+        featured && "md:p-8 md:justify-center",
+      )}
+    >
       {/* Category */}
       <span className="text-[11px] tracking-[0.2em] uppercase text-primary font-medium">
         {post.category}
       </span>
 
       {/* Title */}
-      <h3
-        className={cn(
-          "font-display leading-tight group-hover:text-primary transition-colors duration-300",
-          featured ? "text-2xl md:text-3xl" : "text-lg line-clamp-2"
-        )}
+      <Link
+        to={`/blog/${post.slug}`}
+        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-4"
       >
-        {post.title}
-      </h3>
+        <h3
+          className={cn(
+            "font-display leading-tight transition-colors duration-300 hover:text-primary group-hover:text-primary",
+            featured ? "text-2xl md:text-3xl" : "line-clamp-2 text-lg",
+          )}
+        >
+          {post.title}
+        </h3>
+      </Link>
 
       {/* Excerpt */}
-      <p className={cn("text-sm text-muted-foreground leading-relaxed", featured ? "line-clamp-3" : "line-clamp-2")}>
+      <p
+        className={cn(
+          "text-sm text-muted-foreground leading-relaxed",
+          featured ? "line-clamp-3" : "line-clamp-2",
+        )}
+      >
         {post.excerpt}
       </p>
 
@@ -86,7 +107,9 @@ const BlogCard = ({ post, featured = false }: { post: BlogPost; featured?: boole
           className="h-8 w-8 rounded-full object-cover ring-2 ring-primary/20"
         />
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-foreground truncate">{post.author}</p>
+          <p className="text-xs font-medium text-foreground truncate">
+            {post.author}
+          </p>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
@@ -115,7 +138,9 @@ const BlogCard = ({ post, featured = false }: { post: BlogPost; featured?: boole
 
 const BlogPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeCategory, setActiveCategory] = useState<BlogCategory | "All">("All");
+  const [activeCategory, setActiveCategory] = useState<BlogCategory | "All">(
+    "All",
+  );
 
   useEffect(() => {
     document.title = "Blog — Kasta Beauté | Tips & Inspirasi Kecantikan";
@@ -142,16 +167,17 @@ const BlogPage = () => {
       activeCategory === "All"
         ? blogPosts
         : blogPosts.filter((p) => p.category === activeCategory),
-    [activeCategory]
+    [activeCategory],
   );
 
   const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE);
   const paginatedPosts = filteredPosts.slice(
     (currentPage - 1) * POSTS_PER_PAGE,
-    currentPage * POSTS_PER_PAGE
+    currentPage * POSTS_PER_PAGE,
   );
 
-  const featuredPost = currentPage === 1 && activeCategory === "All" ? blogPosts[0] : null;
+  const featuredPost =
+    currentPage === 1 && activeCategory === "All" ? blogPosts[0] : null;
   const gridPosts = featuredPost
     ? paginatedPosts.filter((p) => p.id !== featuredPost.id)
     : paginatedPosts;
@@ -199,8 +225,8 @@ const BlogPage = () => {
           </h1>
 
           <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed animate-fade-up">
-            Tips skincare, panduan bahan aktif, tutorial kecantikan, dan inspirasi
-            gaya hidup sehat dari para ahli kami.
+            Tips skincare, panduan bahan aktif, tutorial kecantikan, dan
+            inspirasi gaya hidup sehat dari para ahli kami.
           </p>
 
           {/* Stats */}
@@ -210,7 +236,10 @@ const BlogPage = () => {
               { icon: Calendar, label: "Updated Weekly" },
               { icon: Sparkles, label: "Expert Verified" },
             ].map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div
+                key={label}
+                className="flex items-center gap-2 text-sm text-muted-foreground"
+              >
                 <Icon className="h-4 w-4 text-primary" />
                 {label}
               </div>
@@ -231,7 +260,7 @@ const BlogPage = () => {
                   "shrink-0 px-5 py-2 rounded-full text-sm font-medium transition-all duration-300",
                   activeCategory === cat
                     ? "bg-foreground text-background"
-                    : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-accent"
+                    : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-accent",
                 )}
               >
                 {cat}
@@ -280,7 +309,7 @@ const BlogPage = () => {
                       }}
                       className={cn(
                         "rounded-full transition-colors",
-                        currentPage === 1 && "pointer-events-none opacity-40"
+                        currentPage === 1 && "pointer-events-none opacity-40",
                       )}
                     />
                   </PaginationItem>
@@ -302,13 +331,13 @@ const BlogPage = () => {
                           className={cn(
                             "rounded-full w-10 h-10 transition-colors",
                             currentPage === page &&
-                              "bg-foreground text-background border-foreground hover:bg-primary hover:border-primary"
+                              "bg-foreground text-background border-foreground hover:bg-primary hover:border-primary",
                           )}
                         >
                           {page}
                         </PaginationLink>
                       </PaginationItem>
-                    )
+                    ),
                   )}
 
                   <PaginationItem>
@@ -316,11 +345,13 @@ const BlogPage = () => {
                       href="#"
                       onClick={(e) => {
                         e.preventDefault();
-                        if (currentPage < totalPages) handlePageChange(currentPage + 1);
+                        if (currentPage < totalPages)
+                          handlePageChange(currentPage + 1);
                       }}
                       className={cn(
                         "rounded-full transition-colors",
-                        currentPage === totalPages && "pointer-events-none opacity-40"
+                        currentPage === totalPages &&
+                          "pointer-events-none opacity-40",
                       )}
                     />
                   </PaginationItem>
@@ -328,8 +359,8 @@ const BlogPage = () => {
               </Pagination>
 
               <p className="text-center text-xs text-muted-foreground mt-3">
-                Halaman {currentPage} dari {totalPages} •{" "}
-                {filteredPosts.length} artikel
+                Halaman {currentPage} dari {totalPages} • {filteredPosts.length}{" "}
+                artikel
               </p>
             </div>
           )}
@@ -337,7 +368,7 @@ const BlogPage = () => {
       </section>
 
       {/* ── Newsletter Banner ── */}
-      <section className="py-16 md:py-20 bg-gradient-luxury">
+      {/* <section className="py-16 md:py-20 bg-gradient-luxury">
         <div className="container">
           <div className="glass-card p-10 md:p-14 text-center space-y-6 max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-xs tracking-[0.2em] uppercase text-primary">
@@ -364,7 +395,7 @@ const BlogPage = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       <Footer />
       <WhatsAppFloat />

@@ -12,10 +12,11 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
+import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
-import { hasAccessToken } from "@/lib/auth";
-import { addToCart } from "@/lib/cart";
+import { getAuthUser, hasAccessToken } from "@/lib/auth";
+import { addToCart, createCartItemFromProduct, type DirectCheckoutState } from "@/lib/cart";
 import {
   fetchProducts,
   fetchProductDetail,
@@ -26,12 +27,13 @@ import {
 } from "@/lib/products";
 
 const ProductDetail = () => {
-  const navigate = useNavigate();
   const params = useParams();
+  const navigate = useNavigate();
   const productUnitId = Number(params.productUnitId);
   const mobileGalleryRef = useRef<HTMLDivElement | null>(null);
   const [activeMobileSlide, setActiveMobileSlide] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [loginPromptOpen, setLoginPromptOpen] = useState(false);
 
   const {
     data: product,
@@ -86,6 +88,7 @@ const ProductDetail = () => {
       : 0;
   const mobileSlides = productImages.length > 0 ? productImages : cardProduct ? [cardProduct.image] : [];
   const activeImage = mobileSlides[activeMobileSlide] ?? cardProduct?.image ?? "";
+  const authUser = getAuthUser();
 
   useEffect(() => {
     setActiveMobileSlide(0);
@@ -118,10 +121,19 @@ const ProductDetail = () => {
       const message = error instanceof Error ? error.message : "Gagal menambahkan produk ke keranjang.";
       toast.error(message);
       if (message.includes("login")) {
-        navigate("/login");
+        setLoginPromptOpen(true);
       }
     },
   });
+
+  const handleAddToCart = () => {
+    if (!hasAccessToken()) {
+      setLoginPromptOpen(true);
+      return;
+    }
+
+    addToCartMutation.mutate();
+  };
 
   const handleMobileGalleryScroll = () => {
     if (!mobileGalleryRef.current) {
@@ -158,6 +170,33 @@ const ProductDetail = () => {
     }
 
     setQuantity((current) => Math.min(product.total_quantity, current + 1));
+  };
+
+  const handleBuyNow = () => {
+    if (!product) {
+      toast.error("Produk tidak tersedia.");
+      return;
+    }
+
+    if (!hasAccessToken()) {
+      toast.error("Kamu harus login dulu sebelum melanjutkan checkout.");
+      navigate("/login");
+      return;
+    }
+
+    if (quantity <= 0) {
+      toast.error("Quantity produk harus lebih dari 0.");
+      return;
+    }
+
+    const directCheckoutState: DirectCheckoutState = {
+      mode: "direct",
+      item: createCartItemFromProduct(product, quantity, authUser?.id ?? ""),
+    };
+
+    navigate("/pre-checkout", {
+      state: directCheckoutState,
+    });
   };
 
   return (
@@ -373,12 +412,13 @@ const ProductDetail = () => {
                     <Button
                       variant="outline"
                       className="h-12 w-full rounded-xl border-foreground/20 bg-white text-foreground hover:bg-muted"
+                      onClick={handleBuyNow}
                     >
                       Beli Langsung
                     </Button>
                     <Button
                       className="h-12 w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
-                      onClick={() => addToCartMutation.mutate()}
+                      onClick={handleAddToCart}
                       disabled={addToCartMutation.isPending || product.total_quantity <= 0}
                     >
                       {addToCartMutation.isPending ? "Menambahkan..." : "+ Tambahkan ke Keranjang"}
@@ -517,12 +557,13 @@ const ProductDetail = () => {
             <Button
               variant="outline"
               className="h-12 w-full rounded-none border-foreground bg-white px-4 text-base font-semibold text-foreground hover:bg-muted"
+              onClick={handleBuyNow}
             >
               Beli Langsung
             </Button>
             <Button
               className="h-12 w-full rounded-xl bg-primary px-5 text-base font-semibold text-primary-foreground hover:bg-primary/90"
-              onClick={() => addToCartMutation.mutate()}
+              onClick={handleAddToCart}
               disabled={addToCartMutation.isPending || product.total_quantity <= 0}
             >
               {addToCartMutation.isPending ? "Menambahkan..." : "+ Keranjang"}
@@ -530,6 +571,11 @@ const ProductDetail = () => {
           </div>
         </div>
       ) : null}
+      <LoginRequiredDialog
+        open={loginPromptOpen}
+        onOpenChange={setLoginPromptOpen}
+        productName={cardProduct?.name}
+      />
       <WhatsAppFloat className="bottom-24 md:bottom-6" />
     </main>
   );

@@ -16,7 +16,7 @@ const AuthShell = ({ children }: AuthShellProps) => {
         <section className="w-full max-w-lg animate-scale-in">
           <Link to="/" className="mx-auto mb-8 flex w-fit items-center gap-2">
             <span className="font-display text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
-              Kasta<span className="text-primary italic">Beuate</span>
+              Kasta<span className="text-primary italic">Beaute</span>
             </span>
           </Link>
 

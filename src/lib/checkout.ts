@@ -1,4 +1,4 @@
-import { fetchAuth } from "./auth";
+import { fetchAuth, getApiBaseUrl, getAuthToken, type ApiEnvelope } from "./auth";
 
 type DeliveryCostRequest = {
   origin_subdistrict_id: number;
@@ -23,6 +23,32 @@ export type ShippingOption = {
   cost: number;
   etd: string;
 };
+
+export type CheckoutShippingPayload = {
+  name: string;
+  code: string;
+  service: string;
+  description: string;
+  cost: number;
+  etd: string;
+};
+
+export type CheckoutItemPayload = {
+  product_id: number;
+  product_detail_id: number;
+  product_unit_id: number;
+  quantity: number;
+};
+
+export type CheckoutRequest = {
+  user_address_id: number;
+  user_id: string;
+  payment_method_code: string;
+  shipping: CheckoutShippingPayload;
+  items: CheckoutItemPayload[];
+};
+
+type CheckoutResponse = ApiEnvelope<unknown> | null;
 
 function parseShippingOptions(input: unknown, courier: string): ShippingOption[] {
   const source = Array.isArray(input)
@@ -98,4 +124,56 @@ export async function fetchDeliveryCost(request: DeliveryCostRequest) {
   }) as DeliveryCostApiEnvelope;
 
   return parseShippingOptions(payload.data, request.courier);
+}
+
+export async function checkoutTransaction(request: CheckoutRequest) {
+  const token = getAuthToken();
+
+  if (!token) {
+    throw new Error("Token otentikasi tidak ditemukan. Silakan login kembali.");
+  }
+
+  const response = await fetch(`${getApiBaseUrl()}/transactions/checkout`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(request),
+  });
+
+  const rawText = await response.text();
+  let payload: CheckoutResponse = null;
+
+  if (rawText) {
+    try {
+      payload = JSON.parse(rawText) as ApiEnvelope<unknown>;
+    } catch {
+      if (!response.ok) {
+        throw new Error(rawText || "Checkout gagal diproses.");
+      }
+
+      return {
+        status: true,
+        message: "Checkout berhasil.",
+        data: null,
+        error: null,
+      } satisfies ApiEnvelope<unknown>;
+    }
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      payload?.error || payload?.message || rawText || "Checkout gagal diproses."
+    );
+  }
+
+  return (
+    payload ?? {
+      status: true,
+      message: "Checkout berhasil.",
+      data: null,
+      error: null,
+    }
+  );
 }

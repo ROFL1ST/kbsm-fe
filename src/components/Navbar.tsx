@@ -28,30 +28,30 @@ import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/use-debounce";
 import NavbarSearchDropdown from "@/components/NavbarSearchDropdown";
 
-const shopCategories = [
-  {
-    title: "Cleansers",
-    items: ["Foaming Cleanser", "Oil Cleanser", "Micellar Water"],
-  },
-  { title: "Serums", items: ["Vitamin C", "Niacinamide", "Hyaluronic Acid"] },
-  {
-    title: "Moisturizers",
-    items: ["Day Cream", "Night Cream", "Gel Moisturizer"],
-  },
-  { title: "Sunscreens", items: ["SPF 50+", "Tinted SPF", "Mineral SPF"] },
-  { title: "Masks", items: ["Sheet Mask", "Clay Mask", "Sleeping Mask"] },
-  { title: "Treatment", items: ["Acne Care", "Brightening", "Anti Aging"] },
-];
+// const shopCategories = [
+//   {
+//     title: "Cleansers",
+//     items: ["Foaming Cleanser", "Oil Cleanser", "Micellar Water"],
+//   },
+//   { title: "Serums", items: ["Vitamin C", "Niacinamide", "Hyaluronic Acid"] },
+//   {
+//     title: "Moisturizers",
+//     items: ["Day Cream", "Night Cream", "Gel Moisturizer"],
+//   },
+//   { title: "Sunscreens", items: ["SPF 50+", "Tinted SPF", "Mineral SPF"] },
+//   { title: "Masks", items: ["Sheet Mask", "Clay Mask", "Sleeping Mask"] },
+//   { title: "Treatment", items: ["Acne Care", "Brightening", "Anti Aging"] },
+// ];
 
 const navLinks = [
   { label: "Home", href: "/" },
-  { label: "Shop", href: "#shop", hasMega: true },
+  { label: "Shop", href: "/shop", hasMega: false },
   { label: "Best Seller", href: "#bestseller" },
-  { label: "New Arrivals", href: "#new" },
+  // { label: "New Arrivals", href: "#new" },
   { label: "Collections", href: "#collections" },
   { label: "About", href: "/about" },
   { label: "Blog", href: "/blog", isRoute: true },
-  { label: "Contact", href: "#contact" },
+  // { label: "Contact", href: "#contact" },
 ];
 
 const Navbar = () => {
@@ -169,13 +169,13 @@ const Navbar = () => {
       <div
         className={cn(
           "container flex items-center justify-between gap-4 ",
-          !scrolled  && "md:mt-7",
+          !scrolled && "md:mt-7",
         )}
       >
         {/* Logo */}
         <a href="/" className="flex items-center gap-2 shrink-0">
           <span className="font-display text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
-            Kasta<span className="text-primary italic">Beuate</span>
+            Kasta<span className="text-primary italic">Beaute</span>
           </span>
         </a>
 
@@ -186,7 +186,7 @@ const Navbar = () => {
               <div
                 key={link.label}
                 className="relative"
-                onMouseEnter={() => link.hasMega && setMegaOpen(true)}
+                onMouseEnter={() => link.hasMega && setMegaOpen(false)}
                 onMouseLeave={() => link.hasMega && setMegaOpen(false)}
               >
                 {link.isRoute ? (
@@ -205,7 +205,7 @@ const Navbar = () => {
                     {link.hasMega && <ChevronDown className="h-3 w-3" />}
                   </a>
                 )}
-                {link.hasMega && megaOpen && (
+                {/* {link.hasMega && megaOpen && (
                   <div className="fixed left-0 right-0 top-full mt-2 px-6 animate-fade-in">
                     <div className="container">
                       <div className="glass-card p-8 grid grid-cols-3 lg:grid-cols-6 gap-6">
@@ -231,7 +231,7 @@ const Navbar = () => {
                       </div>
                     </div>
                   </div>
-                )}
+                )} */}
               </div>
             ))}
           </nav>
@@ -487,7 +487,7 @@ const Navbar = () => {
                 >
                   {l.label}
                 </a>
-              )
+              ),
             )}
             {isLoggedIn ? (
               <>

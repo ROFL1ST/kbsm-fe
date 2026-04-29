@@ -14,12 +14,23 @@ import {
   PRODUCT_CACHE_TTL,
 } from "@/lib/products";
 
+type CategoryId = number | "";
+
 const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get("search") ?? "";
 
-  const [selectedCategory, setSelectedCategory] = useState<number | "">("");
-  const [selectedStatus, setSelectedStatus] = useState<number | "">("");
+  const categoryIdParam = searchParams.get("category_id");
+  const [selectedCategory, setSelectedCategory] = useState<CategoryId>(
+    categoryIdParam ? Number(categoryIdParam) : ""
+  );
+  const [selectedStatus, setSelectedStatus] = useState<CategoryId>("");
+
+  // Sync state saat URL berubah dari luar (navigasi dari Home)
+  useEffect(() => {
+    const id = searchParams.get("category_id");
+    setSelectedCategory(id ? Number(id) : "");
+  }, [searchParams]);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
@@ -33,7 +44,12 @@ const Shop = () => {
     isError,
   } = useQuery({
     queryKey: ["products", { search: searchQuery, category_id: selectedCategory, status: selectedStatus }],
-    queryFn: () => fetchProducts({ search: searchQuery, categoryId: selectedCategory, status: selectedStatus }),
+    queryFn: () =>
+      fetchProducts({
+        search: searchQuery,
+        categoryId: selectedCategory,
+        status: selectedStatus,
+      }),
     select: (items) => items.map(mapProductToCard),
     staleTime: PRODUCT_CACHE_TTL,
     gcTime: PRODUCT_CACHE_TTL * 2,
@@ -46,6 +62,22 @@ const Shop = () => {
     next.delete("search");
     setSearchParams(next, { replace: true });
   };
+
+  const handleCategorySelect = (id: CategoryId) => {
+    setSelectedCategory(id);
+    const next = new URLSearchParams(searchParams);
+    if (id === "") {
+      next.delete("category_id");
+    } else {
+      next.set("category_id", String(id));
+    }
+    setSearchParams(next, { replace: true });
+  };
+
+  const activeCategoryName =
+    selectedCategory !== ""
+      ? (categories.find((c) => c.id === selectedCategory)?.name ?? "")
+      : "";
 
   useEffect(() => {
     document.title = "Shop - Kasta Beaute";
@@ -87,7 +119,6 @@ const Shop = () => {
 
       <section className="py-16 md:py-20">
         <div className="container">
-          {/* Filters Section */}
           <div className="mb-10 space-y-5 animate-fade-in">
             {/* Search result banner */}
             {searchQuery && (
@@ -95,7 +126,7 @@ const Shop = () => {
                 <Search className="h-4 w-4 shrink-0 text-primary" />
                 <p className="flex-1 text-foreground">
                   Menampilkan hasil untuk{" "}
-                  <span className="font-semibold text-primary">"{searchQuery}"</span>
+                  <span className="font-semibold text-primary">&ldquo;{searchQuery}&rdquo;</span>
                 </p>
                 <button
                   onClick={clearSearch}
@@ -108,7 +139,26 @@ const Shop = () => {
               </div>
             )}
 
-            {/* Status filter (Semua / Best Seller) */}
+            {/* Category filter banner */}
+            {!searchQuery && activeCategoryName && (
+              <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-accent/60 px-5 py-3.5 text-sm backdrop-blur-sm">
+                <Layers className="h-4 w-4 shrink-0 text-primary" />
+                <p className="flex-1 text-foreground">
+                  Menampilkan kategori{" "}
+                  <span className="font-semibold text-primary">&ldquo;{activeCategoryName}&rdquo;</span>
+                </p>
+                <button
+                  onClick={() => handleCategorySelect("")}
+                  aria-label="Hapus filter kategori"
+                  className="flex items-center gap-1.5 rounded-full border border-border/60 bg-white/70 px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent active:bg-accent"
+                >
+                  <X className="h-3 w-3" />
+                  Hapus
+                </button>
+              </div>
+            )}
+
+            {/* Status filter */}
             <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
               <button
                 onClick={() => setSelectedStatus("")}
@@ -134,11 +184,11 @@ const Shop = () => {
               </button>
             </div>
 
-            {/* Category filter */}
+            {/* Category chips */}
             <ScrollArea className="w-full">
               <div className="flex w-max space-x-2 pb-3">
                 <button
-                  onClick={() => setSelectedCategory("")}
+                  onClick={() => handleCategorySelect("")}
                   className={`min-h-[44px] px-5 py-2.5 rounded-full text-sm font-medium transition-colors shadow-sm whitespace-nowrap ${
                     selectedCategory === ""
                       ? "bg-primary text-primary-foreground"
@@ -150,7 +200,7 @@ const Shop = () => {
                 {categories.map((cat) => (
                   <button
                     key={cat.id}
-                    onClick={() => setSelectedCategory(cat.id)}
+                    onClick={() => handleCategorySelect(cat.id)}
                     className={`min-h-[44px] px-5 py-2.5 rounded-full text-sm font-medium transition-colors shadow-sm whitespace-nowrap ${
                       selectedCategory === cat.id
                         ? "bg-primary text-primary-foreground"
@@ -182,7 +232,7 @@ const Shop = () => {
                 <button
                   onClick={() => {
                     clearSearch();
-                    setSelectedCategory("");
+                    handleCategorySelect("");
                     setSelectedStatus("");
                   }}
                   className="mt-6 min-h-[44px] px-6 text-sm font-medium text-primary hover:underline active:underline"

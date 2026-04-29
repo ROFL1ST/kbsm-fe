@@ -32,14 +32,14 @@ const Index = () => {
     <main className="min-h-screen bg-background">
       <Navbar />
       <Hero />
-      <About />
+      {/* <About /> */}
       <Marquee />
       <Benefits />
       <BestSellers />
       <Categories />
       <FlashSale />
       <Testimonials />
-      <Newsletter />
+      {/* <Newsletter /> */}
       <Footer />
       <WhatsAppFloat />
     </main>
