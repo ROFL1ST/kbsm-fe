@@ -57,17 +57,15 @@ const ProductDetail = () => {
     data: relatedProducts = [],
     isLoading: isRelatedLoading,
   } = useQuery({
-    queryKey: ["related-products", product?.category_id],
+    queryKey: ["related-products", product?.category_id, productUnitId],
     queryFn: () =>
       fetchProducts({
         categoryId: product!.category_id,
+        productUnitId,
         size: 10,
         page: 1,
       }),
-    select: (items) =>
-      items
-        .filter((item) => item.product_unit_id !== productUnitId)
-        .map(mapProductToCard),
+    select: (items) => items.map(mapProductToCard),
     enabled: typeof product?.category_id === "number" && product.category_id > 0,
     staleTime: PRODUCT_CACHE_TTL,
     gcTime: PRODUCT_CACHE_TTL * 2,
@@ -463,7 +461,6 @@ const ProductDetail = () => {
 
               {/* ── Produk Terkait ── */}
               <div className="border-t border-border/60 pt-8">
-                {/* Section label */}
                 <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                   <div className="space-y-1.5">
                     <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium tracking-widest text-primary uppercase">
@@ -486,7 +483,6 @@ const ProductDetail = () => {
                   </Link>
                 </div>
 
-                {/* Skeleton */}
                 {isRelatedLoading ? (
                   <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
                     {Array.from({ length: 5 }).map((_, index) => (
@@ -497,14 +493,12 @@ const ProductDetail = () => {
                     ))}
                   </div>
                 ) : relatedProducts.length > 0 ? (
-                  /* Product grid */
                   <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
                     {relatedProducts.map((relatedProduct) => (
                       <ProductCard key={relatedProduct.id} p={relatedProduct} />
                     ))}
                   </div>
                 ) : (
-                  /* Empty state */
                   <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-border/60 bg-muted/30 py-14 text-center">
                     <PackageSearch className="h-10 w-10 text-muted-foreground/40" />
                     <p className="text-sm font-medium text-muted-foreground">
