@@ -15,8 +15,8 @@ import WhatsAppFloat from "@/components/WhatsAppFloat";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
-import { hasAccessToken } from "@/lib/auth";
-import { addToCart } from "@/lib/cart";
+import { getAuthUser, hasAccessToken } from "@/lib/auth";
+import { addToCart, createCartItemFromProduct, type DirectCheckoutState } from "@/lib/cart";
 import {
   fetchProducts,
   fetchProductDetail,
@@ -87,6 +87,7 @@ const ProductDetail = () => {
       : 0;
   const mobileSlides = productImages.length > 0 ? productImages : cardProduct ? [cardProduct.image] : [];
   const activeImage = mobileSlides[activeMobileSlide] ?? cardProduct?.image ?? "";
+  const authUser = getAuthUser();
 
   useEffect(() => {
     setActiveMobileSlide(0);
@@ -168,6 +169,33 @@ const ProductDetail = () => {
     }
 
     setQuantity((current) => Math.min(product.total_quantity, current + 1));
+  };
+
+  const handleBuyNow = () => {
+    if (!product) {
+      toast.error("Produk tidak tersedia.");
+      return;
+    }
+
+    if (!hasAccessToken()) {
+      toast.error("Kamu harus login dulu sebelum melanjutkan checkout.");
+      navigate("/login");
+      return;
+    }
+
+    if (quantity <= 0) {
+      toast.error("Quantity produk harus lebih dari 0.");
+      return;
+    }
+
+    const directCheckoutState: DirectCheckoutState = {
+      mode: "direct",
+      item: createCartItemFromProduct(product, quantity, authUser?.id ?? ""),
+    };
+
+    navigate("/pre-checkout", {
+      state: directCheckoutState,
+    });
   };
 
   return (
@@ -383,6 +411,7 @@ const ProductDetail = () => {
                     <Button
                       variant="outline"
                       className="h-12 w-full rounded-xl border-foreground/20 bg-white text-foreground hover:bg-muted"
+                      onClick={handleBuyNow}
                     >
                       Beli Langsung
                     </Button>
@@ -527,6 +556,7 @@ const ProductDetail = () => {
             <Button
               variant="outline"
               className="h-12 w-full rounded-none border-foreground bg-white px-4 text-base font-semibold text-foreground hover:bg-muted"
+              onClick={handleBuyNow}
             >
               Beli Langsung
             </Button>

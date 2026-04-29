@@ -1,14 +1,15 @@
 import { useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
-  Calendar,
-  Clock,
-  Tag,
-  ChevronRight,
-  Sparkles,
-  Share2,
   BookOpen,
+  Calendar,
+  ChevronRight,
+  Clock,
+  Share2,
+  Sparkles,
+  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,19 +18,18 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import {
-  getPostBySlug,
-  getRelatedPosts,
-  formatDate,
+  BLOGS_CACHE_TTL,
+  fetchBlogById,
+  fetchBlogsByCategory,
+  formatBlogDate,
   type BlogPost,
-} from "@/data/blogData";
+} from "@/lib/blogs";
 import { cn } from "@/lib/utils";
-
-/* ───────────────────────────── Related Card ───────────────────────────── */
 
 const RelatedCard = ({ post }: { post: BlogPost }) => (
   <Link
-    to={`/blog/${post.slug}`}
-    className="group bg-card rounded-3xl overflow-hidden soft-shadow hover-lift flex flex-col"
+    to={`/blog/${post.id}`}
+    className="group flex flex-col overflow-hidden rounded-3xl bg-card soft-shadow hover-lift"
     onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
   >
     <div className="aspect-video overflow-hidden bg-gradient-nude">
@@ -37,20 +37,20 @@ const RelatedCard = ({ post }: { post: BlogPost }) => (
         src={post.image}
         alt={post.title}
         loading="lazy"
-        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
       />
     </div>
-    <div className="p-5 flex flex-col gap-2 flex-1">
-      <span className="text-[11px] tracking-[0.2em] uppercase text-primary font-medium">
+    <div className="flex flex-1 flex-col gap-2 p-5">
+      <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-primary">
         {post.category}
       </span>
-      <h3 className="font-display text-base leading-tight line-clamp-2 group-hover:text-primary transition-colors duration-300">
+      <h3 className="line-clamp-2 font-display text-base leading-tight transition-colors duration-300 group-hover:text-primary">
         {post.title}
       </h3>
-      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-auto pt-2">
+      <div className="mt-auto flex items-center gap-2 pt-2 text-xs text-muted-foreground">
         <Calendar className="h-3 w-3" />
-        {formatDate(post.date)}
-        <span>·</span>
+        {formatBlogDate(post.date)}
+        <span>•</span>
         <Clock className="h-3 w-3" />
         {post.readTime} min read
       </div>
@@ -58,83 +58,129 @@ const RelatedCard = ({ post }: { post: BlogPost }) => (
   </Link>
 );
 
-/* ───────────────────────────── BlogDetailPage ───────────────────────────── */
-
 const BlogDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const post = slug ? getPostBySlug(slug) : undefined;
+  const blogId = Number(slug ?? 0);
+
+  const {
+    data: post,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["blog-detail", blogId],
+    queryFn: () => fetchBlogById(blogId),
+    enabled: Number.isFinite(blogId) && blogId > 0,
+    staleTime: BLOGS_CACHE_TTL,
+    gcTime: BLOGS_CACHE_TTL * 2,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+
+  const { data: relatedResponse } = useQuery({
+    queryKey: ["related-blogs", post?.category_blog_id],
+    queryFn: () => fetchBlogsByCategory(post!.category_blog_id!, 4),
+    enabled: Boolean(post?.category_blog_id),
+    staleTime: BLOGS_CACHE_TTL,
+    gcTime: BLOGS_CACHE_TTL * 2,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+
+  useEffect(() => {
+    if (!Number.isFinite(blogId) || blogId <= 0) {
+      navigate("/blog", { replace: true });
+    }
+  }, [blogId, navigate]);
+
+  useEffect(() => {
+    if (isLoading) {
+      return;
+    }
+
+    if (!post && !isLoading) {
+      navigate("/blog", { replace: true });
+    }
+  }, [isLoading, navigate, post]);
 
   useEffect(() => {
     if (!post) {
-      navigate("/blog", { replace: true });
       return;
     }
-    document.title = `${post.title} — Kasta Beauté Blog`;
-    const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute("content", post.excerpt);
-    else {
-      const m = document.createElement("meta");
-      m.name = "description";
-      m.content = post.excerpt;
-      document.head.appendChild(m);
+
+    document.title = `${post.title} - Kasta Beaute Blog`;
+    const metaTag = document.querySelector('meta[name="description"]');
+    if (metaTag) {
+      metaTag.setAttribute("content", post.excerpt);
+    } else {
+      const next = document.createElement("meta");
+      next.name = "description";
+      next.content = post.excerpt;
+      document.head.appendChild(next);
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [post, navigate]);
+  }, [post]);
 
-  if (!post) return null;
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-background">
+        <Navbar />
+        <section className="pt-32">
+          <div className="container">
+            <div className="h-[32rem] animate-pulse rounded-3xl bg-muted" />
+          </div>
+        </section>
+      </main>
+    );
+  }
 
-  const relatedPosts = getRelatedPosts(post);
+  if (isError || !post) {
+    return null;
+  }
+
+  const relatedPosts = (relatedResponse?.data ?? []).filter((item) => item.id !== post.id).slice(0, 3);
 
   const handleShare = async () => {
     if (navigator.share) {
       await navigator.share({ title: post.title, url: window.location.href });
-    } else {
-      await navigator.clipboard.writeText(window.location.href);
+      return;
     }
+
+    await navigator.clipboard.writeText(window.location.href);
   };
 
   return (
     <main className="min-h-screen bg-background">
       <Navbar />
 
-      {/* ── Hero Image ── */}
-      <section className="relative pt-24 md:pt-28 overflow-hidden bg-gradient-luxury">
+      <section className="relative overflow-hidden bg-gradient-luxury pt-24 md:pt-28">
         <div className="absolute inset-0 bg-gradient-glow pointer-events-none" />
-        <div className="absolute -top-32 -right-32 w-[400px] h-[400px] bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute -right-32 -top-32 h-[400px] w-[400px] rounded-full bg-primary/10 blur-3xl" />
 
         <div className="container relative">
-          {/* Breadcrumb */}
-          <nav
-            aria-label="breadcrumb"
-            className="flex items-center gap-1.5 text-xs text-muted-foreground mb-8 pt-8 animate-fade-in"
-          >
-            <Link to="/" className="hover:text-primary transition-colors">
+          <nav aria-label="breadcrumb" className="mb-8 flex items-center gap-1.5 pt-8 text-xs text-muted-foreground animate-fade-in">
+            <Link to="/" className="transition-colors hover:text-primary">
               Home
             </Link>
             <ChevronRight className="h-3 w-3" />
-            <Link to="/blog" className="hover:text-primary transition-colors">
+            <Link to="/blog" className="transition-colors hover:text-primary">
               Blog
             </Link>
             <ChevronRight className="h-3 w-3" />
-            <span className="text-foreground line-clamp-1 max-w-[200px] sm:max-w-none">
-              {post.title}
-            </span>
+            <span className="line-clamp-1 max-w-[200px] text-foreground sm:max-w-none">{post.title}</span>
           </nav>
 
-          {/* Article Header */}
-          <div className="max-w-3xl mx-auto text-center space-y-5 pb-12 animate-fade-up">
-            <span className="inline-block text-[11px] tracking-[0.2em] uppercase text-primary font-medium">
+          <div className="mx-auto max-w-3xl space-y-5 pb-12 text-center animate-fade-up">
+            <span className="inline-block text-[11px] font-medium uppercase tracking-[0.2em] text-primary">
               {post.category}
             </span>
-            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl leading-[1.1] tracking-tight text-balance">
+            <h1 className="font-display text-4xl leading-[1.1] tracking-tight text-balance sm:text-5xl lg:text-6xl">
               {post.title}
             </h1>
-            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+            <p className="text-base leading-relaxed text-muted-foreground md:text-lg">
               {post.excerpt}
             </p>
 
-            {/* Author + Meta */}
             <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
               <div className="flex items-center gap-3">
                 <img
@@ -144,60 +190,53 @@ const BlogDetailPage = () => {
                 />
                 <div className="text-left">
                   <p className="text-sm font-semibold text-foreground">{post.author}</p>
-                  <p className="text-xs text-muted-foreground">{post.authorBio.split(" dengan")[0]}</p>
+                  <p className="text-xs text-muted-foreground">{post.authorBio}</p>
                 </div>
               </div>
-              <Separator orientation="vertical" className="h-8 hidden sm:block" />
+              <Separator orientation="vertical" className="hidden h-8 sm:block" />
               <div className="flex items-center gap-3 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1.5">
                   <Calendar className="h-4 w-4 text-primary" />
-                  {formatDate(post.date)}
+                  {formatBlogDate(post.date)}
                 </span>
-                <span>·</span>
+                <span>•</span>
                 <span className="flex items-center gap-1.5">
                   <Clock className="h-4 w-4 text-primary" />
                   {post.readTime} min read
                 </span>
-                <span>·</span>
+                <span>•</span>
                 <span className="flex items-center gap-1.5">
                   <BookOpen className="h-4 w-4 text-primary" />
-                  {post.tags.length} tags
+                  {Math.max(post.tags.length, 1)} tags
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Hero image */}
-          <div className="max-w-4xl mx-auto animate-scale-in">
-            <div className="relative aspect-video rounded-[2rem] overflow-hidden luxury-shadow">
-              <img
-                src={post.image}
-                alt={post.title}
-                className="w-full h-full object-cover"
-              />
+          <div className="mx-auto max-w-4xl animate-scale-in">
+            <div className="relative aspect-video overflow-hidden rounded-[2rem] luxury-shadow">
+              <img src={post.image} alt={post.title} className="h-full w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-foreground/10 to-transparent" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Article Body ── */}
       <section className="py-16 md:py-20">
         <div className="container">
-          <div className="max-w-3xl mx-auto">
-            {/* Back + Share */}
-            <div className="flex items-center justify-between mb-10">
+          <div className="mx-auto max-w-3xl">
+            <div className="mb-10 flex items-center justify-between">
               <Link
                 to="/blog"
-                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group"
+                className="group inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary"
               >
-                <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+                <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
                 Semua Artikel
               </Link>
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-full border-foreground/20 hover:bg-foreground hover:text-background gap-2 text-xs"
+                className="gap-2 rounded-full border-foreground/20 text-xs hover:bg-foreground hover:text-background"
                 onClick={handleShare}
               >
                 <Share2 className="h-3.5 w-3.5" />
@@ -205,28 +244,18 @@ const BlogDetailPage = () => {
               </Button>
             </div>
 
-            {/* Article content */}
-            <div
-              className={cn(
-                "prose-blog",
-                "text-foreground leading-relaxed"
-              )}
-              dangerouslySetInnerHTML={{ __html: post.content }}
-            />
+            <div className={cn("prose-blog text-foreground leading-relaxed")} dangerouslySetInnerHTML={{ __html: post.content }} />
 
-            {/* Author card */}
-            <div className="mt-12 p-6 glass-card rounded-3xl flex items-start gap-4">
+            <div className="glass-card mt-12 flex items-start gap-4 rounded-3xl p-6">
               <img
                 src={post.authorAvatar}
                 alt={post.author}
-                className="h-14 w-14 rounded-full object-cover ring-2 ring-primary/20 shrink-0"
+                className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-primary/20"
               />
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="font-display font-semibold text-foreground">
-                    {post.author}
-                  </p>
-                  <span className="text-[10px] tracking-[0.2em] uppercase text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                <div className="mb-1 flex items-center gap-2">
+                  <p className="font-display font-semibold text-foreground">{post.author}</p>
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-primary">
                     Author
                   </span>
                 </div>
@@ -234,17 +263,16 @@ const BlogDetailPage = () => {
               </div>
             </div>
 
-            {/* Tags */}
             <div className="mt-8 flex flex-wrap gap-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mr-2">
+              <div className="mr-2 flex items-center gap-2 text-sm text-muted-foreground">
                 <Tag className="h-4 w-4 text-primary" />
                 Tags:
               </div>
-              {post.tags.map((tag) => (
+              {(post.tags.length > 0 ? post.tags : [post.category]).map((tag) => (
                 <Badge
                   key={tag}
                   variant="secondary"
-                  className="rounded-full px-3 py-1 text-xs font-normal bg-accent text-accent-foreground hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer"
+                  className="cursor-pointer rounded-full bg-accent px-3 py-1 text-xs font-normal text-accent-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
                 >
                   {tag}
                 </Badge>
@@ -253,8 +281,7 @@ const BlogDetailPage = () => {
 
             <Separator className="my-10" />
 
-            {/* Share section */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-gradient-luxury rounded-3xl">
+            <div className="flex flex-col items-center justify-between gap-4 rounded-3xl bg-gradient-luxury p-6 sm:flex-row">
               <div>
                 <p className="font-display text-lg">Suka artikel ini?</p>
                 <p className="text-sm text-muted-foreground">
@@ -262,7 +289,7 @@ const BlogDetailPage = () => {
                 </p>
               </div>
               <Button
-                className="rounded-full bg-foreground text-background hover:bg-primary gap-2 shrink-0"
+                className="shrink-0 gap-2 rounded-full bg-foreground text-background hover:bg-primary"
                 onClick={handleShare}
               >
                 <Share2 className="h-4 w-4" />
@@ -273,50 +300,35 @@ const BlogDetailPage = () => {
         </div>
       </section>
 
-      {/* ── Related Articles ── */}
-      {relatedPosts.length > 0 && (
-        <section className="py-16 md:py-20 bg-gradient-luxury">
+      {relatedPosts.length > 0 ? (
+        <section className="bg-gradient-luxury py-16 md:py-20">
           <div className="container">
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
+            <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-xs tracking-[0.3em] uppercase text-primary mb-2 flex items-center gap-2">
+                <p className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-primary">
                   <Sparkles className="h-3.5 w-3.5" />
                   More from {post.category}
                 </p>
                 <h2 className="font-display text-3xl md:text-4xl">
-                  Artikel <em className="italic gradient-text">Terkait</em>
+                  Artikel <em className="gradient-text italic">Terkait</em>
                 </h2>
               </div>
               <Link
-                to="/blog"
-                className="story-link text-sm font-medium tracking-[0.15em] uppercase text-primary"
+                to={post.category_blog_id ? `/blog?category_blog_id=${post.category_blog_id}` : "/blog"}
+                className="story-link text-sm font-medium uppercase tracking-[0.15em] text-primary"
               >
                 Lihat Semua →
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-              {relatedPosts.map((p) => (
-                <RelatedCard key={p.id} post={p} />
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 animate-fade-in">
+              {relatedPosts.map((item) => (
+                <RelatedCard key={item.id} post={item} />
               ))}
             </div>
-
-            {/* CTA if < 3 related */}
-            {relatedPosts.length < 3 && (
-              <div className="text-center mt-10">
-                <Link to="/blog">
-                  <Button
-                    variant="outline"
-                    className="rounded-full border-foreground/20 hover:bg-foreground hover:text-background px-8 text-sm tracking-[0.15em] uppercase"
-                  >
-                    Lihat Semua Artikel
-                  </Button>
-                </Link>
-              </div>
-            )}
           </div>
         </section>
-      )}
+      ) : null}
 
       <Footer />
       <WhatsAppFloat />
