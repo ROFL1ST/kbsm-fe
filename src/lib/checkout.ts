@@ -1,4 +1,4 @@
-import { fetchAuth } from "./auth";
+import { fetchAuth, getApiBaseUrl, getAuthToken, type ApiEnvelope } from "./auth";
 
 type DeliveryCostRequest = {
   origin_subdistrict_id: number;
@@ -47,6 +47,8 @@ export type CheckoutRequest = {
   shipping: CheckoutShippingPayload;
   items: CheckoutItemPayload[];
 };
+
+type CheckoutResponse = ApiEnvelope<unknown> | null;
 
 function parseShippingOptions(input: unknown, courier: string): ShippingOption[] {
   const source = Array.isArray(input)
@@ -125,8 +127,53 @@ export async function fetchDeliveryCost(request: DeliveryCostRequest) {
 }
 
 export async function checkoutTransaction(request: CheckoutRequest) {
-  return fetchAuth<unknown>("/transactions/checkout", {
+  const token = getAuthToken();
+
+  if (!token) {
+    throw new Error("Token otentikasi tidak ditemukan. Silakan login kembali.");
+  }
+
+  const response = await fetch(`${getApiBaseUrl()}/transactions/checkout`, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify(request),
   });
+
+  const rawText = await response.text();
+  let payload: CheckoutResponse = null;
+
+  if (rawText) {
+    try {
+      payload = JSON.parse(rawText) as ApiEnvelope<unknown>;
+    } catch {
+      if (!response.ok) {
+        throw new Error(rawText || "Checkout gagal diproses.");
+      }
+
+      return {
+        status: true,
+        message: "Checkout berhasil.",
+        data: null,
+        error: null,
+      } satisfies ApiEnvelope<unknown>;
+    }
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      payload?.error || payload?.message || rawText || "Checkout gagal diproses."
+    );
+  }
+
+  return (
+    payload ?? {
+      status: true,
+      message: "Checkout berhasil.",
+      data: null,
+      error: null,
+    }
+  );
 }
