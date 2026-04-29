@@ -255,6 +255,28 @@ function resolveBlogArray(input: unknown) {
   return [];
 }
 
+function resolveBlogMeta(
+  payload: ApiEnvelope<unknown>,
+): unknown {
+  if (payload.meta) {
+    return payload.meta;
+  }
+
+  if (payload.data && typeof payload.data === "object") {
+    const raw = payload.data as Record<string, unknown>;
+
+    if (raw.meta) {
+      return raw.meta;
+    }
+
+    if (raw.pagination) {
+      return raw.pagination;
+    }
+  }
+
+  return undefined;
+}
+
 function normalizeMeta(meta: unknown, fallbackPage: number, fallbackSize: number, totalItems: number): BlogListMeta {
   const raw = meta && typeof meta === "object" ? meta as Record<string, unknown> : {};
   const page = Number(raw.page ?? raw.current_page ?? fallbackPage);
@@ -313,7 +335,7 @@ export async function fetchBlogs(params: BlogListParams = {}): Promise<BlogListR
 
   return {
     data: items,
-    meta: normalizeMeta((payload as { meta?: unknown }).meta, page, size, items.length),
+    meta: normalizeMeta(resolveBlogMeta(payload), page, size, items.length),
   };
 }
 
