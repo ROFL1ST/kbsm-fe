@@ -126,6 +126,24 @@ const Footer = () => {
                 </Link>
               </h4>
               <ul className="space-y-3">
+                <li>
+                  <Link
+                    to="/shop#bestseller"
+                    className="text-sm text-background/60 hover:text-background transition-colors"
+                    onClick={() => setTimeout(() => document.querySelector("#bestseller")?.scrollIntoView({ behavior: "smooth" }), 100)}
+                  >
+                    Best Seller
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/#collections"
+                    className="text-sm text-background/60 hover:text-background transition-colors"
+                    onClick={() => setTimeout(() => document.querySelector("#collections")?.scrollIntoView({ behavior: "smooth" }), 100)}
+                  >
+                    Collection
+                  </Link>
+                </li>
                 {categories.map((cat) => (
                   <li key={cat.id}>
                     <Link

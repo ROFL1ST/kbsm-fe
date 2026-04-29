@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   Sparkles,
   Heart,
@@ -81,21 +81,10 @@ const VALUES = [
 export default function AboutPage() {
   const statsRef = useRef<HTMLElement>(null);
   const [statsStarted, setStatsStarted] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     document.title = "Tentang Kami — Kasta Beauté";
-
-    const hash = window.location.hash;
-    if (hash) {
-      setTimeout(() => {
-        const el = document.querySelector(hash);
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth" });
-        }
-      }, 100);
-    } else {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -106,6 +95,20 @@ export default function AboutPage() {
     if (statsRef.current) observer.observe(statsRef.current);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    const hash = location.hash;
+    if (hash) {
+      setTimeout(() => {
+        const el = document.querySelector(hash);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [location.hash]);
 
   return (
     <main className="min-h-screen bg-background">
