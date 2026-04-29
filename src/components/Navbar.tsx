@@ -46,9 +46,9 @@ import NavbarSearchDropdown from "@/components/NavbarSearchDropdown";
 const navLinks = [
   { label: "Home", href: "/" },
   { label: "Shop", href: "/shop", hasMega: false },
-  { label: "Best Seller", href: "#bestseller" },
+  { label: "Best Seller", href: "/shop#bestseller", isRoute: true },
   // { label: "New Arrivals", href: "#new" },
-  { label: "Collections", href: "#collections" },
+  { label: "Collections", href: "/#collections", isRoute: true },
   { label: "About", href: "/about" },
   { label: "Blog", href: "/blog", isRoute: true },
   // { label: "Contact", href: "#contact" },
@@ -193,6 +193,10 @@ const Navbar = () => {
                   <Link
                     to={link.href}
                     className="story-link text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-1"
+                    onClick={link.href.includes("#") ? () => {
+                      const hash = link.href.split("#")[1];
+                      setTimeout(() => document.querySelector(`#${hash}`)?.scrollIntoView({ behavior: "smooth" }), 100);
+                    } : undefined}
                   >
                     {link.label}
                   </Link>

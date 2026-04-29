@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Search, Star, Layers, X } from "lucide-react";
 import Navbar from "@/components/Navbar";
@@ -19,6 +19,17 @@ type CategoryId = number | "";
 
 const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+
+  useEffect(() => {
+    const hash = location.hash;
+    if (hash) {
+      setTimeout(() => {
+        const el = document.querySelector(hash);
+        if (el) el.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    }
+  }, [location.hash]);
   const searchQuery = searchParams.get("search") ?? "";
 
   const categoryIdParam = searchParams.get("category_id");
@@ -129,7 +140,7 @@ const Shop = () => {
       </section>
 
       {/* ── Product Grid ─────────────────────────────────────── */}
-      <section className="py-16 md:py-20">
+      <section id="bestseller" className="py-16 md:py-20">
         <div className="container">
           <div className="mb-10 space-y-5 animate-fade-in">
             {searchQuery && (
