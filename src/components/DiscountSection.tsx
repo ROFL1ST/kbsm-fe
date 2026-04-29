@@ -27,7 +27,7 @@ function useCountdown(validUntil: string) {
   return t;
 }
 
-/* ── Countdown box ────────────────────────────────────────── */
+/* ── Countdown box ─────────────────────────────────────────── */
 const Box = ({ v, l, compact }: { v: number; l: string; compact?: boolean }) => (
   <div className="text-center">
     <div className={`glass-card tabular-nums font-display font-semibold text-foreground ${
@@ -41,7 +41,7 @@ const Box = ({ v, l, compact }: { v: number; l: string; compact?: boolean }) => 
   </div>
 );
 
-/* ── Shared slider ──────────────────────────────────────────── */
+/* ── Shared slider ─────────────────────────────────────────── */
 const DiscountSlider = ({ compact }: { compact?: boolean }) => {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -65,10 +65,16 @@ const DiscountSlider = ({ compact }: { compact?: boolean }) => {
       onMouseLeave={() => setPaused(false)}
     >
       {compact ? (
-        /* ── COMPACT: mobile = stack (img atas, teks bawah) | lg = side-by-side ── */
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-center">
-          {/* Image */}
-          <div className="relative overflow-hidden rounded-2xl luxury-shadow aspect-[4/3] sm:aspect-square">
+        /*
+         * COMPACT (Shop hero right column)
+         * Mobile  : 1 col — teks order-1 (atas), gambar order-2 (bawah, full-width)
+         * lg+     : 2 col side-by-side — gambar kiri (order-1), teks kanan (order-2)
+         * → Persis sama dengan Home full layout tapi ukuran lebih kecil
+         */
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-6 items-center">
+
+          {/* Gambar — bawah di mobile, kiri di desktop */}
+          <div className="relative overflow-hidden rounded-3xl luxury-shadow aspect-square order-2 lg:order-1">
             {item.image ? (
               <img
                 key={item.product_unit_id}
@@ -81,24 +87,22 @@ const DiscountSlider = ({ compact }: { compact?: boolean }) => {
               />
             ) : (
               <div className="w-full h-full bg-gradient-luxury flex items-center justify-center">
-                <Tag className="h-10 w-10 text-primary/20" />
+                <Tag className="h-14 w-14 text-primary/20" />
               </div>
             )}
-            {/* Badge */}
-            <div className="absolute top-3 left-3 bg-foreground text-background rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.15em] flex items-center gap-1.5">
+            <div className="absolute top-4 left-4 bg-foreground text-background rounded-full px-3 py-1.5 text-[10px] uppercase tracking-[0.15em] flex items-center gap-1.5">
               <Sparkles className="h-2.5 w-2.5 text-primary" />
               -{item.discount_percentage}% Off
             </div>
-            {/* Dots */}
             {total > 1 && (
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
                 {discounts.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setActive(i)}
                     aria-label={`Slide ${i + 1}`}
                     className={`rounded-full transition-all duration-300 ${
-                      i === active ? "w-5 h-1.5 bg-foreground" : "w-1.5 h-1.5 bg-foreground/30 hover:bg-foreground/60"
+                      i === active ? "w-6 h-2 bg-foreground" : "w-2 h-2 bg-foreground/30 hover:bg-foreground/60"
                     }`}
                   />
                 ))}
@@ -106,30 +110,27 @@ const DiscountSlider = ({ compact }: { compact?: boolean }) => {
             )}
           </div>
 
-          {/* Text */}
-          <div className="space-y-3">
-            <p className="text-[10px] uppercase tracking-[0.25em] text-primary">Penawaran Terbatas</p>
-            <h3 className="font-display text-xl sm:text-2xl leading-tight">
+          {/* Teks — atas di mobile, kanan di desktop */}
+          <div className="space-y-4 order-1 lg:order-2">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-primary">Penawaran Terbatas</p>
+            <h3 className="font-display text-2xl md:text-3xl lg:text-2xl xl:text-3xl leading-tight text-balance">
               <em className="italic gradient-text">Diskon {item.discount_percentage}%</em>
               <br />{item.name}
             </h3>
-            {/* Price */}
             <div className="flex items-baseline gap-2">
-              <span className="font-display text-lg sm:text-xl font-semibold">
+              <span className="font-display text-xl font-semibold text-foreground">
                 {formatRupiah(item.final_price)}
               </span>
               <span className="text-sm text-muted-foreground line-through">
                 {formatRupiah(item.original_price)}
               </span>
             </div>
-            {/* Countdown */}
             <div className="flex gap-2">
               <Box v={t.d} l="Days" compact />
               <Box v={t.h} l="Hours" compact />
               <Box v={t.m} l="Min" compact />
               <Box v={t.s} l="Sec" compact />
             </div>
-            {/* CTA + arrows */}
             <div className="flex items-center gap-2 pt-1">
               <Button
                 asChild
@@ -163,9 +164,8 @@ const DiscountSlider = ({ compact }: { compact?: boolean }) => {
           </div>
         </div>
       ) : (
-        /* ── FULL: Home page full-width layout ────────────────────── */
+        /* ── FULL: Home page layout ─────────────────────────── */
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          {/* Image */}
           <div className="relative aspect-square lg:aspect-[4/5] rounded-3xl overflow-hidden luxury-shadow order-2 lg:order-1">
             {item.image ? (
               <img
@@ -201,8 +201,6 @@ const DiscountSlider = ({ compact }: { compact?: boolean }) => {
               </div>
             )}
           </div>
-
-          {/* Text */}
           <div className="order-1 lg:order-2 space-y-7">
             <p className="text-xs tracking-[0.3em] uppercase text-primary">Penawaran Terbatas</p>
             <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-balance leading-[1.05]">
@@ -265,7 +263,7 @@ const DiscountSlider = ({ compact }: { compact?: boolean }) => {
   );
 };
 
-/* ── Export ─────────────────────────────────────────────────── */
+/* ── Export ──────────────────────────────────────────────────── */
 const DiscountSection = ({ compact }: { compact?: boolean }) => {
   if (compact) return <DiscountSlider compact />;
 
