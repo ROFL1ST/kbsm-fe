@@ -10,7 +10,7 @@ const FADE_MS = 350;
 
 type Discount = (typeof discounts)[number];
 
-/* ── Countdown hook ───────────────────────────────────────── */
+/* ── Countdown hook ──────────────────────────────────────── */
 function useCountdown(validUntil: string) {
   const calc = () => {
     const diff = Math.max(0, new Date(validUntil).getTime() - Date.now());
@@ -30,7 +30,7 @@ function useCountdown(validUntil: string) {
   return t;
 }
 
-/* ── Countdown box ───────────────────────────────────────── */
+/* ── Countdown box ─────────────────────────────────────── */
 const Box = ({ v, l, compact }: { v: number; l: string; compact?: boolean }) => (
   <div className="text-center">
     <div className={`glass-card tabular-nums font-display font-semibold text-foreground ${
@@ -44,7 +44,7 @@ const Box = ({ v, l, compact }: { v: number; l: string; compact?: boolean }) => 
   </div>
 );
 
-/* ── Shared: image strip ─────────────────────────────────────── */
+/* ── Shared: image strip ───────────────────────────────────── */
 const ImageStrip = ({ active, total }: { active: number; total: number }) => (
   <div className="relative overflow-hidden rounded-3xl luxury-shadow aspect-square">
     <div
@@ -74,7 +74,7 @@ const ImageStrip = ({ active, total }: { active: number; total: number }) => (
   </div>
 );
 
-/* ── Shared: nav controls + dots ──────────────────────────────── */
+/* ── Shared: nav controls + dots ───────────────────────────── */
 const Controls = ({
   item, active, total, compact, prev, next, goTo,
 }: {
@@ -118,7 +118,7 @@ const Controls = ({
   </>
 );
 
-/* ── MOBILE layout: flex-col, urutan dijamin ──────────────────────── */
+/* ── HOME: MobileSlider ───────────────────────────────────────── */
 const MobileSlider = () => {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -138,11 +138,7 @@ const MobileSlider = () => {
   const t = useCountdown(item.valid_until);
 
   return (
-    <div
-      className="flex flex-col gap-6"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
+    <div className="flex flex-col gap-6" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       {/* 1. Label + judul */}
       <div className="space-y-2">
         <p className="text-xs uppercase tracking-[0.3em] text-primary">Penawaran Terbatas</p>
@@ -151,10 +147,8 @@ const MobileSlider = () => {
           <br />{item.name}
         </h2>
       </div>
-
       {/* 2. Gambar */}
       <ImageStrip active={active} total={total} />
-
       {/* 3. Kategori + harga + countdown + CTA */}
       <div className="space-y-5">
         <p className="text-xs uppercase tracking-[0.3em] text-primary">{item.category}</p>
@@ -174,7 +168,7 @@ const MobileSlider = () => {
   );
 };
 
-/* ── DESKTOP layout: grid 2-col, identik dengan sebelumnya ───────────── */
+/* ── HOME: DesktopSlider ─────────────────────────────────────── */
 const DesktopSlider = () => {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -191,27 +185,15 @@ const DesktopSlider = () => {
   }, [active, total, paused, next]);
 
   return (
-    <div
-      className="grid grid-cols-2 gap-6 xl:gap-12 items-center"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
-      {/* Kiri: gambar */}
+    <div className="grid grid-cols-2 gap-6 xl:gap-12 items-center" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       <ImageStrip active={active} total={total} />
-
-      {/* Kanan: info — fade per slide */}
       <div className="relative" style={{ minHeight: 500 }}>
         {discounts.map((item, i) => {
+          // eslint-disable-next-line react-hooks/rules-of-hooks
           const t = useCountdown(item.valid_until);
           return (
-            <div
-              key={item.product_unit_id}
-              className="absolute inset-0 flex flex-col justify-center"
-              style={{
-                opacity: i === active ? 1 : 0,
-                transition: `opacity ${FADE_MS}ms ease-in-out`,
-                pointerEvents: i === active ? "auto" : "none",
-              }}
+            <div key={item.product_unit_id} className="absolute inset-0 flex flex-col justify-center"
+              style={{ opacity: i === active ? 1 : 0, transition: `opacity ${FADE_MS}ms ease-in-out`, pointerEvents: i === active ? "auto" : "none" }}
             >
               <div className="space-y-7">
                 <p className="text-xs uppercase tracking-[0.3em] text-primary">Penawaran Terbatas</p>
@@ -242,7 +224,15 @@ const DesktopSlider = () => {
   );
 };
 
-/* ── Compact slider (Shop page) ──────────────────────────────── */
+/* ── SHOP: CompactSlider ──────────────────────────────────────── */
+/**
+ * Di Shop page, DiscountSection compact ada di dalam kolom kanan
+ * grid hero section (lg:grid-cols-2). Di mobile, kolom itu jadi
+ * full width dan compact slider tampil sebagai 1 kolom.
+ *
+ * Layout compact mobile: label+judul → gambar → harga+countdown+CTA
+ * Layout compact desktop (lg+): gambar kiri, info kanan (sama seperti Home)
+ */
 const CompactSlider = () => {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -262,35 +252,62 @@ const CompactSlider = () => {
   const t = useCountdown(item.valid_until);
 
   return (
-    <div
-      className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
-      <ImageStrip active={active} total={total} />
-      <div className="space-y-4">
-        <p className="text-[10px] uppercase tracking-[0.3em] text-primary">Penawaran Terbatas</p>
-        <div>
-          <em className="font-display text-2xl italic gradient-text leading-tight block">Diskon {item.discount_percentage}%</em>
-          <h3 className="font-display text-2xl leading-tight">{item.name}</h3>
+    <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+      {/* Mobile: flex-col, urutan dijamin */}
+      <div className="flex flex-col gap-5 lg:hidden">
+        {/* 1. Label + judul */}
+        <div className="space-y-1.5">
+          <p className="text-[10px] uppercase tracking-[0.3em] text-primary">Penawaran Terbatas</p>
+          <div>
+            <em className="font-display text-2xl italic gradient-text leading-tight block">Diskon {item.discount_percentage}%</em>
+            <h3 className="font-display text-2xl leading-tight">{item.name}</h3>
+          </div>
         </div>
-        <div className="flex items-baseline gap-2">
-          <span className="font-display font-semibold text-foreground text-xl">{formatRupiah(item.final_price)}</span>
-          <span className="text-muted-foreground line-through text-sm">{formatRupiah(item.original_price)}</span>
+        {/* 2. Gambar */}
+        <ImageStrip active={active} total={total} />
+        {/* 3. Harga + countdown + CTA */}
+        <div className="space-y-4">
+          <div className="flex items-baseline gap-2">
+            <span className="font-display font-semibold text-foreground text-xl">{formatRupiah(item.final_price)}</span>
+            <span className="text-muted-foreground line-through text-sm">{formatRupiah(item.original_price)}</span>
+          </div>
+          <div className="flex gap-2">
+            <Box v={t.d} l="Days" compact />
+            <Box v={t.h} l="Hours" compact />
+            <Box v={t.m} l="Min" compact />
+            <Box v={t.s} l="Sec" compact />
+          </div>
+          <Controls item={item} active={active} total={total} compact prev={prev} next={next} goTo={goTo} />
         </div>
-        <div className="flex gap-2">
-          <Box v={t.d} l="Days" compact />
-          <Box v={t.h} l="Hours" compact />
-          <Box v={t.m} l="Min" compact />
-          <Box v={t.s} l="Sec" compact />
+      </div>
+
+      {/* Desktop: gambar kiri, info kanan */}
+      <div className="hidden lg:grid lg:grid-cols-2 gap-6 items-center">
+        <ImageStrip active={active} total={total} />
+        <div className="space-y-4">
+          <p className="text-[10px] uppercase tracking-[0.3em] text-primary">Penawaran Terbatas</p>
+          <div>
+            <em className="font-display text-2xl italic gradient-text leading-tight block">Diskon {item.discount_percentage}%</em>
+            <h3 className="font-display text-2xl leading-tight">{item.name}</h3>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="font-display font-semibold text-foreground text-xl">{formatRupiah(item.final_price)}</span>
+            <span className="text-muted-foreground line-through text-sm">{formatRupiah(item.original_price)}</span>
+          </div>
+          <div className="flex gap-2">
+            <Box v={t.d} l="Days" compact />
+            <Box v={t.h} l="Hours" compact />
+            <Box v={t.m} l="Min" compact />
+            <Box v={t.s} l="Sec" compact />
+          </div>
+          <Controls item={item} active={active} total={total} compact prev={prev} next={next} goTo={goTo} />
         </div>
-        <Controls item={item} active={active} total={total} compact prev={prev} next={next} goTo={goTo} />
       </div>
     </div>
   );
 };
 
-/* ── Export ────────────────────────────────────────────────── */
+/* ── Export ─────────────────────────────────────────────── */
 const DiscountSection = ({ compact }: { compact?: boolean }) => {
   if (compact) return <CompactSlider />;
 
