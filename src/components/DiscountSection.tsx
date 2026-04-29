@@ -65,12 +65,6 @@ const DiscountSlider = ({ compact }: { compact?: boolean }) => {
       onMouseLeave={() => setPaused(false)}
     >
       {compact ? (
-        /*
-         * COMPACT (Shop hero right column)
-         * Mobile  : 1 col — teks order-1 (atas), gambar order-2 (bawah, full-width)
-         * lg+     : 2 col side-by-side — gambar kiri (order-1), teks kanan (order-2)
-         * → Persis sama dengan Home full layout tapi ukuran lebih kecil
-         */
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-6 items-center">
 
           {/* Gambar — bawah di mobile, kiri di desktop */}
@@ -113,10 +107,26 @@ const DiscountSlider = ({ compact }: { compact?: boolean }) => {
           {/* Teks — atas di mobile, kanan di desktop */}
           <div className="space-y-4 order-1 lg:order-2">
             <p className="text-[10px] uppercase tracking-[0.3em] text-primary">Penawaran Terbatas</p>
-            <h3 className="font-display text-2xl md:text-3xl lg:text-2xl xl:text-3xl leading-tight text-balance">
-              <em className="italic gradient-text">Diskon {item.discount_percentage}%</em>
-              <br />{item.name}
-            </h3>
+
+            {/* Label diskon + nama produk dipisah agar line-clamp hanya pada nama */}
+            <div>
+              <em className="font-display text-2xl md:text-3xl lg:text-2xl xl:text-3xl italic gradient-text leading-tight block">
+                Diskon {item.discount_percentage}%
+              </em>
+              {/* Nama produk: max 2 baris, height selalu sama (2 baris) */}
+              <h3
+                className="font-display text-2xl md:text-3xl lg:text-2xl xl:text-3xl leading-tight overflow-hidden"
+                style={{
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  minHeight: "calc(1.25 * 2em)",
+                }}
+              >
+                {item.name}
+              </h3>
+            </div>
+
             <div className="flex items-baseline gap-2">
               <span className="font-display text-xl font-semibold text-foreground">
                 {formatRupiah(item.final_price)}
