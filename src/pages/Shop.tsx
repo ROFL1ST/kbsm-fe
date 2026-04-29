@@ -87,13 +87,13 @@ const Shop = () => {
     <main className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero — 2 col: kiri teks, kanan discount slider */}
+      {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-gradient-luxury pb-16 pt-40 md:pb-20 md:pt-48">
         <div className="absolute inset-0 bg-gradient-glow pointer-events-none" />
-        <div className="container relative">
+        <div className="container relative space-y-10 lg:space-y-0">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
 
-            {/* Left — teks (tidak berubah) */}
+            {/* Left — heading */}
             <div className="max-w-3xl space-y-5">
               <p className="text-xs uppercase tracking-[0.3em] text-primary">
                 Complete Collection
@@ -119,8 +119,8 @@ const Shop = () => {
               </div>
             </div>
 
-            {/* Right — discount slider (compact, hidden on mobile) */}
-            <div className="hidden lg:block">
+            {/* Right — discount slider (visible all breakpoints) */}
+            <div className="w-full">
               <DiscountSection compact />
             </div>
 
@@ -128,7 +128,7 @@ const Shop = () => {
         </div>
       </section>
 
-      {/* Product Grid */}
+      {/* ── Product Grid ─────────────────────────────────────── */}
       <section className="py-16 md:py-20">
         <div className="container">
           <div className="mb-10 space-y-5 animate-fade-in">

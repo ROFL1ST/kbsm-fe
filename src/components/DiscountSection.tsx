@@ -27,26 +27,22 @@ function useCountdown(validUntil: string) {
   return t;
 }
 
-/* ── Countdown boxes ──────────────────────────────────────── */
+/* ── Countdown box ────────────────────────────────────────── */
 const Box = ({ v, l, compact }: { v: number; l: string; compact?: boolean }) => (
   <div className="text-center">
     <div className={`glass-card tabular-nums font-display font-semibold text-foreground ${
       compact
-        ? "px-3 py-2 min-w-[52px] text-2xl"
+        ? "px-3 py-2 min-w-[48px] text-xl"
         : "px-4 md:px-6 py-3 md:py-4 min-w-[68px] md:min-w-[88px] text-3xl md:text-5xl"
     }`}>
       {String(v).padStart(2, "0")}
     </div>
-    <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mt-2">{l}</div>
+    <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mt-1.5">{l}</div>
   </div>
 );
 
-/* ── Shared slider content (used in both modes) ───────────── */
-interface SliderContentProps {
-  compact?: boolean;
-}
-
-const DiscountSlider = ({ compact }: SliderContentProps) => {
+/* ── Shared slider ──────────────────────────────────────────── */
+const DiscountSlider = ({ compact }: { compact?: boolean }) => {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const total = discounts.length;
@@ -63,150 +59,215 @@ const DiscountSlider = ({ compact }: SliderContentProps) => {
   const item = discounts[active];
   const t = useCountdown(item.valid_until);
 
-  const content = (
+  return (
     <div
-      className={`grid gap-8 items-center ${
-        compact ? "grid-cols-2" : "grid-cols-1 lg:grid-cols-2 gap-12"
-      }`}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* Image */}
-      <div
-        className={`relative overflow-hidden rounded-3xl luxury-shadow ${
-          compact ? "aspect-square" : "aspect-square lg:aspect-[4/5] order-2 lg:order-1"
-        }`}
-      >
-        {item.image ? (
-          <img
-            key={item.product_unit_id}
-            src={item.image}
-            alt={item.name}
-            loading="lazy"
-            width={900}
-            height={900}
-            className="w-full h-full object-cover transition-opacity duration-500"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-luxury flex items-center justify-center">
-            <Tag className={compact ? "h-12 w-12 text-primary/20" : "h-20 w-20 text-primary/20"} />
-          </div>
-        )}
-
-        {/* Badge */}
-        <div className={`absolute top-4 left-4 bg-foreground text-background rounded-full uppercase flex items-center gap-1.5 tracking-[0.15em] ${
-          compact ? "px-3 py-1 text-[10px]" : "px-4 py-2 text-xs"
-        }`}>
-          <Sparkles className={compact ? "h-3 w-3 text-primary" : "h-3.5 w-3.5 text-primary"} />
-          -{item.discount_percentage}% Off
-        </div>
-
-        {/* Dots */}
-        {total > 1 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
-            {discounts.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setActive(i)}
-                aria-label={`Slide ${i + 1}`}
-                className={`rounded-full transition-all duration-300 ${
-                  i === active ? "w-6 h-2 bg-foreground" : "w-2 h-2 bg-foreground/30 hover:bg-foreground/60"
-                }`}
+      {compact ? (
+        /* ── COMPACT: mobile = stack (img atas, teks bawah) | lg = side-by-side ── */
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-center">
+          {/* Image */}
+          <div className="relative overflow-hidden rounded-2xl luxury-shadow aspect-[4/3] sm:aspect-square">
+            {item.image ? (
+              <img
+                key={item.product_unit_id}
+                src={item.image}
+                alt={item.name}
+                loading="lazy"
+                width={600}
+                height={600}
+                className="w-full h-full object-cover transition-opacity duration-500"
               />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className={compact ? "space-y-4" : "order-1 lg:order-2 space-y-7"}>
-        <p className={`uppercase text-primary tracking-[0.25em] ${
-          compact ? "text-[10px]" : "text-xs"
-        }`}>Penawaran Terbatas</p>
-
-        <h2 className={`font-display text-balance leading-[1.05] ${
-          compact ? "text-2xl" : "text-4xl md:text-5xl lg:text-6xl"
-        }`}>
-          <em className="italic gradient-text">Diskon {item.discount_percentage}%</em>
-          <br />{item.name}
-        </h2>
-
-        {!compact && (
-          <p className="text-muted-foreground max-w-md">
-            Dapatkan{" "}
-            <span className="font-semibold text-foreground">{item.category}</span>{" "}
-            premium Kasta Beauté dengan harga terbaik. Stok terbatas — jangan sampai kehabisan!
-          </p>
-        )}
-
-        {/* Price */}
-        <div className="flex items-baseline gap-2">
-          <span className={`font-display font-semibold text-foreground ${
-            compact ? "text-xl" : "text-3xl"
-          }`}>
-            {formatRupiah(item.final_price)}
-          </span>
-          <span className={`text-muted-foreground line-through ${
-            compact ? "text-sm" : "text-lg"
-          }`}>
-            {formatRupiah(item.original_price)}
-          </span>
-        </div>
-
-        {/* Countdown */}
-        <div className="flex gap-2 md:gap-3">
-          <Box v={t.d} l="Days" compact={compact} />
-          <Box v={t.h} l="Hours" compact={compact} />
-          <Box v={t.m} l="Min" compact={compact} />
-          <Box v={t.s} l="Sec" compact={compact} />
-        </div>
-
-        {/* CTA */}
-        <div className="flex items-center gap-3">
-          <Button
-            asChild
-            size={compact ? "default" : "lg"}
-            className={`rounded-full bg-foreground text-background hover:bg-primary text-xs tracking-[0.15em] uppercase elegant-shadow group ${
-              compact ? "h-11 px-6" : "h-14 px-8 text-sm"
-            }`}
-          >
-            <Link to={`/shop/product/${item.product_unit_id}`}>
-              Shop Now
-              <ArrowRight className="ml-2 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </Button>
-
-          {total > 1 && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={prev}
-                aria-label="Previous"
-                className="h-9 w-9 rounded-full border border-border/60 bg-white/70 backdrop-blur flex items-center justify-center hover:bg-accent transition-colors"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                onClick={next}
-                aria-label="Next"
-                className="h-9 w-9 rounded-full border border-border/60 bg-white/70 backdrop-blur flex items-center justify-center hover:bg-accent transition-colors"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
+            ) : (
+              <div className="w-full h-full bg-gradient-luxury flex items-center justify-center">
+                <Tag className="h-10 w-10 text-primary/20" />
+              </div>
+            )}
+            {/* Badge */}
+            <div className="absolute top-3 left-3 bg-foreground text-background rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.15em] flex items-center gap-1.5">
+              <Sparkles className="h-2.5 w-2.5 text-primary" />
+              -{item.discount_percentage}% Off
             </div>
-          )}
+            {/* Dots */}
+            {total > 1 && (
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+                {discounts.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActive(i)}
+                    aria-label={`Slide ${i + 1}`}
+                    className={`rounded-full transition-all duration-300 ${
+                      i === active ? "w-5 h-1.5 bg-foreground" : "w-1.5 h-1.5 bg-foreground/30 hover:bg-foreground/60"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Text */}
+          <div className="space-y-3">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-primary">Penawaran Terbatas</p>
+            <h3 className="font-display text-xl sm:text-2xl leading-tight">
+              <em className="italic gradient-text">Diskon {item.discount_percentage}%</em>
+              <br />{item.name}
+            </h3>
+            {/* Price */}
+            <div className="flex items-baseline gap-2">
+              <span className="font-display text-lg sm:text-xl font-semibold">
+                {formatRupiah(item.final_price)}
+              </span>
+              <span className="text-sm text-muted-foreground line-through">
+                {formatRupiah(item.original_price)}
+              </span>
+            </div>
+            {/* Countdown */}
+            <div className="flex gap-2">
+              <Box v={t.d} l="Days" compact />
+              <Box v={t.h} l="Hours" compact />
+              <Box v={t.m} l="Min" compact />
+              <Box v={t.s} l="Sec" compact />
+            </div>
+            {/* CTA + arrows */}
+            <div className="flex items-center gap-2 pt-1">
+              <Button
+                asChild
+                size="default"
+                className="rounded-full bg-foreground text-background hover:bg-primary h-11 px-5 text-xs tracking-[0.15em] uppercase elegant-shadow group"
+              >
+                <Link to={`/shop/product/${item.product_unit_id}`}>
+                  Shop Now
+                  <ArrowRight className="ml-2 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </Button>
+              {total > 1 && (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={prev}
+                    aria-label="Previous"
+                    className="h-9 w-9 rounded-full border border-border/60 bg-white/70 backdrop-blur flex items-center justify-center hover:bg-accent active:bg-accent transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={next}
+                    aria-label="Next"
+                    className="h-9 w-9 rounded-full border border-border/60 bg-white/70 backdrop-blur flex items-center justify-center hover:bg-accent active:bg-accent transition-colors"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      ) : (
+        /* ── FULL: Home page full-width layout ────────────────────── */
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {/* Image */}
+          <div className="relative aspect-square lg:aspect-[4/5] rounded-3xl overflow-hidden luxury-shadow order-2 lg:order-1">
+            {item.image ? (
+              <img
+                key={item.product_unit_id}
+                src={item.image}
+                alt={item.name}
+                loading="lazy"
+                width={900}
+                height={900}
+                className="w-full h-full object-cover transition-opacity duration-500"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-luxury flex items-center justify-center">
+                <Tag className="h-20 w-20 text-primary/20" />
+              </div>
+            )}
+            <div className="absolute top-6 left-6 bg-foreground text-background px-4 py-2 rounded-full text-xs tracking-[0.2em] uppercase flex items-center gap-2">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              -{item.discount_percentage}% Off
+            </div>
+            {total > 1 && (
+              <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2">
+                {discounts.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActive(i)}
+                    aria-label={`Slide ${i + 1}`}
+                    className={`rounded-full transition-all duration-300 ${
+                      i === active ? "w-6 h-2 bg-foreground" : "w-2 h-2 bg-foreground/30 hover:bg-foreground/60"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Text */}
+          <div className="order-1 lg:order-2 space-y-7">
+            <p className="text-xs tracking-[0.3em] uppercase text-primary">Penawaran Terbatas</p>
+            <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-balance leading-[1.05]">
+              <em className="italic gradient-text">Diskon {item.discount_percentage}%</em>
+              <br />{item.name}
+            </h2>
+            <p className="text-muted-foreground max-w-md">
+              Dapatkan{" "}
+              <span className="font-semibold text-foreground">{item.category}</span>{" "}
+              premium Kasta Beauté dengan harga terbaik. Stok terbatas — jangan sampai kehabisan!
+            </p>
+            <div className="flex items-baseline gap-3">
+              <span className="font-display text-3xl font-semibold text-foreground">
+                {formatRupiah(item.final_price)}
+              </span>
+              <span className="text-lg text-muted-foreground line-through">
+                {formatRupiah(item.original_price)}
+              </span>
+            </div>
+            <div className="flex gap-3 md:gap-4">
+              <Box v={t.d} l="Days" />
+              <Box v={t.h} l="Hours" />
+              <Box v={t.m} l="Min" />
+              <Box v={t.s} l="Sec" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Button
+                asChild
+                size="lg"
+                className="rounded-full bg-foreground text-background hover:bg-primary h-14 px-8 text-sm tracking-[0.15em] uppercase elegant-shadow group"
+              >
+                <Link to={`/shop/product/${item.product_unit_id}`}>
+                  Shop Now
+                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </Button>
+              {total > 1 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={prev}
+                    aria-label="Previous"
+                    className="h-11 w-11 rounded-full border border-border/60 bg-white/70 backdrop-blur flex items-center justify-center hover:bg-accent transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={next}
+                    aria-label="Next"
+                    className="h-11 w-11 rounded-full border border-border/60 bg-white/70 backdrop-blur flex items-center justify-center hover:bg-accent transition-colors"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-
-  return content;
 };
 
-/* ── Full-width section (Home page) ───────────────────────── */
+/* ── Export ─────────────────────────────────────────────────── */
 const DiscountSection = ({ compact }: { compact?: boolean }) => {
-  if (compact) {
-    return <DiscountSlider compact />;
-  }
+  if (compact) return <DiscountSlider compact />;
 
   return (
     <section className="py-20 md:py-28 bg-gradient-nude relative overflow-hidden">
