@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import { Star, Quote } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Star, Quote, ChevronLeft, ChevronRight } from "lucide-react";
 import { fetchReviews, type Review } from "@/lib/reviews";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 
-const PER_PAGE = 10;
+const CARDS_PER_VIEW = 3;
 
-/* ── Skeleton card ───────────────────────────────────────── */
+/* ── Skeleton ──────────────────────────────────────────── */
 const ReviewSkeleton = () => (
-  <div className="flex-shrink-0 w-[320px] md:w-[380px] bg-card border border-border/50 rounded-3xl p-8 soft-shadow space-y-4 animate-pulse">
+  <div className="bg-card border border-border/50 rounded-3xl p-8 soft-shadow space-y-4 animate-pulse">
     <div className="flex gap-1">
       {[...Array(5)].map((_, i) => (
         <div key={i} className="h-4 w-4 rounded-sm bg-muted" />
@@ -28,12 +28,9 @@ const ReviewSkeleton = () => (
   </div>
 );
 
-/* ── Single review card ──────────────────────────────────── */
-const ReviewCard = ({ r, observeRef }: { r: Review; observeRef?: (el: HTMLElement | null) => void }) => (
-  <article
-    ref={observeRef}
-    className="flex-shrink-0 w-[320px] md:w-[380px] bg-card border border-border/50 rounded-3xl p-8 hover-lift soft-shadow relative"
-  >
+/* ── Card ──────────────────────────────────────────────── */
+const ReviewCard = ({ r }: { r: Review }) => (
+  <article className="bg-card border border-border/50 rounded-3xl p-8 hover-lift soft-shadow relative flex flex-col h-full">
     <Quote className="absolute top-6 right-6 h-8 w-8 text-primary/20" />
 
     <div className="flex items-center gap-1 mb-4">
@@ -42,7 +39,7 @@ const ReviewCard = ({ r, observeRef }: { r: Review; observeRef?: (el: HTMLElemen
       ))}
     </div>
 
-    <p className="text-foreground/80 leading-relaxed mb-6 text-[15px] line-clamp-5">
+    <p className="text-foreground/80 leading-relaxed mb-6 text-[15px] line-clamp-5 flex-1">
       &ldquo;{r.review}&rdquo;
     </p>
 
@@ -51,8 +48,8 @@ const ReviewCard = ({ r, observeRef }: { r: Review; observeRef?: (el: HTMLElemen
         src={r.image}
         alt={r.name}
         loading="lazy"
-        width={56}
-        height={56}
+        width={48}
+        height={48}
         className="h-12 w-12 rounded-full object-cover shrink-0"
         onError={(e) => {
           const initials = r.name
@@ -78,70 +75,32 @@ const ReviewCard = ({ r, observeRef }: { r: Review; observeRef?: (el: HTMLElemen
   </article>
 );
 
-/* ── Main component ──────────────────────────────────────── */
+/* ── Main ──────────────────────────────────────────────── */
 const Testimonials = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [nextPage, setNextPage] = useState(2); // page 1 dimuat di initial load
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const observerRef = useRef<IntersectionObserver | null>(null);
+  const [page, setPage] = useState(0); // 0-based page index
 
-  // Initial load — page 1
   useEffect(() => {
-    fetchReviews({ page: 1, perPage: PER_PAGE })
-      .then(({ reviews, hasMore, nextPage }) => {
-        setReviews(reviews);
-        setHasMore(hasMore);
-        setNextPage(nextPage);
-      })
+    fetchReviews()
+      .then(setReviews)
       .catch(() => setReviews([]))
       .finally(() => setLoading(false));
   }, []);
 
-  // Load next page
-  const loadMore = useCallback(() => {
-    if (loadingMore || !hasMore) return;
-    setLoadingMore(true);
-    fetchReviews({ page: nextPage, perPage: PER_PAGE })
-      .then(({ reviews: newReviews, hasMore: more, nextPage: np }) => {
-        setReviews((prev) => {
-          // deduplicate by id
-          const ids = new Set(prev.map((r) => r.id));
-          return [...prev, ...newReviews.filter((r) => !ids.has(r.id))];
-        });
-        setHasMore(more);
-        setNextPage(np);
-      })
-      .catch(() => {})
-      .finally(() => setLoadingMore(false));
-  }, [loadingMore, hasMore, nextPage]);
-
-  // IntersectionObserver: observe sentinel (invisible div after last-3 card)
-  useEffect(() => {
-    if (!sentinelRef.current || !hasMore) return;
-
-    observerRef.current?.disconnect();
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) loadMore();
-      },
-      { threshold: 0.1 }
-    );
-    observerRef.current.observe(sentinelRef.current);
-
-    return () => observerRef.current?.disconnect();
-  }, [hasMore, loadMore, reviews.length]);
-
   if (!loading && reviews.length === 0) return null;
 
-  // Sentinel diletakkan sebelum 3 card terakhir:
-  // index di mana sentinel disisipkan = max(0, reviews.length - 3)
-  const sentinelIndex = Math.max(0, reviews.length - 3);
+  const totalPages = Math.ceil(reviews.length / CARDS_PER_VIEW);
+  const currentCards = reviews.slice(
+    page * CARDS_PER_VIEW,
+    page * CARDS_PER_VIEW + CARDS_PER_VIEW
+  );
+
+  const prev = () => setPage((p) => Math.max(0, p - 1));
+  const next = () => setPage((p) => Math.min(totalPages - 1, p + 1));
 
   return (
-    <section className="py-20 md:py-28 bg-background overflow-hidden">
+    <section className="py-20 md:py-28 bg-background">
       <div className="container">
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-14">
@@ -150,40 +109,56 @@ const Testimonials = () => {
             Real results, <em className="italic gradient-text">real love</em>
           </h2>
         </div>
-      </div>
 
-      {/* Horizontal scroll — full-width, padding inset dari container */}
-      <div className="relative">
-        <ScrollArea className="w-full">
-          <div className="flex gap-5 px-4 md:px-8 lg:px-[max(2rem,calc((100vw-1280px)/2+2rem))] pb-4">
+        {/* Cards grid */}
+        <div className="grid md:grid-cols-3 gap-6 min-h-[280px]">
+          {loading
+            ? [...Array(CARDS_PER_VIEW)].map((_, i) => <ReviewSkeleton key={i} />)
+            : currentCards.map((r) => <ReviewCard key={r.id} r={r} />)}
+        </div>
 
-            {/* Skeleton saat initial load */}
-            {loading && [...Array(3)].map((_, i) => <ReviewSkeleton key={i} />)}
+        {/* Navigation — hanya muncul kalau data > 3 */}
+        {!loading && totalPages > 1 && (
+          <div className="flex items-center justify-center gap-4 mt-10">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={prev}
+              disabled={page === 0}
+              aria-label="Previous reviews"
+              className="rounded-full h-10 w-10"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
 
-            {/* Cards + sentinel */}
-            {reviews.map((r, idx) => (
-              <>
-                {/* Sentinel: invisible div tepat sebelum 3 card terakhir */}
-                {idx === sentinelIndex && hasMore && (
-                  <div
-                    key="sentinel"
-                    ref={sentinelRef}
-                    aria-hidden="true"
-                    className="w-0 h-0 flex-shrink-0"
-                  />
-                )}
-                <ReviewCard key={r.id} r={r} />
-              </>
-            ))}
+            {/* Dot indicators */}
+            <div className="flex gap-2">
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPage(i)}
+                  aria-label={`Go to page ${i + 1}`}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    i === page
+                      ? "w-6 bg-primary"
+                      : "w-2 bg-border hover:bg-muted-foreground"
+                  }`}
+                />
+              ))}
+            </div>
 
-            {/* Skeleton inline saat load more */}
-            {loadingMore && [...Array(2)].map((_, i) => <ReviewSkeleton key={`more-${i}`} />)}
-
-            {/* End spacer */}
-            <div className="flex-shrink-0 w-4" aria-hidden="true" />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={next}
+              disabled={page === totalPages - 1}
+              aria-label="Next reviews"
+              className="rounded-full h-10 w-10"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+        )}
       </div>
     </section>
   );
