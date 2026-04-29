@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -22,7 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/sonner";
 import { getAuthUser, hasAccessToken } from "@/lib/auth";
 import { getUserAddresses } from "@/lib/address";
-import { fetchCart, type CartItem } from "@/lib/cart";
+import { fetchCart, type CartItem, type DirectCheckoutState } from "@/lib/cart";
 import { fetchDeliveryCost } from "@/lib/checkout";
 import { formatRupiah, getProductImages } from "@/lib/products";
 
@@ -62,10 +62,14 @@ function resolveReviewItems(items: CartItem[]) {
 const PreCheckoutPage = () => {
   const isLoggedIn = hasAccessToken();
   const authUser = getAuthUser();
+  const location = useLocation();
   const [checkoutStep, setCheckoutStep] = useState<"shipping" | "payment">("shipping");
   const [selectedCourier, setSelectedCourier] = useState(COURIERS[0].id);
   const [selectedShippingId, setSelectedShippingId] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(PAYMENT_METHODS[0].id);
+  const directCheckoutState = location.state as DirectCheckoutState | null;
+  const directItem =
+    directCheckoutState?.mode === "direct" ? directCheckoutState.item : null;
 
   const {
     data: cart,
@@ -75,7 +79,7 @@ const PreCheckoutPage = () => {
   } = useQuery({
     queryKey: ["pre-checkout-cart"],
     queryFn: fetchCart,
-    enabled: isLoggedIn,
+    enabled: isLoggedIn && !directItem,
     staleTime: 1000 * 30,
     gcTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
@@ -97,7 +101,7 @@ const PreCheckoutPage = () => {
     refetchOnReconnect: false,
   });
 
-  const reviewItems = resolveReviewItems(cart?.items ?? []);
+  const reviewItems = directItem ? [directItem] : resolveReviewItems(cart?.items ?? []);
   const primaryAddress = addresses.find((address) => address.is_default) ?? addresses[0] ?? null;
   const destinationSubdistrictId = primaryAddress?.subdistrict_id ?? primaryAddress?.district_id ?? null;
   const totalWeight = reviewItems.reduce((total, item) => total + (item.quantity * DEFAULT_ITEM_WEIGHT), 0);
@@ -224,7 +228,7 @@ const PreCheckoutPage = () => {
             <div className="rounded-3xl border border-border/60 bg-white p-8 text-center text-muted-foreground soft-shadow">
               Gagal memuat data checkout. Coba refresh beberapa saat lagi.
             </div>
-          ) : reviewItems.length === 0 || !cart?.summary ? (
+          ) : reviewItems.length === 0 ? (
             <div className="rounded-[2rem] border border-border/60 bg-white px-6 py-14 text-center soft-shadow md:px-12">
               <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <ShoppingBag className="h-7 w-7" />

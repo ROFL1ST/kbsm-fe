@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   ChevronRight,
@@ -28,6 +28,7 @@ import {
 
 const ProductDetail = () => {
   const params = useParams();
+  const navigate = useNavigate();
   const productUnitId = Number(params.productUnitId);
   const mobileGalleryRef = useRef<HTMLDivElement | null>(null);
   const [activeMobileSlide, setActiveMobileSlide] = useState(0);
