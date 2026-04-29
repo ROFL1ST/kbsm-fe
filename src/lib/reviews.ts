@@ -27,5 +27,5 @@ export async function fetchReviews(): Promise<Review[]> {
   const res = await fetch(`${BASE_URL}/reviews`);
   if (!res.ok) throw new Error("Failed to fetch reviews");
   const json: ReviewsResponse = await res.json();
-  return json.data;
+  return json.data ?? [];
 }
