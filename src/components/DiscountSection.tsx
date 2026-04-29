@@ -42,7 +42,12 @@ const Box = ({ v, l, compact }: { v: number; l: string; compact?: boolean }) => 
   </div>
 );
 
-/* ── Text info: fade in/out per slide ─────────────────────── */
+/* ── SlideInfo ─────────────────────────────────────────────── */
+/**
+ * Di desktop: menampilkan SEMUA (label + judul + deskripsi + harga + countdown + CTA)
+ * Di mobile:  hanya menampilkan bagian bawah (kategori + harga + countdown + CTA)
+ *             karena label + judul sudah dirender di MobileTop (di atas gambar)
+ */
 const SlideInfo = ({
   item, visible, compact,
   prev, next, total, active, goTo,
@@ -68,12 +73,38 @@ const SlideInfo = ({
       }}
     >
       <div className={compact ? "space-y-4" : "space-y-7"}>
-        <p className={`uppercase tracking-[0.3em] text-primary ${
-          compact ? "text-[10px]" : "text-xs"
-        }`}>Penawaran Terbatas</p>
 
-        {compact ? (
+        {/* Label + judul + deskripsi: HANYA tampil di desktop (lg+) */}
+        {!compact && (
+          <>
+            <p className="hidden lg:block text-xs uppercase tracking-[0.3em] text-primary">
+              Penawaran Terbatas
+            </p>
+            <h2 className="hidden lg:block font-display text-4xl md:text-5xl lg:text-6xl text-balance leading-[1.05]">
+              <em className="italic gradient-text">Diskon {item.discount_percentage}%</em>
+              <br />{item.name}
+            </h2>
+            <p className="hidden lg:block text-muted-foreground max-w-md">
+              Dapatkan{" "}
+              <span className="font-semibold text-foreground">{item.category}</span>{" "}
+              premium Kasta Beauté dengan harga terbaik. Stok terbatas — jangan sampai kehabisan!
+            </p>
+          </>
+        )}
+
+        {/* Kategori: tampil di mobile (bawah gambar), hidden di desktop karena sudah ada di deskripsi */}
+        {!compact && (
+          <p className="lg:hidden text-xs uppercase tracking-[0.3em] text-primary">
+            {item.category}
+          </p>
+        )}
+
+        {/* Compact mode: tetap tampil label + judul seperti semula */}
+        {compact && (
           <div>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-primary mb-1">
+              Penawaran Terbatas
+            </p>
             <em className="font-display text-2xl md:text-3xl lg:text-2xl xl:text-3xl italic gradient-text leading-tight block">
               Diskon {item.discount_percentage}%
             </em>
@@ -89,20 +120,9 @@ const SlideInfo = ({
               {item.name}
             </h3>
           </div>
-        ) : (
-          <>
-            <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-balance leading-[1.05]">
-              <em className="italic gradient-text">Diskon {item.discount_percentage}%</em>
-              <br />{item.name}
-            </h2>
-            <p className="text-muted-foreground max-w-md">
-              Dapatkan{" "}
-              <span className="font-semibold text-foreground">{item.category}</span>{" "}
-              premium Kasta Beauté dengan harga terbaik. Stok terbatas — jangan sampai kehabisan!
-            </p>
-          </>
         )}
 
+        {/* Harga */}
         <div className={`flex items-baseline ${compact ? "gap-2" : "gap-3"}`}>
           <span className={`font-display font-semibold text-foreground ${
             compact ? "text-xl" : "text-3xl"
@@ -116,6 +136,7 @@ const SlideInfo = ({
           </span>
         </div>
 
+        {/* Countdown */}
         <div className={`flex ${compact ? "gap-2" : "gap-3 md:gap-4"}`}>
           <Box v={t.d} l="Days" compact={compact} />
           <Box v={t.h} l="Hours" compact={compact} />
@@ -209,11 +230,53 @@ const DiscountSlider = ({ compact }: { compact?: boolean }) => {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* ─ KIRI: Gambar — horizontal slide ─ */}
-      <div className={`relative overflow-hidden rounded-3xl luxury-shadow order-1 lg:order-1 ${
-        compact ? "aspect-square" : "aspect-square lg:aspect-[4/5]"
-      }`}>
-        {/* Image track */}
+      {/*
+        DOM order (mobile, grid-cols-1):
+          1. MobileTop  — label "Penawaran Terbatas" + "Diskon x%" + nama produk
+          2. Gambar     — aspect-square
+          3. SlideInfo  — kategori + harga + countdown + CTA
+
+        Desktop (lg+, grid-cols-2):
+          col-1 = Gambar   (MobileTop hidden via lg:hidden)
+          col-2 = SlideInfo (tampil full: label+judul+desc+harga+countdown+CTA)
+          MobileTop tidak terhitung karena lg:hidden + absolute 0-height trick
+
+        Cara kerja desktop:
+          MobileTop diberi `lg:hidden` sehingga tidak mengambil baris grid.
+          Gambar = item pertama yang visible → otomatis masuk col-1.
+          SlideInfo = item kedua → masuk col-2.
+      */}
+
+      {/* 1. MOBILE TOP — label + judul (hanya mobile) */}
+      {!compact && (
+        <div className="lg:hidden space-y-3 pb-1">
+          {/* Wrapper relative agar fade antar slide tetap smooth */}
+          <div className="relative" style={{ minHeight: 100 }}>
+            {discounts.map((item, i) => (
+              <div
+                key={item.product_unit_id}
+                className="absolute inset-0"
+                style={{
+                  opacity: i === active ? 1 : 0,
+                  transition: `opacity ${FADE_MS}ms ease-in-out`,
+                  pointerEvents: i === active ? "auto" : "none",
+                }}
+              >
+                <p className="text-xs uppercase tracking-[0.3em] text-primary mb-2">
+                  Penawaran Terbatas
+                </p>
+                <h2 className="font-display text-4xl leading-[1.05]">
+                  <em className="italic gradient-text">Diskon {item.discount_percentage}%</em>
+                  <br />{item.name}
+                </h2>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 2. GAMBAR — aspect-square di semua breakpoint */}
+      <div className="relative overflow-hidden rounded-3xl luxury-shadow aspect-square">
         <div
           className="flex h-full"
           style={{
@@ -233,13 +296,13 @@ const DiscountSlider = ({ compact }: { compact?: boolean }) => {
                   src={item.image}
                   alt={item.name}
                   loading="lazy"
-                  width={compact ? 400 : 900}
-                  height={compact ? 400 : 900}
+                  width={900}
+                  height={900}
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-luxury flex items-center justify-center">
-                  <Tag className={compact ? "h-14 w-14 text-primary/20" : "h-20 w-20 text-primary/20"} />
+                  <Tag className="h-20 w-20 text-primary/20" />
                 </div>
               )}
             </div>
@@ -247,17 +310,15 @@ const DiscountSlider = ({ compact }: { compact?: boolean }) => {
         </div>
 
         {/* Badge diskon */}
-        <div className={`absolute top-4 left-4 bg-foreground text-background rounded-full uppercase tracking-[0.15em] flex items-center gap-1.5 ${
-          compact ? "px-3 py-1.5 text-[10px]" : "px-4 py-2 text-xs tracking-[0.2em]"
-        }`}>
-          <Sparkles className={compact ? "h-2.5 w-2.5 text-primary" : "h-3.5 w-3.5 text-primary"} />
+        <div className="absolute top-4 left-4 bg-foreground text-background rounded-full px-4 py-2 text-xs tracking-[0.2em] uppercase flex items-center gap-1.5">
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
           -{discounts[active].discount_percentage}% Off
         </div>
       </div>
 
-      {/* ─ KANAN: Info — fade per slide ─ */}
+      {/* 3. SLIDE INFO — harga + countdown + CTA (mobile); full info (desktop) */}
       <div
-        className="relative order-1 lg:order-2"
+        className="relative"
         style={{ minHeight: compact ? 380 : 500 }}
       >
         {discounts.map((item, i) => (
