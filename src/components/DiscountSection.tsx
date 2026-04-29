@@ -31,7 +31,7 @@ function useCountdown(validUntil: string) {
 /* ── Countdown box ─────────────────────────────────────────── */
 const Box = ({ v, l, compact }: { v: number; l: string; compact?: boolean }) => (
   <div className="text-center">
-    <div className={`tabular-nums font-display font-semibold text-foreground border border-border/60 rounded-lg ${
+    <div className={`glass-card tabular-nums font-display font-semibold text-foreground ${
       compact
         ? "px-3 py-2 min-w-[48px] text-xl"
         : "px-4 md:px-6 py-3 md:py-4 min-w-[68px] md:min-w-[88px] text-3xl md:text-5xl"
@@ -129,7 +129,7 @@ const SlideInfo = ({
             <Button
               asChild
               size={compact ? "default" : "lg"}
-              className={`rounded-full bg-foreground text-background hover:bg-primary uppercase group ${
+              className={`rounded-full bg-foreground text-background hover:bg-primary uppercase elegant-shadow group ${
                 compact
                   ? "h-11 px-5 text-xs tracking-[0.15em]"
                   : "h-14 px-8 text-sm tracking-[0.15em]"
@@ -145,7 +145,7 @@ const SlideInfo = ({
             <button
               onClick={prev}
               aria-label="Previous"
-              className={`rounded-full border border-border/60 flex items-center justify-center hover:bg-accent active:bg-accent transition-colors ${
+              className={`rounded-full border border-border/60 bg-white/70 backdrop-blur flex items-center justify-center hover:bg-accent active:bg-accent transition-colors ${
                 compact ? "h-9 w-9" : "h-11 w-11"
               }`}
             >
@@ -154,7 +154,7 @@ const SlideInfo = ({
             <button
               onClick={next}
               aria-label="Next"
-              className={`rounded-full border border-border/60 flex items-center justify-center hover:bg-accent active:bg-accent transition-colors ${
+              className={`rounded-full border border-border/60 bg-white/70 backdrop-blur flex items-center justify-center hover:bg-accent active:bg-accent transition-colors ${
                 compact ? "h-9 w-9" : "h-11 w-11"
               }`}
             >
@@ -210,10 +210,10 @@ const DiscountSlider = ({ compact }: { compact?: boolean }) => {
       onMouseLeave={() => setPaused(false)}
     >
       {/* ─ KIRI: Gambar — horizontal slide ─ */}
-      <div className={`relative overflow-hidden rounded-3xl order-2 lg:order-1 ${
+      <div className={`relative overflow-hidden rounded-3xl luxury-shadow order-2 lg:order-1 ${
         compact ? "aspect-square" : "aspect-square lg:aspect-[4/5]"
       }`}>
-        {/* Image track: translateX */}
+        {/* Image track */}
         <div
           className="flex h-full"
           style={{
@@ -246,7 +246,7 @@ const DiscountSlider = ({ compact }: { compact?: boolean }) => {
           ))}
         </div>
 
-        {/* Badge diskon tetap di atas */}
+        {/* Badge diskon */}
         <div className={`absolute top-4 left-4 bg-foreground text-background rounded-full uppercase tracking-[0.15em] flex items-center gap-1.5 ${
           compact ? "px-3 py-1.5 text-[10px]" : "px-4 py-2 text-xs tracking-[0.2em]"
         }`}>
