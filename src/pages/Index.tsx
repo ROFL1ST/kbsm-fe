@@ -5,6 +5,7 @@ import Benefits from "@/components/Benefits";
 import BestSellers from "@/components/BestSellers";
 import Categories from "@/components/Categories";
 import FlashSale from "@/components/FlashSale";
+import DiscountSection from "@/components/DiscountSection";
 import Testimonials from "@/components/Testimonials";
 import Newsletter from "@/components/Newsletter";
 import Footer from "@/components/Footer";
@@ -38,6 +39,7 @@ const Index = () => {
       <BestSellers />
       <Categories />
       <FlashSale />
+      <DiscountSection />
       <Testimonials />
       {/* <Newsletter /> */}
       <Footer />
