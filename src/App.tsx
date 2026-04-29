@@ -27,7 +27,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-        <Toaster />
+      <Toaster />
       <Sonner />
       <BrowserRouter>
         <ScrollToTop />
@@ -37,9 +37,12 @@ const App = () => (
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/shop" element={<Shop />} />
-          <Route path="/shop/product/:productUnitId" element={<ProductDetail />} />
+          <Route
+            path="/shop/product/:productUnitId"
+            element={<ProductDetail />}
+          />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/pre-checkout" element={<PreCheckoutPage />} />
           <Route path="/blog" element={<BlogPage />} />

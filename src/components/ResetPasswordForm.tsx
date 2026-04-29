@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff, LockKeyhole } from "lucide-react";
 import AuthShell from "@/components/AuthShell";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,9 @@ const ResetPasswordForm = () => {
   const [newPassword, setNewPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const token = useParams().token;
+
+  // INTEGRATION API RESET PASSWORD REQEST BODY new_password & token, method POST, endpoint /auth/reset-password
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 

@@ -33,7 +33,7 @@ import {
 import { checkoutTransaction, fetchDeliveryCost } from "@/lib/checkout";
 import { formatRupiah, getProductImages } from "@/lib/products";
 
-const ORIGIN_SUBDISTRICT_ID = 218;
+const ORIGIN_SUBDISTRICT_ID = 19043;
 const DEFAULT_ITEM_WEIGHT = 1000;
 
 const PAYMENT_METHODS = [
@@ -43,23 +43,31 @@ const PAYMENT_METHODS = [
     description: "Konfirmasi cepat untuk pembayaran via transfer bank.",
     icon: CreditCard,
   },
-  {
-    id: "CASH",
-    label: "Tunai",
-    description: "Pembayaran dilakukan secara tunai sesuai instruksi transaksi.",
-    icon: Store,
-  },
-  {
-    id: "COD",
-    label: "Bayar di Tempat",
-    description: "Pembayaran dilakukan saat pesanan diterima.",
-    icon: ShieldCheck,
-  },
+  // {
+  //   id: "CASH",
+  //   label: "Tunai",
+  //   description: "Pembayaran dilakukan secara tunai sesuai instruksi transaksi.",
+  //   icon: Store,
+  // },
+  // {
+  //   id: "COD",
+  //   label: "Bayar di Tempat",
+  //   description: "Pembayaran dilakukan saat pesanan diterima.",
+  //   icon: ShieldCheck,
+  // },
 ];
 
 const COURIERS = [
-  { id: "jne", label: "JNE", description: "Jaringan luas untuk pengiriman nasional." },
-  { id: "jnt", label: "J&T", description: "Pickup cepat dengan estimasi pengiriman kompetitif." },
+  {
+    id: "jne",
+    label: "JNE",
+    description: "Jaringan luas untuk pengiriman nasional.",
+  },
+  {
+    id: "jnt",
+    label: "J&T",
+    description: "Pickup cepat dengan estimasi pengiriman kompetitif.",
+  },
 ];
 
 function resolveReviewItems(items: CartItem[]) {
@@ -74,7 +82,9 @@ function removeCheckedOutItemsFromCartCache(
     return currentCart;
   }
 
-  const nextItems = currentCart.items.filter((item) => !checkedOutItemIds.includes(item.id));
+  const nextItems = currentCart.items.filter(
+    (item) => !checkedOutItemIds.includes(item.id),
+  );
 
   return {
     ...currentCart,
@@ -89,7 +99,9 @@ const PreCheckoutPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [checkoutStep, setCheckoutStep] = useState<"shipping" | "payment">("shipping");
+  const [checkoutStep, setCheckoutStep] = useState<"shipping" | "payment">(
+    "shipping",
+  );
   const [selectedCourier, setSelectedCourier] = useState(COURIERS[0].id);
   const [selectedShippingId, setSelectedShippingId] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
@@ -127,10 +139,17 @@ const PreCheckoutPage = () => {
     refetchOnReconnect: false,
   });
 
-  const reviewItems = directItem ? [directItem] : resolveReviewItems(cart?.items ?? []);
-  const primaryAddress = addresses.find((address) => address.is_default) ?? addresses[0] ?? null;
-  const destinationSubdistrictId = primaryAddress?.subdistrict_id ?? primaryAddress?.district_id ?? null;
-  const totalWeight = reviewItems.reduce((total, item) => total + (item.quantity * DEFAULT_ITEM_WEIGHT), 0);
+  const reviewItems = directItem
+    ? [directItem]
+    : resolveReviewItems(cart?.items ?? []);
+  const primaryAddress =
+    addresses.find((address) => address.is_default) ?? addresses[0] ?? null;
+  const destinationSubdistrictId =
+    primaryAddress?.subdistrict_id ?? primaryAddress?.district_id ?? null;
+  const totalWeight = reviewItems.reduce(
+    (total, item) => total + item.quantity * DEFAULT_ITEM_WEIGHT,
+    0,
+  );
 
   const {
     data: shippingOptions = [],
@@ -138,14 +157,21 @@ const PreCheckoutPage = () => {
     isError: isShippingError,
     error: shippingError,
   } = useQuery({
-    queryKey: ["delivery-cost", selectedCourier, destinationSubdistrictId, totalWeight],
-    queryFn: () => fetchDeliveryCost({
-      origin_subdistrict_id: ORIGIN_SUBDISTRICT_ID,
-      destination_subdistrict_id: destinationSubdistrictId!,
-      weight: Math.max(totalWeight, DEFAULT_ITEM_WEIGHT),
-      courier: selectedCourier,
-    }),
-    enabled: isLoggedIn && Boolean(destinationSubdistrictId) && reviewItems.length > 0,
+    queryKey: [
+      "delivery-cost",
+      selectedCourier,
+      destinationSubdistrictId,
+      totalWeight,
+    ],
+    queryFn: () =>
+      fetchDeliveryCost({
+        origin_subdistrict_id: ORIGIN_SUBDISTRICT_ID,
+        destination_subdistrict_id: destinationSubdistrictId!,
+        weight: 100,
+        courier: selectedCourier,
+      }),
+    enabled:
+      isLoggedIn && Boolean(destinationSubdistrictId) && reviewItems.length > 0,
     staleTime: 1000 * 30,
     gcTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
@@ -240,17 +266,27 @@ const PreCheckoutPage = () => {
       const checkedOutCartItemIds = checkedOutCartItems.map((item) => item.id);
 
       if (checkedOutCartItems.length > 0) {
-        await Promise.all(checkedOutCartItems.map((item) => removeCartItem(item.id)));
+        await Promise.all(
+          checkedOutCartItems.map((item) => removeCartItem(item.id)),
+        );
       }
 
       if (checkedOutCartItemIds.length > 0) {
         queryClient.setQueryData<CartResponseData | undefined>(
           ["pre-checkout-cart"],
-          (currentCart) => removeCheckedOutItemsFromCartCache(currentCart, checkedOutCartItemIds),
+          (currentCart) =>
+            removeCheckedOutItemsFromCartCache(
+              currentCart,
+              checkedOutCartItemIds,
+            ),
         );
         queryClient.setQueryData<CartResponseData | undefined>(
           ["cart"],
-          (currentCart) => removeCheckedOutItemsFromCartCache(currentCart, checkedOutCartItemIds),
+          (currentCart) =>
+            removeCheckedOutItemsFromCartCache(
+              currentCart,
+              checkedOutCartItemIds,
+            ),
         );
       }
 
@@ -260,11 +296,15 @@ const PreCheckoutPage = () => {
         queryClient.invalidateQueries({ queryKey: ["navbar-cart"] }),
       ]);
 
-      toast.success("Checkout berhasil dibuat. Lanjutkan pembayaran dari daftar transaksi.");
+      toast.success(
+        "Checkout berhasil dibuat. Lanjutkan pembayaran dari daftar transaksi.",
+      );
       navigate("/transactions");
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Checkout gagal diproses.");
+      toast.error(
+        error instanceof Error ? error.message : "Checkout gagal diproses.",
+      );
     },
   });
 
@@ -274,7 +314,7 @@ const PreCheckoutPage = () => {
 
   const subtotal = reviewItems.reduce(
     (total, item) => total + item.calculation.final_price,
-    0
+    0,
   );
   const shippingCost = selectedShippingOption?.cost ?? 0;
   const grandTotal = subtotal + shippingCost;
@@ -294,7 +334,8 @@ const PreCheckoutPage = () => {
               Confirm <em className="italic gradient-text">Your Order</em>
             </h1>
             <p className="max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
-              Review produk, alamat pengiriman, kurir, dan metode pembayaran sebelum masuk ke proses checkout akhir.
+              Review produk, alamat pengiriman, kurir, dan metode pembayaran
+              sebelum masuk ke proses checkout akhir.
             </p>
           </div>
         </div>
@@ -311,7 +352,9 @@ const PreCheckoutPage = () => {
               Kembali ke keranjang
             </Link>
             <span className="rounded-full border border-border/60 bg-white px-4 py-2 text-sm text-muted-foreground">
-              {isCartLoading ? "Menyiapkan pesanan..." : `${reviewItems.length} produk siap checkout`}
+              {isCartLoading
+                ? "Menyiapkan pesanan..."
+                : `${reviewItems.length} produk siap checkout`}
             </span>
           </div>
 
@@ -319,7 +362,10 @@ const PreCheckoutPage = () => {
             <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_400px]">
               <div className="space-y-5">
                 {Array.from({ length: 3 }).map((_, index) => (
-                  <div key={index} className="h-48 rounded-3xl bg-muted animate-pulse" />
+                  <div
+                    key={index}
+                    className="h-48 rounded-3xl bg-muted animate-pulse"
+                  />
                 ))}
               </div>
               <div className="h-[36rem] rounded-3xl bg-muted animate-pulse" />
@@ -333,9 +379,12 @@ const PreCheckoutPage = () => {
               <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <ShoppingBag className="h-7 w-7" />
               </div>
-              <h2 className="text-2xl font-semibold text-foreground">Tidak ada item untuk checkout</h2>
+              <h2 className="text-2xl font-semibold text-foreground">
+                Tidak ada item untuk checkout
+              </h2>
               <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
-                Pilih produk dari keranjang terlebih dahulu sebelum lanjut ke pre-checkout.
+                Pilih produk dari keranjang terlebih dahulu sebelum lanjut ke
+                pre-checkout.
               </p>
               <Button asChild className="mt-6 h-12 rounded-full px-8">
                 <Link to="/cart">Kembali ke keranjang</Link>
@@ -347,8 +396,12 @@ const PreCheckoutPage = () => {
                 <section className="rounded-[2rem] border border-border/60 bg-white p-6 soft-shadow md:p-7">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.24em] text-primary">Shipping Address</p>
-                      <h2 className="mt-2 text-2xl font-semibold text-foreground">Alamat utama</h2>
+                      <p className="text-xs uppercase tracking-[0.24em] text-primary">
+                        Shipping Address
+                      </p>
+                      <h2 className="mt-2 text-2xl font-semibold text-foreground">
+                        Alamat utama
+                      </h2>
                     </div>
                     <Button asChild variant="outline" className="rounded-full">
                       <Link to="/profile/addresses">Ubah alamat</Link>
@@ -362,7 +415,8 @@ const PreCheckoutPage = () => {
                   ) : !primaryAddress ? (
                     <div className="mt-6 rounded-3xl border border-dashed border-border/80 bg-muted/20 p-6">
                       <p className="text-sm text-muted-foreground">
-                        Belum ada alamat utama. Tambahkan atau tandai satu alamat sebagai default sebelum checkout.
+                        Belum ada alamat utama. Tambahkan atau tandai satu
+                        alamat sebagai default sebelum checkout.
                       </p>
                       <Button asChild className="mt-4 rounded-full">
                         <Link to="/profile/addresses">Tambah alamat</Link>
@@ -376,7 +430,9 @@ const PreCheckoutPage = () => {
                         </div>
                         <div className="min-w-0 flex-1 space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-semibold text-foreground">{primaryAddress.receiver_name}</p>
+                            <p className="font-semibold text-foreground">
+                              {primaryAddress.receiver_name}
+                            </p>
                             {primaryAddress.label ? (
                               <span className="rounded-full border border-border/60 px-2.5 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
                                 {primaryAddress.label}
@@ -387,13 +443,18 @@ const PreCheckoutPage = () => {
                               Primary
                             </span>
                           </div>
-                          <p className="text-sm text-foreground">{primaryAddress.phone_number}</p>
+                          <p className="text-sm text-foreground">
+                            {primaryAddress.phone_number}
+                          </p>
                           <p className="text-sm leading-relaxed text-muted-foreground">
                             {primaryAddress.address}
                             <br />
-                            {primaryAddress.subdistrict_name}, {primaryAddress.district_name}
+                            {primaryAddress.subdistrict_name},{" "}
+                            {primaryAddress.district_name}
                             <br />
-                            {primaryAddress.city_name}, {primaryAddress.province_name} {primaryAddress.postal_code}
+                            {primaryAddress.city_name},{" "}
+                            {primaryAddress.province_name}{" "}
+                            {primaryAddress.postal_code}
                           </p>
                         </div>
                       </div>
@@ -403,14 +464,20 @@ const PreCheckoutPage = () => {
 
                 <section className="rounded-[2rem] border border-border/60 bg-white p-6 soft-shadow md:p-7">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.24em] text-primary">Order Items</p>
-                    <h2 className="mt-2 text-2xl font-semibold text-foreground">Produk yang dibeli</h2>
+                    <p className="text-xs uppercase tracking-[0.24em] text-primary">
+                      Order Items
+                    </p>
+                    <h2 className="mt-2 text-2xl font-semibold text-foreground">
+                      Produk yang dibeli
+                    </h2>
                   </div>
 
                   <div className="mt-6 space-y-4">
                     {reviewItems.map((item) => {
                       const image = getProductImages(item.product)[0] ?? "";
-                      const productPrice = item.product.discount_flag ? item.product.final_price : item.product.price;
+                      const productPrice = item.product.discount_flag
+                        ? item.product.final_price
+                        : item.product.price;
 
                       return (
                         <article
@@ -454,9 +521,9 @@ const PreCheckoutPage = () => {
                                 <span className="rounded-full border border-border/60 bg-muted/30 px-3 py-1.5">
                                   {item.product.unit_code}
                                 </span>
-                                <span className="rounded-full border border-border/60 bg-muted/30 px-3 py-1.5">
+                                {/* <span className="rounded-full border border-border/60 bg-muted/30 px-3 py-1.5">
                                   {DEFAULT_ITEM_WEIGHT * item.quantity} gr
-                                </span>
+                                </span> */}
                                 <span className="rounded-full border border-border/60 bg-muted/30 px-3 py-1.5">
                                   {formatRupiah(productPrice)} / item
                                 </span>
@@ -474,7 +541,9 @@ const PreCheckoutPage = () => {
                 <div className="rounded-[2rem] border border-border/60 bg-white p-6 soft-shadow md:p-7">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.24em] text-primary">Checkout Setup</p>
+                      <p className="text-xs uppercase tracking-[0.24em] text-primary">
+                        Checkout Setup
+                      </p>
                     </div>
                     <div className="flex items-center gap-2 rounded-full border border-border/60 bg-muted/20 p-1">
                       <button
@@ -495,7 +564,9 @@ const PreCheckoutPage = () => {
                             ? "bg-foreground text-background"
                             : "text-muted-foreground"
                         }`}
-                        onClick={() => selectedShippingOption && setCheckoutStep("payment")}
+                        onClick={() =>
+                          selectedShippingOption && setCheckoutStep("payment")
+                        }
                         disabled={!selectedShippingOption}
                       >
                         Pembayaran
@@ -507,7 +578,9 @@ const PreCheckoutPage = () => {
                     <>
                       <section className="mt-8">
                         <div className="flex items-center justify-between gap-3">
-                          <h3 className="text-base font-semibold text-foreground">Courier</h3>
+                          <h3 className="text-base font-semibold text-foreground">
+                            Courier
+                          </h3>
                           <Truck className="h-4 w-4 text-primary" />
                         </div>
                         <div className="mt-4 grid gap-3">
@@ -524,8 +597,12 @@ const PreCheckoutPage = () => {
                             >
                               <div className="flex items-center justify-between gap-3">
                                 <div>
-                                  <p className="font-semibold text-foreground">{courier.label}</p>
-                                  <p className="mt-1 text-sm text-muted-foreground">{courier.description}</p>
+                                  <p className="font-semibold text-foreground">
+                                    {courier.label}
+                                  </p>
+                                  <p className="mt-1 text-sm text-muted-foreground">
+                                    {courier.description}
+                                  </p>
                                 </div>
                                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
                               </div>
@@ -547,7 +624,8 @@ const PreCheckoutPage = () => {
                           </p>
                         ) : shippingOptions.length === 0 ? (
                           <p className="mt-4 text-sm text-muted-foreground">
-                            Tidak ada layanan pengiriman yang tersedia untuk courier ini.
+                            Tidak ada layanan pengiriman yang tersedia untuk
+                            courier ini.
                           </p>
                         ) : (
                           <RadioGroup
@@ -565,17 +643,25 @@ const PreCheckoutPage = () => {
                                     : "border-border/60 hover:border-primary/40"
                                 }`}
                               >
-                                <RadioGroupItem id={option.id} value={option.id} className="mt-1" />
+                                <RadioGroupItem
+                                  id={option.id}
+                                  value={option.id}
+                                  className="mt-1"
+                                />
                                 <div className="min-w-0 flex-1">
                                   <div className="flex flex-wrap items-start justify-between gap-3">
                                     <div>
                                       <p className="font-semibold text-foreground">
                                         {option.courierName} {option.service}
                                       </p>
-                                      <p className="mt-1 text-sm text-muted-foreground">{option.description}</p>
+                                      <p className="mt-1 text-sm text-muted-foreground">
+                                        {option.description}
+                                      </p>
                                     </div>
                                     <div className="text-right">
-                                      <p className="font-semibold text-foreground">{formatRupiah(option.cost)}</p>
+                                      <p className="font-semibold text-foreground">
+                                        {formatRupiah(option.cost)}
+                                      </p>
                                       <p className="text-xs text-muted-foreground">
                                         Est. {option.etd || "Tersedia"}
                                       </p>
@@ -591,7 +677,9 @@ const PreCheckoutPage = () => {
                   ) : (
                     <section className="mt-8">
                       <div className="flex items-center justify-between gap-3">
-                        <h3 className="text-base font-semibold text-foreground">Payment method</h3>
+                        <h3 className="text-base font-semibold text-foreground">
+                          Payment method
+                        </h3>
                         <CreditCard className="h-4 w-4 text-primary" />
                       </div>
                       <RadioGroup
@@ -612,14 +700,22 @@ const PreCheckoutPage = () => {
                                   : "border-border/60 hover:border-primary/40"
                               }`}
                             >
-                              <RadioGroupItem id={method.id} value={method.id} className="mt-1" />
+                              <RadioGroupItem
+                                id={method.id}
+                                value={method.id}
+                                className="mt-1"
+                              />
                               <div className="flex min-w-0 flex-1 items-start gap-3">
                                 <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
                                   <Icon className="h-4 w-4" />
                                 </div>
                                 <div>
-                                  <p className="font-semibold text-foreground">{method.label}</p>
-                                  <p className="mt-1 text-sm text-muted-foreground">{method.description}</p>
+                                  <p className="font-semibold text-foreground">
+                                    {method.label}
+                                  </p>
+                                  <p className="mt-1 text-sm text-muted-foreground">
+                                    {method.description}
+                                  </p>
                                 </div>
                               </div>
                             </label>
@@ -633,22 +729,32 @@ const PreCheckoutPage = () => {
 
                   <div className="space-y-4 text-sm">
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-muted-foreground">Subtotal produk</span>
-                      <span className="font-medium text-foreground">{formatRupiah(subtotal)}</span>
+                      <span className="text-muted-foreground">
+                        Subtotal produk
+                      </span>
+                      <span className="font-medium text-foreground">
+                        {formatRupiah(subtotal)}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between gap-4">
                       <span className="text-muted-foreground">Ongkir</span>
                       <span className="font-medium text-foreground">
-                        {selectedShippingOption ? formatRupiah(shippingCost) : "Pilih layanan"}
+                        {selectedShippingOption
+                          ? formatRupiah(shippingCost)
+                          : "Pilih layanan"}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between gap-4">
+                    {/* <div className="flex items-center justify-between gap-4">
                       <span className="text-muted-foreground">Berat total</span>
-                      <span className="font-medium text-foreground">{Math.max(totalWeight, 0)} gr</span>
-                    </div>
+                      <span className="font-medium text-foreground">
+                        {Math.max(totalWeight, 0)} gr
+                      </span>
+                    </div> */}
                     <div className="border-t border-border/60 pt-4">
                       <div className="flex items-center justify-between gap-4">
-                        <span className="text-base font-semibold text-foreground">Total pembayaran</span>
+                        <span className="text-base font-semibold text-foreground">
+                          Total pembayaran
+                        </span>
                         <span className="text-xl font-semibold text-foreground">
                           {formatRupiah(grandTotal)}
                         </span>
@@ -683,7 +789,9 @@ const PreCheckoutPage = () => {
                         }
                         onClick={() => checkoutMutation.mutate()}
                       >
-                        {checkoutMutation.isPending ? "Memproses..." : "Lanjut Bayar"}
+                        {checkoutMutation.isPending
+                          ? "Memproses..."
+                          : "Lanjut Bayar"}
                       </Button>
                     </div>
                   )}
