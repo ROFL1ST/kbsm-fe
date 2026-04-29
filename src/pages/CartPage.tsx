@@ -247,7 +247,8 @@ const CartPage = () => {
   const items = localCart?.items ?? [];
   const summary = localCart?.summary ?? calculateCartSummary(items);
   const selectedItems = items.filter((item) => item.is_selected);
-  const hasSelectedItems = selectedItems.length > 0;
+  const selectedSummary = calculateCartSummary(selectedItems);
+  const selectedCount = selectedItems.length;
   const isAllSelected = items.length > 0 && selectedItems.length === items.length;
   const hasPendingItems = pendingItemIds.length > 0;
 
@@ -337,7 +338,7 @@ const CartPage = () => {
                     <Button
                       type="button"
                       variant="ghost"
-                      disabled={!hasSelectedItems || hasPendingItems}
+                      disabled={selectedCount === 0 || hasPendingItems}
                       className="h-auto p-0 text-base font-medium text-primary hover:bg-transparent hover:text-primary/80"
                       onClick={() => {
                         void handleRemoveSelectedItems();
@@ -360,21 +361,6 @@ const CartPage = () => {
                         item.is_selected ? "opacity-100" : "opacity-70"
                       }`}
                     >
-                      {/* <div className="mb-4 flex items-center gap-3">
-                        <Checkbox
-                          checked={item.is_selected}
-                          disabled={isPending}
-                          className="h-5 w-5 rounded-md data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                          onCheckedChange={(checked) => {
-                            void handleCartUpdate(item, {
-                              quantity: item.quantity,
-                              is_selected: checked === true,
-                            });
-                          }}
-                        />
-                        <p className="text-base font-semibold text-foreground md:text-lg">Kasta Beaute</p>
-                      </div> */}
-
                       <div className="flex flex-col gap-4 md:flex-row md:items-start">
                         <div className="flex min-w-0 flex-1 items-start gap-3 md:gap-4">
                           <Checkbox
@@ -485,29 +471,34 @@ const CartPage = () => {
                   </div>
 
                   <div className="mt-8 space-y-4 text-sm">
+                    <div className="rounded-2xl bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
+                      {selectedCount > 0
+                        ? `${selectedCount} produk akan diproses saat checkout.`
+                        : "Pilih minimal satu produk untuk lanjut checkout."}
+                    </div>
                     <div className="flex items-center justify-between gap-4">
                       <span className="text-muted-foreground">Subtotal terpilih</span>
                       <span className="font-medium text-foreground">
-                        {formatRupiah(summary.total_price)}
+                        {formatRupiah(selectedSummary.total_price)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-4">
                       <span className="text-muted-foreground">Discount</span>
                       <span className="font-medium text-primary">
-                        -{formatRupiah(summary.discount_amount)}
+                        -{formatRupiah(selectedSummary.discount_amount)}
                       </span>
                     </div>
                     <div className="border-t border-border/60 pt-4">
                       <div className="flex items-center justify-between gap-4">
                         <span className="text-base font-semibold text-foreground">Estimated total</span>
                         <span className="text-xl font-semibold text-foreground">
-                          {formatRupiah(summary.final_price)}
+                          {formatRupiah(selectedSummary.final_price)}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {hasSelectedItems ? (
+                  {selectedCount > 0 ? (
                     <Button asChild className="mt-8 h-12 w-full rounded-full text-sm uppercase tracking-[0.16em]">
                       <Link to="/pre-checkout">Lanjut ke Checkout</Link>
                     </Button>
@@ -520,7 +511,7 @@ const CartPage = () => {
                       Lanjut ke Checkout
                     </Button>
                   )}
-                  {!hasSelectedItems ? (
+                  {selectedCount === 0 ? (
                     <p className="mt-3 text-sm text-muted-foreground">
                       Pilih minimal satu produk sebelum lanjut ke checkout.
                     </p>

@@ -384,13 +384,13 @@ const ProfilePage = () => {
                 {age} tahun
               </Badge>
             )}
-            <Badge
+            {/* <Badge
               variant="outline"
               className="rounded-full px-4 py-1.5 text-xs gap-1.5 border-primary/30 text-primary"
             >
               <Sparkles className="h-3 w-3" />
               Kasta Member
-            </Badge>
+            </Badge> */}
           </div>
 
           {/* Edit / Cancel buttons */}
@@ -505,10 +505,10 @@ const ProfilePage = () => {
                   <div className="h-9 w-9 rounded-full bg-gradient-rose flex items-center justify-center">
                     <Shield className="h-4 w-4 text-white" />
                   </div>
-                  <h2 className="font-display text-xl">Informasi Akun</h2>
+                  <h2 className="font-display text-xl">Informasi Lainnya</h2>
                 </div>
                 <div className="divide-y divide-border">
-                  <InfoRow
+                  {/* <InfoRow
                     icon={Sparkles}
                     label="Member Tier"
                     value="Kasta Member"
@@ -519,7 +519,7 @@ const ProfilePage = () => {
                     label="Status Akun"
                     value="Aktif"
                     highlight
-                  />
+                  /> */}
                 </div>
                 
                 <div className="mt-6 pt-6 border-t border-border">
@@ -620,6 +620,7 @@ const ProfilePage = () => {
                           <div className="relative">
                             <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
+                              disabled
                               type="email"
                               placeholder="email@contoh.com"
                               className="pl-10 h-12 rounded-xl bg-background border-border focus-visible:ring-primary/40"

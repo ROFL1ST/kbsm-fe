@@ -27,6 +27,7 @@ const Footer = () => {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
+
   const shouldSplitCategories = categories.length > 6;
   const midpoint = Math.ceil(categories.length / 2);
   const categoryColumns = shouldSplitCategories
