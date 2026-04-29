@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, Navigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
+  CheckCircle2,
   ChevronRight,
   CreditCard,
   Loader2,
@@ -20,40 +21,29 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/sonner";
 import { getAuthUser, hasAccessToken } from "@/lib/auth";
-import { getDefaultUserAddress } from "@/lib/address";
-import {
-  calculateCartSummary,
-  fetchCart,
-  removeCartItem,
-  type CartItem,
-  type CartResponseData,
-  type DirectCheckoutState,
-} from "@/lib/cart";
-import { checkoutTransaction, fetchDeliveryCost } from "@/lib/checkout";
+import { getUserAddresses } from "@/lib/address";
+import { fetchCart, type CartItem } from "@/lib/cart";
+import { fetchDeliveryCost } from "@/lib/checkout";
 import { formatRupiah, getProductImages } from "@/lib/products";
 
-const ORIGIN_SUBDISTRICT_ID = 19043;
-const FALLBACK_DESTINATION_SUBDISTRICT_ID = 212;
+const ORIGIN_SUBDISTRICT_ID = 218;
 const DEFAULT_ITEM_WEIGHT = 1000;
 
 const PAYMENT_METHODS = [
   {
     id: "bank-transfer",
-    code: "TRANSFER",
     label: "Bank Transfer",
     description: "Konfirmasi cepat untuk pembayaran via transfer bank.",
     icon: CreditCard,
   },
   {
     id: "virtual-account",
-    code: "VIRTUAL_ACCOUNT",
     label: "Virtual Account",
     description: "Bayar praktis dengan nomor VA unik dari bank pilihan.",
     icon: ShieldCheck,
   },
   {
     id: "e-wallet",
-    code: "E_WALLET",
     label: "E-Wallet",
     description: "Gunakan dompet digital favoritmu saat checkout final.",
     icon: Store,
@@ -61,60 +51,21 @@ const PAYMENT_METHODS = [
 ];
 
 const COURIERS = [
-  {
-    id: "jne",
-    label: "JNE",
-    description: "Jaringan luas untuk pengiriman nasional.",
-  },
-  {
-    id: "jnt",
-    label: "J&T",
-    description: "Pickup cepat dengan estimasi pengiriman kompetitif.",
-  },
+  { id: "jne", label: "JNE", description: "Jaringan luas untuk pengiriman nasional." },
+  { id: "jnt", label: "J&T", description: "Pickup cepat dengan estimasi pengiriman kompetitif." },
 ];
 
 function resolveReviewItems(items: CartItem[]) {
   return items.filter((item) => item.is_selected);
 }
 
-function removeCheckedOutItemsFromCartCache(
-  currentCart: CartResponseData | undefined,
-  checkedOutItemIds: number[]
-) {
-  if (!currentCart) {
-    return currentCart;
-  }
-
-  const nextItems = currentCart.items.filter(
-    (item) => !checkedOutItemIds.includes(item.id)
-  );
-
-  return {
-    ...currentCart,
-    items: nextItems,
-    summary: calculateCartSummary(nextItems),
-  };
-}
-
 const PreCheckoutPage = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const isLoggedIn = hasAccessToken();
   const authUser = getAuthUser();
-
-  const directCheckoutState = location.state as DirectCheckoutState | null;
-  const directCheckoutItem =
-    directCheckoutState?.mode === "direct" ? directCheckoutState.item : null;
-
-  const [checkoutStep, setCheckoutStep] = useState<"shipping" | "payment">(
-    "shipping"
-  );
+  const [checkoutStep, setCheckoutStep] = useState<"shipping" | "payment">("shipping");
   const [selectedCourier, setSelectedCourier] = useState(COURIERS[0].id);
   const [selectedShippingId, setSelectedShippingId] = useState("");
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(
-    PAYMENT_METHODS[0].id
-  );
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(PAYMENT_METHODS[0].id);
 
   const {
     data: cart,
@@ -124,7 +75,7 @@ const PreCheckoutPage = () => {
   } = useQuery({
     queryKey: ["pre-checkout-cart"],
     queryFn: fetchCart,
-    enabled: isLoggedIn && !directCheckoutItem,
+    enabled: isLoggedIn,
     staleTime: 1000 * 30,
     gcTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
@@ -132,13 +83,13 @@ const PreCheckoutPage = () => {
   });
 
   const {
-    data: primaryAddress = null,
+    data: addresses = [],
     isLoading: isAddressLoading,
     isError: isAddressError,
     error: addressError,
   } = useQuery({
-    queryKey: ["pre-checkout-default-address", authUser?.id],
-    queryFn: () => getDefaultUserAddress(authUser!.id),
+    queryKey: ["pre-checkout-addresses", authUser?.id],
+    queryFn: () => getUserAddresses(authUser!.id),
     enabled: isLoggedIn && Boolean(authUser?.id),
     staleTime: 1000 * 60,
     gcTime: 1000 * 60 * 5,
@@ -146,19 +97,10 @@ const PreCheckoutPage = () => {
     refetchOnReconnect: false,
   });
 
-  const reviewItems = directCheckoutItem
-    ? [directCheckoutItem]
-    : resolveReviewItems(cart?.items ?? []);
-
-  const destinationSubdistrictId =
-    primaryAddress?.subdistrict_id ??
-    primaryAddress?.district_id ??
-    FALLBACK_DESTINATION_SUBDISTRICT_ID;
-
-  const totalWeight = reviewItems.reduce(
-    (total, item) => total + item.quantity * DEFAULT_ITEM_WEIGHT,
-    0
-  );
+  const reviewItems = resolveReviewItems(cart?.items ?? []);
+  const primaryAddress = addresses.find((address) => address.is_default) ?? addresses[0] ?? null;
+  const destinationSubdistrictId = primaryAddress?.subdistrict_id ?? primaryAddress?.district_id ?? null;
+  const totalWeight = reviewItems.reduce((total, item) => total + (item.quantity * DEFAULT_ITEM_WEIGHT), 0);
 
   const {
     data: shippingOptions = [],
@@ -166,20 +108,14 @@ const PreCheckoutPage = () => {
     isError: isShippingError,
     error: shippingError,
   } = useQuery({
-    queryKey: [
-      "delivery-cost",
-      selectedCourier,
-      destinationSubdistrictId,
-      totalWeight,
-    ],
-    queryFn: () =>
-      fetchDeliveryCost({
-        origin_subdistrict_id: ORIGIN_SUBDISTRICT_ID,
-        destination_subdistrict_id: destinationSubdistrictId!,
-        weight: Math.max(totalWeight, DEFAULT_ITEM_WEIGHT),
-        courier: selectedCourier,
-      }),
-    enabled: isLoggedIn && reviewItems.length > 0,
+    queryKey: ["delivery-cost", selectedCourier, destinationSubdistrictId, totalWeight],
+    queryFn: () => fetchDeliveryCost({
+      origin_subdistrict_id: ORIGIN_SUBDISTRICT_ID,
+      destination_subdistrict_id: destinationSubdistrictId!,
+      weight: Math.max(totalWeight, DEFAULT_ITEM_WEIGHT),
+      courier: selectedCourier,
+    }),
+    enabled: isLoggedIn && Boolean(destinationSubdistrictId) && reviewItems.length > 0,
     staleTime: 1000 * 30,
     gcTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
@@ -224,108 +160,20 @@ const PreCheckoutPage = () => {
     });
   }, [shippingOptions]);
 
-  const selectedPaymentMethodOption =
-    PAYMENT_METHODS.find((method) => method.id === selectedPaymentMethod) ??
-    PAYMENT_METHODS[0];
+  if (!isLoggedIn || !authUser?.id) {
+    return <Navigate to="/login" replace />;
+  }
 
   const selectedShippingOption =
     shippingOptions.find((option) => option.id === selectedShippingId) ??
     shippingOptions[0] ??
     null;
-
-  const subtotal = calculateCartSummary(reviewItems).final_price;
+  const subtotal = reviewItems.reduce(
+    (total, item) => total + item.calculation.final_price,
+    0
+  );
   const shippingCost = selectedShippingOption?.cost ?? 0;
   const grandTotal = subtotal + shippingCost;
-
-  const checkoutMutation = useMutation({
-    mutationFn: async () => {
-      if (!primaryAddress?.id) {
-        throw new Error("Alamat pengiriman belum tersedia.");
-      }
-
-      if (!selectedShippingOption) {
-        throw new Error("Pilih layanan pengiriman terlebih dahulu.");
-      }
-
-      if (!selectedPaymentMethodOption?.code) {
-        throw new Error("Metode pembayaran belum tersedia.");
-      }
-
-      if (reviewItems.length === 0) {
-        throw new Error("Tidak ada item yang bisa di-checkout.");
-      }
-
-      return checkoutTransaction({
-        user_address_id: primaryAddress.id,
-        user_id: authUser.id,
-        payment_method_code: selectedPaymentMethodOption.code,
-        shipping: {
-          name: selectedShippingOption.courierName,
-          code: selectedShippingOption.courier,
-          service: selectedShippingOption.service,
-          description: selectedShippingOption.description,
-          cost: selectedShippingOption.cost,
-          etd: selectedShippingOption.etd.trim() || "-",
-        },
-        items: reviewItems.map((item) => ({
-          product_id: item.product_id,
-          product_detail_id: item.product_detail_id,
-          product_unit_id: item.product_unit_id,
-          quantity: item.quantity,
-        })),
-      });
-    },
-    onSuccess: async () => {
-      const checkedOutCartItems = directCheckoutItem
-        ? []
-        : reviewItems.filter((item) => item.id > 0);
-
-      const checkedOutCartItemIds = checkedOutCartItems.map((item) => item.id);
-
-      if (checkedOutCartItems.length > 0) {
-        await Promise.all(
-          checkedOutCartItems.map((item) => removeCartItem(item.id))
-        );
-      }
-
-      if (checkedOutCartItemIds.length > 0) {
-        queryClient.setQueryData<CartResponseData | undefined>(
-          ["pre-checkout-cart"],
-          (currentCart) =>
-            removeCheckedOutItemsFromCartCache(
-              currentCart,
-              checkedOutCartItemIds
-            )
-        );
-
-        queryClient.setQueryData<CartResponseData | undefined>(
-          ["cart"],
-          (currentCart) =>
-            removeCheckedOutItemsFromCartCache(
-              currentCart,
-              checkedOutCartItemIds
-            )
-        );
-      }
-
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["pre-checkout-cart"] }),
-        queryClient.invalidateQueries({ queryKey: ["cart"] }),
-      ]);
-
-      toast.success("Checkout berhasil dibuat.");
-      navigate("/transactions");
-    },
-    onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : "Checkout gagal diproses."
-      );
-    },
-  });
-
-  if (!isLoggedIn || !authUser?.id) {
-    return <Navigate to="/login" replace />;
-  }
 
   return (
     <main className="min-h-screen bg-background">
@@ -342,8 +190,7 @@ const PreCheckoutPage = () => {
               Confirm <em className="italic gradient-text">Your Order</em>
             </h1>
             <p className="max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
-              Review produk, alamat pengiriman, kurir, dan metode pembayaran
-              sebelum masuk ke proses checkout akhir.
+              Review produk, alamat pengiriman, kurir, dan metode pembayaran sebelum masuk ke proses checkout akhir.
             </p>
           </div>
         </div>
@@ -359,11 +206,8 @@ const PreCheckoutPage = () => {
               <ArrowLeft className="h-4 w-4" />
               Kembali ke keranjang
             </Link>
-
             <span className="rounded-full border border-border/60 bg-white px-4 py-2 text-sm text-muted-foreground">
-              {isCartLoading
-                ? "Menyiapkan pesanan..."
-                : `${reviewItems.length} produk siap checkout`}
+              {isCartLoading ? "Menyiapkan pesanan..." : `${reviewItems.length} produk siap checkout`}
             </span>
           </div>
 
@@ -371,29 +215,23 @@ const PreCheckoutPage = () => {
             <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_400px]">
               <div className="space-y-5">
                 {Array.from({ length: 3 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="h-48 animate-pulse rounded-3xl bg-muted"
-                  />
+                  <div key={index} className="h-48 rounded-3xl bg-muted animate-pulse" />
                 ))}
               </div>
-              <div className="h-[36rem] animate-pulse rounded-3xl bg-muted" />
+              <div className="h-[36rem] rounded-3xl bg-muted animate-pulse" />
             </div>
           ) : isCartError ? (
             <div className="rounded-3xl border border-border/60 bg-white p-8 text-center text-muted-foreground soft-shadow">
               Gagal memuat data checkout. Coba refresh beberapa saat lagi.
             </div>
-          ) : reviewItems.length === 0 || (!directCheckoutItem && !cart?.summary) ? (
+          ) : reviewItems.length === 0 || !cart?.summary ? (
             <div className="rounded-[2rem] border border-border/60 bg-white px-6 py-14 text-center soft-shadow md:px-12">
               <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <ShoppingBag className="h-7 w-7" />
               </div>
-              <h2 className="text-2xl font-semibold text-foreground">
-                Tidak ada item untuk checkout
-              </h2>
+              <h2 className="text-2xl font-semibold text-foreground">Tidak ada item untuk checkout</h2>
               <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
-                Pilih produk dari keranjang terlebih dahulu sebelum lanjut ke
-                pre-checkout.
+                Pilih produk dari keranjang terlebih dahulu sebelum lanjut ke pre-checkout.
               </p>
               <Button asChild className="mt-6 h-12 rounded-full px-8">
                 <Link to="/cart">Kembali ke keranjang</Link>
@@ -405,16 +243,10 @@ const PreCheckoutPage = () => {
                 <section className="rounded-[2rem] border border-border/60 bg-white p-6 soft-shadow md:p-7">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
-                        Alamat Pengiriman
-                      </p>
+                      <p className="text-xs uppercase tracking-[0.24em] text-primary">Shipping Address</p>
+                      <h2 className="mt-2 text-2xl font-semibold text-foreground">Alamat utama</h2>
                     </div>
-
-                    <Button
-                      asChild
-                      variant="outline"
-                      className="h-10 rounded-full border-border/80 px-6 text-sm font-medium text-slate-500 hover:bg-muted"
-                    >
+                    <Button asChild variant="outline" className="rounded-full">
                       <Link to="/profile/addresses">Ubah alamat</Link>
                     </Button>
                   </div>
@@ -426,46 +258,38 @@ const PreCheckoutPage = () => {
                   ) : !primaryAddress ? (
                     <div className="mt-6 rounded-3xl border border-dashed border-border/80 bg-muted/20 p-6">
                       <p className="text-sm text-muted-foreground">
-                        Belum ada alamat utama. Tambahkan atau tandai satu
-                        alamat sebagai default sebelum checkout.
+                        Belum ada alamat utama. Tambahkan atau tandai satu alamat sebagai default sebelum checkout.
                       </p>
                       <Button asChild className="mt-4 rounded-full">
                         <Link to="/profile/addresses">Tambah alamat</Link>
                       </Button>
                     </div>
                   ) : (
-                    <div className="mt-6">
+                    <div className="mt-6 rounded-3xl bg-muted/20 p-5">
                       <div className="flex items-start gap-3">
-                        <MapPin className="mt-1 h-5 w-5 shrink-0 fill-primary text-primary" />
-
-                        <div className="min-w-0 flex-1">
+                        <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <MapPin className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 flex-1 space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold text-foreground">{primaryAddress.receiver_name}</p>
                             {primaryAddress.label ? (
-                              <p className="text-lg font-semibold text-foreground md:text-lg">
-                                {primaryAddress.label}{" "}
-                                <span className="font-normal">•</span>{" "}
-                                {primaryAddress.receiver_name}
-                              </p>
-                            ) : (
-                              <p className="text-lg font-semibold text-foreground md:text-lg">
-                                {primaryAddress.receiver_name}
-                              </p>
-                            )}
+                              <span className="rounded-full border border-border/60 px-2.5 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                                {primaryAddress.label}
+                              </span>
+                            ) : null}
+                            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-primary">
+                              <CheckCircle2 className="h-3 w-3" />
+                              Primary
+                            </span>
                           </div>
-
-                          <p className="mt-3 text-base leading-relaxed text-foreground md:text-sm">
-                            {primaryAddress.address},{" "}
-                            {primaryAddress.subdistrict_name},{" "}
-                            {primaryAddress.district_name},{" "}
-                            {primaryAddress.city_name},{" "}
-                            {primaryAddress.province_name}
-                            {primaryAddress.postal_code
-                              ? `, ${primaryAddress.postal_code}`
-                              : ""}
-                          </p>
-
-                          <p className="mt-1 text-base text-foreground md:text-sm">
-                            {primaryAddress.phone_number}
+                          <p className="text-sm text-foreground">{primaryAddress.phone_number}</p>
+                          <p className="text-sm leading-relaxed text-muted-foreground">
+                            {primaryAddress.address}
+                            <br />
+                            {primaryAddress.subdistrict_name}, {primaryAddress.district_name}
+                            <br />
+                            {primaryAddress.city_name}, {primaryAddress.province_name} {primaryAddress.postal_code}
                           </p>
                         </div>
                       </div>
@@ -475,20 +299,14 @@ const PreCheckoutPage = () => {
 
                 <section className="rounded-[2rem] border border-border/60 bg-white p-6 soft-shadow md:p-7">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.24em] text-primary">
-                      Order Items
-                    </p>
-                    <h2 className="mt-2 text-2xl font-semibold text-foreground">
-                      Produk yang dibeli
-                    </h2>
+                    <p className="text-xs uppercase tracking-[0.24em] text-primary">Order Items</p>
+                    <h2 className="mt-2 text-2xl font-semibold text-foreground">Produk yang dibeli</h2>
                   </div>
 
                   <div className="mt-6 space-y-4">
                     {reviewItems.map((item) => {
                       const image = getProductImages(item.product)[0] ?? "";
-                      const productPrice = item.product.discount_flag
-                        ? item.product.final_price
-                        : item.product.price;
+                      const productPrice = item.product.discount_flag ? item.product.final_price : item.product.price;
 
                       return (
                         <article
@@ -514,16 +332,13 @@ const PreCheckoutPage = () => {
                                   <p className="text-[11px] uppercase tracking-[0.24em] text-primary">
                                     {item.product.category_name}
                                   </p>
-                                  <h3 className="mt-1 line-clamp-2 text-base font-medium leading-tight text-foreground">
+                                  <h3 className="mt-1 line-clamp-2 text-lg font-semibold leading-tight text-foreground">
                                     {item.product.product_name}
                                   </h3>
                                 </div>
-
                                 <div className="text-right">
-                                  <p className="text-base font-semibold text-foreground">
-                                    {formatRupiah(
-                                      item.calculation.final_price
-                                    )}
+                                  <p className="text-lg font-semibold text-foreground">
+                                    {formatRupiah(item.calculation.final_price)}
                                   </p>
                                   <p className="text-xs text-muted-foreground">
                                     Qty {item.quantity}
@@ -555,11 +370,8 @@ const PreCheckoutPage = () => {
                 <div className="rounded-[2rem] border border-border/60 bg-white p-6 soft-shadow md:p-7">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.24em] text-primary">
-                        Checkout Setup
-                      </p>
+                      <p className="text-xs uppercase tracking-[0.24em] text-primary">Checkout Setup</p>
                     </div>
-
                     <div className="flex items-center gap-2 rounded-full border border-border/60 bg-muted/20 p-1">
                       <button
                         type="button"
@@ -572,7 +384,6 @@ const PreCheckoutPage = () => {
                       >
                         Ongkir
                       </button>
-
                       <button
                         type="button"
                         className={`rounded-full px-3 py-1.5 text-xs font-medium uppercase tracking-[0.14em] transition-colors ${
@@ -580,9 +391,7 @@ const PreCheckoutPage = () => {
                             ? "bg-foreground text-background"
                             : "text-muted-foreground"
                         }`}
-                        onClick={() =>
-                          selectedShippingOption && setCheckoutStep("payment")
-                        }
+                        onClick={() => selectedShippingOption && setCheckoutStep("payment")}
                         disabled={!selectedShippingOption}
                       >
                         Pembayaran
@@ -594,12 +403,9 @@ const PreCheckoutPage = () => {
                     <>
                       <section className="mt-8">
                         <div className="flex items-center justify-between gap-3">
-                          <h3 className="text-base font-semibold text-foreground">
-                            Courier
-                          </h3>
+                          <h3 className="text-base font-semibold text-foreground">Courier</h3>
                           <Truck className="h-4 w-4 text-primary" />
                         </div>
-
                         <div className="mt-4 grid gap-3">
                           {COURIERS.map((courier) => (
                             <button
@@ -614,12 +420,8 @@ const PreCheckoutPage = () => {
                             >
                               <div className="flex items-center justify-between gap-3">
                                 <div>
-                                  <p className="font-semibold text-foreground">
-                                    {courier.label}
-                                  </p>
-                                  <p className="mt-1 text-sm text-muted-foreground">
-                                    {courier.description}
-                                  </p>
+                                  <p className="font-semibold text-foreground">{courier.label}</p>
+                                  <p className="mt-1 text-sm text-muted-foreground">{courier.description}</p>
                                 </div>
                                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
                               </div>
@@ -635,14 +437,13 @@ const PreCheckoutPage = () => {
                           </div>
                         ) : null}
 
-                        {isShippingError ? (
+                        {!destinationSubdistrictId ? null : isShippingError ? (
                           <p className="mt-4 text-sm text-destructive">
                             Gagal menghitung ongkir untuk courier ini.
                           </p>
                         ) : shippingOptions.length === 0 ? (
                           <p className="mt-4 text-sm text-muted-foreground">
-                            Tidak ada layanan pengiriman yang tersedia untuk
-                            courier ini.
+                            Tidak ada layanan pengiriman yang tersedia untuk courier ini.
                           </p>
                         ) : (
                           <RadioGroup
@@ -660,27 +461,17 @@ const PreCheckoutPage = () => {
                                     : "border-border/60 hover:border-primary/40"
                                 }`}
                               >
-                                <RadioGroupItem
-                                  id={option.id}
-                                  value={option.id}
-                                  className="mt-1"
-                                />
-
+                                <RadioGroupItem id={option.id} value={option.id} className="mt-1" />
                                 <div className="min-w-0 flex-1">
                                   <div className="flex flex-wrap items-start justify-between gap-3">
                                     <div>
                                       <p className="font-semibold text-foreground">
                                         {option.courierName} {option.service}
                                       </p>
-                                      <p className="mt-1 text-sm text-muted-foreground">
-                                        {option.description}
-                                      </p>
+                                      <p className="mt-1 text-sm text-muted-foreground">{option.description}</p>
                                     </div>
-
                                     <div className="text-right">
-                                      <p className="font-semibold text-foreground">
-                                        {formatRupiah(option.cost)}
-                                      </p>
+                                      <p className="font-semibold text-foreground">{formatRupiah(option.cost)}</p>
                                       <p className="text-xs text-muted-foreground">
                                         Est. {option.etd || "Tersedia"}
                                       </p>
@@ -696,12 +487,9 @@ const PreCheckoutPage = () => {
                   ) : (
                     <section className="mt-8">
                       <div className="flex items-center justify-between gap-3">
-                        <h3 className="text-base font-semibold text-foreground">
-                          Payment method
-                        </h3>
+                        <h3 className="text-base font-semibold text-foreground">Payment method</h3>
                         <CreditCard className="h-4 w-4 text-primary" />
                       </div>
-
                       <RadioGroup
                         className="mt-4 gap-3"
                         value={selectedPaymentMethod}
@@ -720,24 +508,14 @@ const PreCheckoutPage = () => {
                                   : "border-border/60 hover:border-primary/40"
                               }`}
                             >
-                              <RadioGroupItem
-                                id={method.id}
-                                value={method.id}
-                                className="mt-1"
-                              />
-
+                              <RadioGroupItem id={method.id} value={method.id} className="mt-1" />
                               <div className="flex min-w-0 flex-1 items-start gap-3">
                                 <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
                                   <Icon className="h-4 w-4" />
                                 </div>
-
                                 <div>
-                                  <p className="font-semibold text-foreground">
-                                    {method.label}
-                                  </p>
-                                  <p className="mt-1 text-sm text-muted-foreground">
-                                    {method.description}
-                                  </p>
+                                  <p className="font-semibold text-foreground">{method.label}</p>
+                                  <p className="mt-1 text-sm text-muted-foreground">{method.description}</p>
                                 </div>
                               </div>
                             </label>
@@ -751,37 +529,22 @@ const PreCheckoutPage = () => {
 
                   <div className="space-y-4 text-sm">
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-muted-foreground">
-                        Subtotal produk
-                      </span>
-                      <span className="font-medium text-foreground">
-                        {formatRupiah(subtotal)}
-                      </span>
+                      <span className="text-muted-foreground">Subtotal produk</span>
+                      <span className="font-medium text-foreground">{formatRupiah(subtotal)}</span>
                     </div>
-
                     <div className="flex items-center justify-between gap-4">
                       <span className="text-muted-foreground">Ongkir</span>
                       <span className="font-medium text-foreground">
-                        {selectedShippingOption
-                          ? formatRupiah(shippingCost)
-                          : "Pilih layanan"}
+                        {selectedShippingOption ? formatRupiah(shippingCost) : "Pilih layanan"}
                       </span>
                     </div>
-
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-muted-foreground">
-                        Berat total
-                      </span>
-                      <span className="font-medium text-foreground">
-                        {Math.max(totalWeight, 0)} gr
-                      </span>
+                      <span className="text-muted-foreground">Berat total</span>
+                      <span className="font-medium text-foreground">{Math.max(totalWeight, 0)} gr</span>
                     </div>
-
                     <div className="border-t border-border/60 pt-4">
                       <div className="flex items-center justify-between gap-4">
-                        <span className="text-base font-semibold text-foreground">
-                          Total pembayaran
-                        </span>
+                        <span className="text-base font-semibold text-foreground">Total pembayaran</span>
                         <span className="text-xl font-semibold text-foreground">
                           {formatRupiah(grandTotal)}
                         </span>
@@ -806,19 +569,11 @@ const PreCheckoutPage = () => {
                       >
                         Kembali
                       </Button>
-
                       <Button
                         className="h-12 flex-1 rounded-full text-sm uppercase tracking-[0.16em]"
-                        disabled={
-                          !primaryAddress ||
-                          !selectedShippingOption ||
-                          checkoutMutation.isPending
-                        }
-                        onClick={() => checkoutMutation.mutate()}
+                        disabled={!primaryAddress || !selectedShippingOption}
                       >
-                        {checkoutMutation.isPending
-                          ? "Memproses..."
-                          : "Lanjut Bayar"}
+                        Lanjut Bayar
                       </Button>
                     </div>
                   )}

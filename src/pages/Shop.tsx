@@ -18,19 +18,19 @@ type CategoryId = number | "";
 
 const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-
   const searchQuery = searchParams.get("search") ?? "";
+
   const categoryIdParam = searchParams.get("category_id");
-  const parsedCategoryId = categoryIdParam ? Number(categoryIdParam) : NaN;
-
-  const initialCategory =
-    Number.isFinite(parsedCategoryId) && parsedCategoryId > 0
-      ? parsedCategoryId
-      : "";
-
-  const [selectedCategory, setSelectedCategory] =
-    useState<CategoryId>(initialCategory);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryId>(
+    categoryIdParam ? Number(categoryIdParam) : ""
+  );
   const [selectedStatus, setSelectedStatus] = useState<CategoryId>("");
+
+  // Sync state saat URL berubah dari luar (navigasi dari Home)
+  useEffect(() => {
+    const id = searchParams.get("category_id");
+    setSelectedCategory(id ? Number(id) : "");
+  }, [searchParams]);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
@@ -43,14 +43,7 @@ const Shop = () => {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: [
-      "products",
-      {
-        search: searchQuery,
-        category_id: selectedCategory,
-        status: selectedStatus,
-      },
-    ],
+    queryKey: ["products", { search: searchQuery, category_id: selectedCategory, status: selectedStatus }],
     queryFn: () =>
       fetchProducts({
         search: searchQuery,
@@ -72,26 +65,19 @@ const Shop = () => {
 
   const handleCategorySelect = (id: CategoryId) => {
     setSelectedCategory(id);
-
     const next = new URLSearchParams(searchParams);
-
     if (id === "") {
       next.delete("category_id");
     } else {
       next.set("category_id", String(id));
     }
-
     setSearchParams(next, { replace: true });
   };
 
   const activeCategoryName =
     selectedCategory !== ""
-      ? categories.find((category) => category.id === selectedCategory)?.name ?? ""
+      ? (categories.find((c) => c.id === selectedCategory)?.name ?? "")
       : "";
-
-  useEffect(() => {
-    setSelectedCategory(initialCategory);
-  }, [initialCategory]);
 
   useEffect(() => {
     document.title = "Shop - Kasta Beaute";
@@ -103,29 +89,22 @@ const Shop = () => {
 
       <section className="relative overflow-hidden bg-gradient-luxury pb-16 pt-40 md:pb-20 md:pt-48">
         <div className="absolute inset-0 bg-gradient-glow pointer-events-none" />
-
         <div className="container relative">
           <div className="max-w-3xl space-y-5">
             <p className="text-xs uppercase tracking-[0.3em] text-primary">
               Complete Collection
             </p>
-
             <h1 className="font-display text-5xl leading-tight text-balance md:text-6xl lg:text-7xl">
               Shop <em className="italic gradient-text">All</em> Products
             </h1>
-
             <p className="max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
               Jelajahi seluruh katalog produk Kasta Beaute, termasuk best seller,
               produk diskon, dan koleksi terbaru dari endpoint produk utama.
             </p>
-
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <span className="rounded-full border border-border/60 bg-white/60 px-4 py-2 backdrop-blur">
-                {isLoading
-                  ? "Memuat produk..."
-                  : `${products.length} produk tersedia`}
+                {isLoading ? "Memuat produk..." : `${products.length} produk tersedia`}
               </span>
-
               <Link
                 to="/"
                 className="story-link inline-flex items-center gap-2 font-medium uppercase tracking-[0.15em] text-primary"
@@ -141,17 +120,14 @@ const Shop = () => {
       <section className="py-16 md:py-20">
         <div className="container">
           <div className="mb-10 space-y-5 animate-fade-in">
-            {searchQuery ? (
+            {/* Search result banner */}
+            {searchQuery && (
               <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-accent/60 px-5 py-3.5 text-sm backdrop-blur-sm">
                 <Search className="h-4 w-4 shrink-0 text-primary" />
-
                 <p className="flex-1 text-foreground">
                   Menampilkan hasil untuk{" "}
-                  <span className="font-semibold text-primary">
-                    &ldquo;{searchQuery}&rdquo;
-                  </span>
+                  <span className="font-semibold text-primary">&ldquo;{searchQuery}&rdquo;</span>
                 </p>
-
                 <button
                   onClick={clearSearch}
                   aria-label="Hapus pencarian"
@@ -161,19 +137,16 @@ const Shop = () => {
                   Hapus
                 </button>
               </div>
-            ) : null}
+            )}
 
-            {!searchQuery && activeCategoryName ? (
+            {/* Category filter banner */}
+            {!searchQuery && activeCategoryName && (
               <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-accent/60 px-5 py-3.5 text-sm backdrop-blur-sm">
                 <Layers className="h-4 w-4 shrink-0 text-primary" />
-
                 <p className="flex-1 text-foreground">
                   Menampilkan kategori{" "}
-                  <span className="font-semibold text-primary">
-                    &ldquo;{activeCategoryName}&rdquo;
-                  </span>
+                  <span className="font-semibold text-primary">&ldquo;{activeCategoryName}&rdquo;</span>
                 </p>
-
                 <button
                   onClick={() => handleCategorySelect("")}
                   aria-label="Hapus filter kategori"
@@ -183,8 +156,9 @@ const Shop = () => {
                   Hapus
                 </button>
               </div>
-            ) : null}
+            )}
 
+            {/* Status filter */}
             <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
               <button
                 onClick={() => setSelectedStatus("")}
@@ -197,7 +171,6 @@ const Shop = () => {
                 <Layers className="h-4 w-4" />
                 Semua Produk
               </button>
-
               <button
                 onClick={() => setSelectedStatus(1)}
                 className={`min-h-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap shadow-sm ${
@@ -211,6 +184,7 @@ const Shop = () => {
               </button>
             </div>
 
+            {/* Category chips */}
             <ScrollArea className="w-full">
               <div className="flex w-max space-x-2 pb-3">
                 <button
@@ -223,22 +197,20 @@ const Shop = () => {
                 >
                   Semua Kategori
                 </button>
-
-                {categories.map((category) => (
+                {categories.map((cat) => (
                   <button
-                    key={category.id}
-                    onClick={() => handleCategorySelect(category.id)}
+                    key={cat.id}
+                    onClick={() => handleCategorySelect(cat.id)}
                     className={`min-h-[44px] px-5 py-2.5 rounded-full text-sm font-medium transition-colors shadow-sm whitespace-nowrap ${
-                      selectedCategory === category.id
+                      selectedCategory === cat.id
                         ? "bg-primary text-primary-foreground"
                         : "bg-white border border-border/60 text-foreground hover:bg-accent active:bg-accent"
                     }`}
                   >
-                    {category.name}
+                    {cat.name}
                   </button>
                 ))}
               </div>
-
               <ScrollBar orientation="horizontal" />
             </ScrollArea>
           </div>
@@ -250,18 +222,13 @@ const Shop = () => {
           ) : !isLoading && products.length === 0 ? (
             <div className="glass-card rounded-3xl p-12 text-center flex flex-col items-center justify-center animate-fade-in">
               <Search className="h-12 w-12 text-muted-foreground/30 mb-4" />
-
-              <h3 className="font-display text-xl mb-2">
-                Produk Tidak Ditemukan
-              </h3>
-
+              <h3 className="font-display text-xl mb-2">Produk Tidak Ditemukan</h3>
               <p className="text-muted-foreground max-w-md mx-auto">
                 {searchQuery
                   ? `Tidak ada produk yang cocok dengan kata kunci "${searchQuery}". Coba kata kunci lain atau hapus filter.`
                   : "Belum ada produk yang tersedia untuk kategori ini."}
               </p>
-
-              {searchQuery || selectedCategory !== "" || selectedStatus !== "" ? (
+              {(searchQuery || selectedCategory !== "" || selectedStatus !== "") && (
                 <button
                   onClick={() => {
                     clearSearch();
@@ -272,7 +239,7 @@ const Shop = () => {
                 >
                   Reset Semua Filter
                 </button>
-              ) : null}
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-5 md:gap-6 lg:grid-cols-4">
