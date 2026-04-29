@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, CreditCard, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  CreditCard,
+  Minus,
+  Plus,
+  ShoppingBag,
+  Trash2,
+} from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
@@ -24,6 +31,7 @@ const CartPage = () => {
   const isLoggedIn = hasAccessToken();
   const authUser = getAuthUser();
   const queryClient = useQueryClient();
+
   const [localCart, setLocalCart] = useState<CartResponseData | null>(null);
   const [pendingItemIds, setPendingItemIds] = useState<number[]>([]);
 
@@ -60,7 +68,8 @@ const CartPage = () => {
       return;
     }
 
-    const message = error instanceof Error ? error.message : "Gagal memuat keranjang.";
+    const message =
+      error instanceof Error ? error.message : "Gagal memuat keranjang.";
     toast.error(message);
   }, [error, isError]);
 
@@ -75,19 +84,24 @@ const CartPage = () => {
     queryClient.setQueryData(["pre-checkout-cart"], nextCart ?? undefined);
   };
 
-  const withPendingItem = async (itemId: number, action: () => Promise<void>) => {
+  const withPendingItem = async (
+    itemId: number,
+    action: () => Promise<void>
+  ) => {
     setPendingItemIds((current) => [...current, itemId]);
 
     try {
       await action();
     } finally {
-      setPendingItemIds((current) => current.filter((currentId) => currentId !== itemId));
+      setPendingItemIds((current) =>
+        current.filter((currentId) => currentId !== itemId)
+      );
     }
   };
 
   const handleCartUpdate = async (
     item: CartItem,
-    changes: Pick<CartItem, "quantity" | "is_selected">,
+    changes: Pick<CartItem, "quantity" | "is_selected">
   ) => {
     if (!authUser?.id) {
       toast.error("Sesi login tidak ditemukan. Silakan login kembali.");
@@ -99,12 +113,14 @@ const CartPage = () => {
     }
 
     const previousCart = localCart;
+
     const nextItems = previousCart.items.map((currentItem) => {
       if (currentItem.id !== item.id) {
         return currentItem;
       }
 
       const nextQuantity = changes.quantity;
+
       return {
         ...currentItem,
         quantity: nextQuantity,
@@ -112,6 +128,7 @@ const CartPage = () => {
         calculation: calculateCartItemSummary(currentItem, nextQuantity),
       };
     });
+
     const nextCart = {
       items: nextItems,
       summary: calculateCartSummary(nextItems),
@@ -129,6 +146,7 @@ const CartPage = () => {
         });
       } catch (updateError) {
         syncCartCaches(previousCart);
+
         const message =
           updateError instanceof Error
             ? updateError.message
@@ -144,7 +162,11 @@ const CartPage = () => {
     }
 
     const previousCart = localCart;
-    const nextItems = previousCart.items.filter((item) => item.id !== cartItemId);
+
+    const nextItems = previousCart.items.filter(
+      (item) => item.id !== cartItemId
+    );
+
     const nextCart = {
       items: nextItems,
       summary: calculateCartSummary(nextItems),
@@ -158,6 +180,7 @@ const CartPage = () => {
         toast.success("Item berhasil dihapus dari keranjang.");
       } catch (removeError) {
         syncCartCaches(previousCart);
+
         const message =
           removeError instanceof Error
             ? removeError.message
@@ -173,10 +196,12 @@ const CartPage = () => {
     }
 
     const previousCart = localCart;
+
     const nextItems = previousCart.items.map((item) => ({
       ...item,
       is_selected: checked,
     }));
+
     const nextCart = {
       items: nextItems,
       summary: calculateCartSummary(nextItems),
@@ -193,11 +218,12 @@ const CartPage = () => {
             cart_id: item.id,
             quantity: item.quantity,
             is_selected: checked,
-          }),
-        ),
+          })
+        )
       );
     } catch (updateError) {
       syncCartCaches(previousCart);
+
       const message =
         updateError instanceof Error
           ? updateError.message
@@ -214,13 +240,16 @@ const CartPage = () => {
     }
 
     const selectedCartItems = localCart.items.filter((item) => item.is_selected);
+
     if (selectedCartItems.length === 0) {
       toast.error("Pilih item yang ingin dihapus dulu.");
       return;
     }
 
     const previousCart = localCart;
+
     const nextItems = previousCart.items.filter((item) => !item.is_selected);
+
     const nextCart = {
       items: nextItems,
       summary: calculateCartSummary(nextItems),
@@ -230,10 +259,13 @@ const CartPage = () => {
     setPendingItemIds(selectedCartItems.map((item) => item.id));
 
     try {
-      await Promise.all(selectedCartItems.map((item) => removeCartItem(item.id)));
+      await Promise.all(
+        selectedCartItems.map((item) => removeCartItem(item.id))
+      );
       toast.success("Item terpilih berhasil dihapus.");
     } catch (removeError) {
       syncCartCaches(previousCart);
+
       const message =
         removeError instanceof Error
           ? removeError.message
@@ -258,14 +290,17 @@ const CartPage = () => {
 
       <section className="relative overflow-hidden bg-gradient-luxury pb-14 pt-36 md:pb-16 md:pt-44">
         <div className="absolute inset-0 bg-gradient-glow pointer-events-none" />
+
         <div className="container relative">
           <div className="max-w-3xl space-y-5">
             <p className="text-xs uppercase tracking-[0.3em] text-primary">
               Shopping Cart
             </p>
+
             <h1 className="font-display text-4xl leading-tight text-balance md:text-5xl lg:text-6xl">
               Review <em className="italic gradient-text">Your Cart</em>
             </h1>
+
             <p className="max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
               Cek kembali produk pilihanmu sebelum lanjut ke proses checkout.
             </p>
@@ -283,8 +318,11 @@ const CartPage = () => {
               <ArrowLeft className="h-4 w-4" />
               Lanjut belanja
             </Link>
+
             <span className="rounded-full border border-border/60 bg-white px-4 py-2 text-sm text-muted-foreground">
-              {isLoading ? "Memuat keranjang..." : `${items.length} item, ${selectedItems.length} dipilih`}
+              {isLoading
+                ? "Memuat keranjang..."
+                : `${items.length} item, ${selectedItems.length} dipilih`}
             </span>
           </div>
 
@@ -292,10 +330,14 @@ const CartPage = () => {
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
               <div className="space-y-4">
                 {Array.from({ length: 3 }).map((_, index) => (
-                  <div key={index} className="h-40 rounded-3xl bg-muted animate-pulse" />
+                  <div
+                    key={index}
+                    className="h-40 animate-pulse rounded-3xl bg-muted"
+                  />
                 ))}
               </div>
-              <div className="h-96 rounded-3xl bg-muted animate-pulse" />
+
+              <div className="h-96 animate-pulse rounded-3xl bg-muted" />
             </div>
           ) : isError ? (
             <div className="rounded-3xl border border-border/60 bg-white p-8 text-center text-muted-foreground soft-shadow">
@@ -306,11 +348,17 @@ const CartPage = () => {
               <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <ShoppingBag className="h-7 w-7" />
               </div>
-              <h2 className="text-2xl font-semibold text-foreground">Keranjang kamu masih kosong</h2>
+
+              <h2 className="text-2xl font-semibold text-foreground">
+                Keranjang kamu masih kosong
+              </h2>
+
               <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
-                Belum ada produk yang tersimpan di keranjang. Tambahkan produk dari katalog dan kembali
-                lagi ke sini untuk melanjutkan checkout.
+                Belum ada produk yang tersimpan di keranjang. Tambahkan produk
+                dari katalog dan kembali lagi ke sini untuk melanjutkan
+                checkout.
               </p>
+
               <Button asChild className="mt-6 h-12 rounded-full px-8">
                 <Link to="/shop">Mulai belanja</Link>
               </Button>
@@ -324,14 +372,19 @@ const CartPage = () => {
                       <Checkbox
                         checked={isAllSelected}
                         disabled={hasPendingItems}
-                        className="h-5 w-5 rounded-md data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                        className="h-5 w-5 rounded-md data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                         onCheckedChange={(checked) => {
                           void handleToggleAllItems(checked === true);
                         }}
                       />
+
                       <div className="flex items-baseline gap-2">
-                        <p className="text-md font-semibold text-foreground">Pilih Semua</p>
-                        <span className="text-sm text-muted-foreground md:text-base">({selectedItems.length})</span>
+                        <p className="text-md font-semibold text-foreground">
+                          Pilih Semua
+                        </p>
+                        <span className="text-sm text-muted-foreground md:text-base">
+                          ({selectedItems.length})
+                        </span>
                       </div>
                     </div>
 
@@ -366,7 +419,7 @@ const CartPage = () => {
                           <Checkbox
                             checked={item.is_selected}
                             disabled={isPending}
-                            className="mt-1.5 h-5 w-5 rounded-md data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                            className="mt-1.5 h-5 w-5 rounded-md data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                             onCheckedChange={(checked) => {
                               void handleCartUpdate(item, {
                                 quantity: item.quantity,
@@ -393,11 +446,21 @@ const CartPage = () => {
                                 {item.product.product_name}
                               </h2>
                             </Link>
-                            <p className="mt-2 text-sm text-muted-foreground">{item.product.unit_code}</p>
+
+                            <p className="mt-2 text-sm text-muted-foreground">
+                              {item.product.unit_code}
+                            </p>
+
                             <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground md:text-sm">
-                              <span>Tersisa {item.product.total_quantity}</span>
-                              {item.product.discount_flag && item.product.discount_amount > 0 ? (
-                                <span className="line-through">{formatRupiah(item.product.price)}</span>
+                              <span>
+                                Tersisa {item.product.total_quantity}
+                              </span>
+
+                              {item.product.discount_flag &&
+                              item.product.discount_amount > 0 ? (
+                                <span className="line-through">
+                                  {formatRupiah(item.product.price)}
+                                </span>
                               ) : null}
                             </div>
                           </div>
@@ -435,16 +498,21 @@ const CartPage = () => {
                               >
                                 <Minus className="h-4 w-4" />
                               </button>
+
                               <div className="flex h-full min-w-12 items-center justify-center px-3 text-sm font-medium text-foreground md:min-w-14 md:text-base">
                                 {item.quantity}
                               </div>
+
                               <button
                                 type="button"
                                 className="flex h-full w-10 items-center justify-center text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                                 disabled={isPending || item.quantity >= maxQuantity}
                                 onClick={() => {
                                   void handleCartUpdate(item, {
-                                    quantity: Math.min(maxQuantity, item.quantity + 1),
+                                    quantity: Math.min(
+                                      maxQuantity,
+                                      item.quantity + 1
+                                    ),
                                     is_selected: item.is_selected,
                                   });
                                 }}
@@ -464,9 +532,14 @@ const CartPage = () => {
                 <div className="rounded-[2rem] border border-border/60 bg-white p-6 soft-shadow md:p-7 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.24em] text-primary">Order Summary</p>
-                      <h2 className="mt-2 text-2xl font-semibold text-foreground">Ringkasan belanja</h2>
+                      <p className="text-xs uppercase tracking-[0.24em] text-primary">
+                        Order Summary
+                      </p>
+                      <h2 className="mt-2 text-2xl font-semibold text-foreground">
+                        Ringkasan belanja
+                      </h2>
                     </div>
+
                     <CreditCard className="h-6 w-6 text-primary" />
                   </div>
 
@@ -476,21 +549,28 @@ const CartPage = () => {
                         ? `${selectedCount} produk akan diproses saat checkout.`
                         : "Pilih minimal satu produk untuk lanjut checkout."}
                     </div>
+
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-muted-foreground">Subtotal terpilih</span>
+                      <span className="text-muted-foreground">
+                        Subtotal terpilih
+                      </span>
                       <span className="font-medium text-foreground">
                         {formatRupiah(selectedSummary.total_price)}
                       </span>
                     </div>
+
                     <div className="flex items-center justify-between gap-4">
                       <span className="text-muted-foreground">Discount</span>
                       <span className="font-medium text-primary">
                         -{formatRupiah(selectedSummary.discount_amount)}
                       </span>
                     </div>
+
                     <div className="border-t border-border/60 pt-4">
                       <div className="flex items-center justify-between gap-4">
-                        <span className="text-base font-semibold text-foreground">Estimated total</span>
+                        <span className="text-base font-semibold text-foreground">
+                          Estimated total
+                        </span>
                         <span className="text-xl font-semibold text-foreground">
                           {formatRupiah(selectedSummary.final_price)}
                         </span>
@@ -499,23 +579,27 @@ const CartPage = () => {
                   </div>
 
                   {selectedCount > 0 ? (
-                    <Button asChild className="mt-8 h-12 w-full rounded-full text-sm uppercase tracking-[0.16em]">
+                    <Button
+                      asChild
+                      className="mt-8 h-12 w-full rounded-full text-sm uppercase tracking-[0.16em]"
+                    >
                       <Link to="/pre-checkout">Lanjut ke Checkout</Link>
                     </Button>
                   ) : (
-                    <Button
-                      type="button"
-                      disabled
-                      className="mt-8 h-12 w-full rounded-full text-sm uppercase tracking-[0.16em]"
-                    >
-                      Lanjut ke Checkout
-                    </Button>
+                    <>
+                      <Button
+                        type="button"
+                        disabled
+                        className="mt-8 h-12 w-full rounded-full text-sm uppercase tracking-[0.16em]"
+                      >
+                        Lanjut ke Checkout
+                      </Button>
+
+                      <p className="mt-3 text-sm text-muted-foreground">
+                        Pilih minimal satu produk sebelum lanjut ke checkout.
+                      </p>
+                    </>
                   )}
-                  {selectedCount === 0 ? (
-                    <p className="mt-3 text-sm text-muted-foreground">
-                      Pilih minimal satu produk sebelum lanjut ke checkout.
-                    </p>
-                  ) : null}
                 </div>
               </aside>
             </div>

@@ -1,7 +1,14 @@
 import { useEffect, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, BookOpen, Calendar, Clock, Search, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  Calendar,
+  Clock,
+  Search,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Pagination,
@@ -28,17 +35,23 @@ import { cn } from "@/lib/utils";
 
 const EMPTY_BLOGS: BlogPost[] = [];
 
-const BlogCard = ({ post, featured = false }: { post: BlogPost; featured?: boolean }) => (
+const BlogCard = ({
+  post,
+  featured = false,
+}: {
+  post: BlogPost;
+  featured?: boolean;
+}) => (
   <article
     className={cn(
       "group flex flex-col overflow-hidden rounded-3xl bg-card soft-shadow hover-lift",
-      featured && "md:col-span-2 md:flex-row",
+      featured && "md:col-span-2 md:flex-row"
     )}
   >
     <div
       className={cn(
         "relative shrink-0 overflow-hidden bg-gradient-nude",
-        featured ? "aspect-video md:w-1/2 md:aspect-auto" : "aspect-video",
+        featured ? "aspect-video md:aspect-auto md:w-1/2" : "aspect-video"
       )}
     >
       {post.featured ? (
@@ -46,57 +59,79 @@ const BlogCard = ({ post, featured = false }: { post: BlogPost; featured?: boole
           Featured
         </span>
       ) : null}
+
       <img
         src={post.image}
         alt={post.title}
         loading="lazy"
         className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
       />
+
       <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
     </div>
 
-    <div className={cn("flex flex-1 flex-col gap-3 p-6", featured && "md:justify-center md:p-8")}>
+    <div
+      className={cn(
+        "flex flex-1 flex-col gap-3 p-6",
+        featured && "md:justify-center md:p-8"
+      )}
+    >
       <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-primary">
         {post.category}
       </span>
-      <h3
-        className={cn(
-          "font-display leading-tight transition-colors duration-300 group-hover:text-primary",
-          featured ? "text-2xl md:text-3xl" : "line-clamp-2 text-lg",
-        )}
+
+      <Link
+        to={`/blog/${post.slug}`}
+        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-4"
       >
-        {post.title}
-      </h3>
+        <h3
+          className={cn(
+            "font-display leading-tight transition-colors duration-300 hover:text-primary group-hover:text-primary",
+            featured ? "text-2xl md:text-3xl" : "line-clamp-2 text-lg"
+          )}
+        >
+          {post.title}
+        </h3>
+      </Link>
+
       <p
         className={cn(
           "text-sm leading-relaxed text-muted-foreground",
-          featured ? "line-clamp-3" : "line-clamp-2",
+          featured ? "line-clamp-3" : "line-clamp-2"
         )}
       >
         {post.excerpt}
       </p>
+
       <div className="mt-auto flex items-center gap-4 border-t border-border pt-3">
         <img
           src={post.authorAvatar}
           alt={post.author}
           className="h-8 w-8 rounded-full object-cover ring-2 ring-primary/20"
         />
+
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-medium text-foreground">{post.author}</p>
+          <p className="truncate text-xs font-medium text-foreground">
+            {post.author}
+          </p>
+
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               {formatBlogDate(post.date)}
             </span>
+
             <span>•</span>
+
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               {post.readTime} min read
             </span>
           </div>
         </div>
+
         <Link
-          to={`/blog/${post.id}`}
+          to={`/blog/${post.slug}`}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-foreground/5 transition-colors duration-300 hover:bg-primary hover:text-white"
           aria-label={`Read ${post.title}`}
         >
@@ -109,6 +144,7 @@ const BlogCard = ({ post, featured = false }: { post: BlogPost; featured?: boole
 
 const BlogPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+
   const page = Math.max(1, Number(searchParams.get("page") ?? 1) || 1);
   const size = DEFAULT_BLOG_PAGE_SIZE;
   const nameFilter = searchParams.get("name") ?? "";
@@ -129,12 +165,20 @@ const BlogPage = () => {
     isError,
     error,
   } = useQuery({
-    queryKey: ["blogs", { page, size, category_blog_id: categoryBlogIdFilter }],
-    queryFn: () => fetchBlogs({
-      page,
-      size,
-      category_blog_id: categoryBlogIdFilter || undefined,
-    }),
+    queryKey: [
+      "blogs",
+      {
+        page,
+        size,
+        category_blog_id: categoryBlogIdFilter,
+      },
+    ],
+    queryFn: () =>
+      fetchBlogs({
+        page,
+        size,
+        category_blog_id: categoryBlogIdFilter || undefined,
+      }),
     staleTime: BLOGS_CACHE_TTL,
     gcTime: BLOGS_CACHE_TTL * 2,
     refetchOnWindowFocus: false,
@@ -142,6 +186,7 @@ const BlogPage = () => {
   });
 
   const blogs = blogResponse?.data ?? EMPTY_BLOGS;
+
   const meta = blogResponse?.meta ?? {
     page,
     size,
@@ -154,7 +199,10 @@ const BlogPage = () => {
       return "All";
     }
 
-    const category = categories.find((item) => String(item.id) === categoryBlogIdFilter);
+    const category = categories.find(
+      (item) => String(item.id) === categoryBlogIdFilter
+    );
+
     return category?.name ?? "All";
   }, [categories, categoryBlogIdFilter]);
 
@@ -164,19 +212,26 @@ const BlogPage = () => {
     }
 
     const keyword = nameFilter.trim().toLowerCase();
+
     return blogs.filter((post) => post.title.toLowerCase().includes(keyword));
   }, [blogs, nameFilter]);
 
-  const featuredPost = page === 1 && !nameFilter && !categoryBlogIdFilter ? filteredBlogs[0] ?? null : null;
+  const featuredPost =
+    page === 1 && !nameFilter && !categoryBlogIdFilter
+      ? filteredBlogs[0] ?? null
+      : null;
+
   const gridPosts = featuredPost
     ? filteredBlogs.filter((post) => post.id !== featuredPost.id)
     : filteredBlogs;
 
   useEffect(() => {
     document.title = "Blog - Kasta Beaute | Tips & Inspirasi Kecantikan";
+
     const metaTag = document.querySelector('meta[name="description"]');
     const desc =
       "Temukan tips skincare, panduan bahan aktif, tutorial kecantikan, dan inspirasi gaya hidup sehat dari Kasta Beaute.";
+
     if (metaTag) {
       metaTag.setAttribute("content", desc);
     } else {
@@ -208,18 +263,34 @@ const BlogPage = () => {
 
   const getPageNumbers = () => {
     const pages: (number | "ellipsis")[] = [];
+
     if (meta.totalPages <= 5) {
-      for (let i = 1; i <= meta.totalPages; i += 1) pages.push(i);
+      for (let i = 1; i <= meta.totalPages; i += 1) {
+        pages.push(i);
+      }
+
       return pages;
     }
 
     pages.push(1);
-    if (page > 3) pages.push("ellipsis");
+
+    if (page > 3) {
+      pages.push("ellipsis");
+    }
+
     const start = Math.max(2, page - 1);
     const end = Math.min(meta.totalPages - 1, page + 1);
-    for (let i = start; i <= end; i += 1) pages.push(i);
-    if (page < meta.totalPages - 2) pages.push("ellipsis");
+
+    for (let i = start; i <= end; i += 1) {
+      pages.push(i);
+    }
+
+    if (page < meta.totalPages - 2) {
+      pages.push("ellipsis");
+    }
+
     pages.push(meta.totalPages);
+
     return pages;
   };
 
@@ -239,11 +310,13 @@ const BlogPage = () => {
           </div>
 
           <h1 className="animate-fade-up font-display text-5xl leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
-            Our Beauty <em className="gradient-text italic font-medium">Blog</em>
+            Our Beauty{" "}
+            <em className="gradient-text italic font-medium">Blog</em>
           </h1>
 
           <p className="mx-auto max-w-xl animate-fade-up text-base leading-relaxed text-muted-foreground md:text-lg">
-            Tips skincare, panduan bahan aktif, tutorial kecantikan, dan inspirasi gaya hidup sehat dari para ahli kami.
+            Tips skincare, panduan bahan aktif, tutorial kecantikan, dan
+            inspirasi gaya hidup sehat dari para ahli kami.
           </p>
 
           <div className="animate-fade-up flex justify-center gap-8 pt-4">
@@ -252,7 +325,10 @@ const BlogPage = () => {
               { icon: Calendar, label: `Page ${meta.page}` },
               { icon: Sparkles, label: "Expert Verified" },
             ].map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div
+                key={label}
+                className="flex items-center gap-2 text-sm text-muted-foreground"
+              >
                 <Icon className="h-4 w-4 text-primary" />
                 {label}
               </div>
@@ -265,25 +341,36 @@ const BlogPage = () => {
         <div className="container space-y-4">
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
             <button
-              onClick={() => updateSearchParams({ category_blog_id: null, page: "1" })}
+              onClick={() =>
+                updateSearchParams({
+                  category_blog_id: null,
+                  page: "1",
+                })
+              }
               className={cn(
                 "shrink-0 rounded-full px-5 py-2 text-sm font-medium transition-all duration-300",
                 !categoryBlogIdFilter
                   ? "bg-foreground text-background"
-                  : "bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground",
+                  : "bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground"
               )}
             >
               All
             </button>
+
             {categories.map((category: BlogCategory) => (
               <button
                 key={category.id}
-                onClick={() => updateSearchParams({ category_blog_id: String(category.id), page: "1" })}
+                onClick={() =>
+                  updateSearchParams({
+                    category_blog_id: String(category.id),
+                    page: "1",
+                  })
+                }
                 className={cn(
                   "shrink-0 rounded-full px-5 py-2 text-sm font-medium transition-all duration-300",
                   categoryBlogIdFilter === String(category.id)
                     ? "bg-foreground text-background"
-                    : "bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground",
+                    : "bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground"
                 )}
               >
                 {category.name}
@@ -295,27 +382,42 @@ const BlogPage = () => {
             <input
               type="text"
               value={nameFilter}
-              onChange={(event) => updateSearchParams({ name: event.target.value || null, page: "1" })}
+              onChange={(event) =>
+                updateSearchParams({
+                  name: event.target.value || null,
+                  page: "1",
+                })
+              }
               placeholder="Filter by nama artikel"
               className="h-11 rounded-full border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
+
             <select
               value={categoryBlogIdFilter}
-              onChange={(event) => updateSearchParams({ category_blog_id: event.target.value || null, page: "1" })}
+              onChange={(event) =>
+                updateSearchParams({
+                  category_blog_id: event.target.value || null,
+                  page: "1",
+                })
+              }
               className="h-11 rounded-full border border-border bg-background px-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
             >
               <option value="">Semua kategori</option>
+
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
                 </option>
               ))}
             </select>
+
             <div className="flex items-center justify-end">
               <Button
                 variant="outline"
                 className="rounded-full"
-                onClick={() => setSearchParams(new URLSearchParams(), { replace: true })}
+                onClick={() =>
+                  setSearchParams(new URLSearchParams(), { replace: true })
+                }
               >
                 Reset Filter
               </Button>
@@ -329,13 +431,18 @@ const BlogPage = () => {
           {isLoading ? (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: size }).map((_, index) => (
-                <div key={index} className="aspect-[4/5] animate-pulse rounded-3xl bg-muted" />
+                <div
+                  key={index}
+                  className="aspect-[4/5] animate-pulse rounded-3xl bg-muted"
+                />
               ))}
             </div>
           ) : isError ? (
             <div className="py-20 text-center">
               <p className="font-display text-2xl text-muted-foreground">
-                {error instanceof Error ? error.message : "Gagal memuat artikel."}
+                {error instanceof Error
+                  ? error.message
+                  : "Gagal memuat artikel."}
               </p>
             </div>
           ) : (
@@ -355,11 +462,14 @@ const BlogPage = () => {
               ) : (
                 <div className="py-20 text-center">
                   <Search className="mx-auto mb-4 h-10 w-10 text-muted-foreground/40" />
+
                   <p className="font-display text-2xl text-muted-foreground">
                     Belum ada artikel untuk filter ini.
                   </p>
+
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Filter aktif: kategori {activeCategoryName}, nama {nameFilter || "semua"}.
+                    Filter aktif: kategori {activeCategoryName}, nama{" "}
+                    {nameFilter || "semua"}.
                   </p>
                 </div>
               )}
@@ -373,13 +483,19 @@ const BlogPage = () => {
                           href="#"
                           onClick={(event) => {
                             event.preventDefault();
-                            if (page > 1) handlePageChange(page - 1);
+
+                            if (page > 1) {
+                              handlePageChange(page - 1);
+                            }
                           }}
-                          className={cn("rounded-full transition-colors", page === 1 && "pointer-events-none opacity-40")}
+                          className={cn(
+                            "rounded-full transition-colors",
+                            page === 1 && "pointer-events-none opacity-40"
+                          )}
                         />
                       </PaginationItem>
 
-                      {getPageNumbers().map((item, index) => (
+                      {getPageNumbers().map((item, index) =>
                         item === "ellipsis" ? (
                           <PaginationItem key={`ellipsis-${index}`}>
                             <PaginationEllipsis />
@@ -395,25 +511,30 @@ const BlogPage = () => {
                               }}
                               className={cn(
                                 "h-10 w-10 rounded-full transition-colors",
-                                page === item && "border-foreground bg-foreground text-background hover:border-primary hover:bg-primary",
+                                page === item &&
+                                  "border-foreground bg-foreground text-background hover:border-primary hover:bg-primary"
                               )}
                             >
                               {item}
                             </PaginationLink>
                           </PaginationItem>
                         )
-                      ))}
+                      )}
 
                       <PaginationItem>
                         <PaginationNext
                           href="#"
                           onClick={(event) => {
                             event.preventDefault();
-                            if (page < meta.totalPages) handlePageChange(page + 1);
+
+                            if (page < meta.totalPages) {
+                              handlePageChange(page + 1);
+                            }
                           }}
                           className={cn(
                             "rounded-full transition-colors",
-                            page === meta.totalPages && "pointer-events-none opacity-40",
+                            page === meta.totalPages &&
+                              "pointer-events-none opacity-40"
                           )}
                         />
                       </PaginationItem>
@@ -421,7 +542,8 @@ const BlogPage = () => {
                   </Pagination>
 
                   <p className="mt-3 text-center text-xs text-muted-foreground">
-                    Halaman {meta.page} dari {meta.totalPages} • {meta.total} artikel
+                    Halaman {meta.page} dari {meta.totalPages} • {meta.total}{" "}
+                    artikel
                   </p>
                 </div>
               ) : null}
@@ -437,18 +559,24 @@ const BlogPage = () => {
               <Sparkles className="h-3.5 w-3.5" />
               Weekly Tips
             </div>
+
             <h2 className="font-display text-3xl text-balance md:text-4xl">
-              Dapatkan Tips Kecantikan <em className="gradient-text italic">Langsung</em> ke Inbox-mu
+              Dapatkan Tips Kecantikan{" "}
+              <em className="gradient-text italic">Langsung</em> ke Inbox-mu
             </h2>
+
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Subscribe dan dapatkan artikel eksklusif, tips skincare terbaru, dan penawaran spesial setiap minggu.
+              Subscribe dan dapatkan artikel eksklusif, tips skincare terbaru,
+              dan penawaran spesial setiap minggu.
             </p>
+
             <div className="mx-auto flex max-w-md flex-col gap-3 sm:flex-row">
               <input
                 type="email"
                 placeholder="Email kamu..."
                 className="flex-1 rounded-full border border-border bg-background px-5 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
               />
+
               <Button className="rounded-full bg-foreground px-6 text-sm uppercase tracking-[0.1em] text-background hover:bg-primary">
                 Subscribe
               </Button>

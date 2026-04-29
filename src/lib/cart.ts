@@ -9,11 +9,12 @@ type AddToCartRequest = {
   user_id?: string;
 };
 
-type UpdateCartRequest = {
+type UpdateCartItemRequest = {
+  id?: number;
+  cart_id?: number;
+  quantity?: number;
+  is_selected?: boolean;
   user_id?: string;
-  quantity: number;
-  cart_id: number;
-  is_selected: boolean;
 };
 
 type AddToCartResponse = {
@@ -24,9 +25,7 @@ type RemoveCartResponse = {
   id?: number | string;
 };
 
-type UpdateCartResponse = {
-  id?: number | string;
-};
+type UpdateCartItemResponse = CartItem | CartResponseData | { id?: number | string };
 
 export type CartSummary = {
   total_price: number;
@@ -64,7 +63,10 @@ export function getCartItemCountFromItems(items: CartItem[]) {
   return items.reduce((total, item) => total + item.quantity, 0);
 }
 
-export function calculateCartItemSummary(item: CartItem, quantity: number): CartSummary {
+export function calculateCartItemSummary(
+  item: CartItem,
+  quantity: number
+): CartSummary {
   const safeQuantity = Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
   const totalPrice = item.product.price * safeQuantity;
   const discountAmount = item.product.discount_flag
@@ -84,18 +86,23 @@ export function calculateCartSummary(items: CartItem[]) {
     .reduce<CartSummary>(
       (total, item) => ({
         total_price: total.total_price + item.calculation.total_price,
-        discount_amount: total.discount_amount + item.calculation.discount_amount,
+        discount_amount:
+          total.discount_amount + item.calculation.discount_amount,
         final_price: total.final_price + item.calculation.final_price,
       }),
       {
         total_price: 0,
         discount_amount: 0,
         final_price: 0,
-      },
+      }
     );
 }
 
-export function createCartItemFromProduct(product: ProductApiItem, quantity: number, userId = ""): CartItem {
+export function createCartItemFromProduct(
+  product: ProductApiItem,
+  quantity: number,
+  userId = ""
+): CartItem {
   const safeQuantity = Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
 
   return {
@@ -109,8 +116,11 @@ export function createCartItemFromProduct(product: ProductApiItem, quantity: num
     product,
     calculation: {
       total_price: product.price * safeQuantity,
-      discount_amount: (product.discount_flag ? product.discount_amount : 0) * safeQuantity,
-      final_price: (product.discount_flag ? product.final_price : product.price) * safeQuantity,
+      discount_amount:
+        (product.discount_flag ? product.discount_amount : 0) * safeQuantity,
+      final_price:
+        (product.discount_flag ? product.final_price : product.price) *
+        safeQuantity,
     },
   };
 }
@@ -120,14 +130,19 @@ export async function addToCart(request: AddToCartRequest) {
   const userId = request.user_id ?? authUser?.id;
 
   if (!userId) {
-    throw new Error("Kamu harus login dulu sebelum menambahkan produk ke keranjang.");
+    throw new Error(
+      "Kamu harus login dulu sebelum menambahkan produk ke keranjang."
+    );
   }
 
   if (!Number.isFinite(request.quantity) || request.quantity <= 0) {
     throw new Error("Quantity produk harus lebih dari 0.");
   }
 
-  if (!Number.isFinite(request.product_unit_id) || request.product_unit_id <= 0) {
+  if (
+    !Number.isFinite(request.product_unit_id) ||
+    request.product_unit_id <= 0
+  ) {
     throw new Error("Produk yang dipilih tidak valid.");
   }
 
@@ -156,34 +171,46 @@ export async function fetchCart() {
   return payload.data;
 }
 
-export async function updateCartItem(request: UpdateCartRequest) {
+export async function updateCartItem(request: UpdateCartItemRequest) {
   const authUser = getAuthUser();
   const userId = request.user_id ?? authUser?.id;
+  const cartId = request.id ?? request.cart_id;
 
   if (!userId) {
     throw new Error("Kamu harus login dulu sebelum mengubah keranjang.");
   }
 
-  if (!Number.isFinite(request.cart_id) || request.cart_id <= 0) {
+  if (!cartId || !Number.isFinite(cartId) || cartId <= 0) {
     throw new Error("Item keranjang yang dipilih tidak valid.");
   }
 
-  if (!Number.isFinite(request.quantity) || request.quantity <= 0) {
+  if (
+    request.quantity !== undefined &&
+    (!Number.isFinite(request.quantity) || request.quantity <= 0)
+  ) {
     throw new Error("Quantity produk harus lebih dari 0.");
   }
 
-  const payload = await fetchAuth<UpdateCartResponse>("/carts/update", {
+  const body: Record<string, unknown> = {
+    id: cartId,
+    user_id: userId,
+  };
+
+  if (request.quantity !== undefined) {
+    body.quantity = request.quantity;
+  }
+
+  if (request.is_selected !== undefined) {
+    body.is_selected = request.is_selected;
+  }
+
+  const payload = await fetchAuth<UpdateCartItemResponse>("/carts", {
     method: "PATCH",
-    body: JSON.stringify({
-      user_id: userId,
-      quantity: request.quantity,
-      cart_id: request.cart_id,
-      is_selected: request.is_selected,
-    }),
+    body: JSON.stringify(body),
   });
 
   dispatchCartStateChange();
-  return payload;
+  return payload as ApiEnvelope<UpdateCartItemResponse>;
 }
 
 export async function removeCartItem(cartId: number) {
@@ -191,9 +218,12 @@ export async function removeCartItem(cartId: number) {
     throw new Error("Item keranjang yang dipilih tidak valid.");
   }
 
-  const payload = await fetchAuth<RemoveCartResponse>(`/carts/remove?cart_id=${cartId}`, {
-    method: "DELETE",
-  });
+  const payload = await fetchAuth<RemoveCartResponse>(
+    `/carts/remove?cart_id=${cartId}`,
+    {
+      method: "DELETE",
+    }
+  );
 
   dispatchCartStateChange();
   return payload;
