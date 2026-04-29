@@ -84,7 +84,18 @@ export default function AboutPage() {
 
   useEffect(() => {
     document.title = "Tentang Kami — Kasta Beauté";
-    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    const hash = window.location.hash;
+    if (hash) {
+      setTimeout(() => {
+        const el = document.querySelector(hash);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -147,7 +158,7 @@ export default function AboutPage() {
       </section>
 
       {/* 2. BRAND STORY */}
-      <section className="py-20 md:py-28">
+      <section id="our-story" className="py-20 md:py-28">
         <div className="container">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
             <div className="relative order-2 md:order-1 animate-fade-in">
@@ -241,7 +252,7 @@ export default function AboutPage() {
       </section>
 
       {/* 4. VALUES */}
-      <section className="py-20 md:py-28">
+      <section id="kenapa-memilih-kami" className="py-20 md:py-28">
         <div className="container">
           <div className="text-center mb-14 space-y-3 animate-fade-up">
             <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-xs tracking-[0.2em] uppercase text-primary">
@@ -277,7 +288,7 @@ export default function AboutPage() {
       </section>
 
       {/* 5. CUSTOMER STORIES — shared Testimonials component */}
-      <div className="bg-gradient-luxury">
+      <div id="customer-stories" className="bg-gradient-luxury">
         <Testimonials />
       </div>
 
