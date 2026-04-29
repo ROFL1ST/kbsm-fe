@@ -7,6 +7,8 @@ import {
   Plus,
   Share2,
   Store,
+  Sparkles,
+  PackageSearch,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -59,7 +61,8 @@ const ProductDetail = () => {
     queryFn: () =>
       fetchProducts({
         categoryId: product!.category_id,
-        size: 5,
+        size: 10,
+        page: 1,
       }),
     select: (items) =>
       items
@@ -89,6 +92,10 @@ const ProductDetail = () => {
   const mobileSlides = productImages.length > 0 ? productImages : cardProduct ? [cardProduct.image] : [];
   const activeImage = mobileSlides[activeMobileSlide] ?? cardProduct?.image ?? "";
   const authUser = getAuthUser();
+
+  const shopByCategoryLink = product?.category_id
+    ? `/shop?category_id=${product.category_id}`
+    : "/shop";
 
   useEffect(() => {
     setActiveMobileSlide(0);
@@ -444,62 +451,6 @@ const ProductDetail = () => {
                 </div>
               </div>
 
-              {/* <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
-                <div className="rounded-2xl border border-border/60 bg-white p-6 soft-shadow md:p-8">
-                  <h2 className="text-lg font-semibold text-foreground">
-                    Detail Produk
-                  </h2>
-                  <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Kategori</p>
-                      <p className="mt-1 font-medium text-foreground">
-                        {product.category_name}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Kode Produk</p>
-                      <p className="mt-1 font-medium text-foreground">{product.code}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Satuan</p>
-                      <p className="mt-1 font-medium text-foreground">
-                        {product.unit_code}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Best Seller</p>
-                      <p className="mt-1 font-medium text-foreground">
-                        {product.is_best_seller ? "Ya" : "Tidak"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-border/60 bg-white p-6 soft-shadow md:p-8">
-                  <h2 className="text-lg font-semibold text-foreground">
-                    Informasi Singkat
-                  </h2>
-                  <div className="mt-5 grid gap-3">
-                    {[
-                      "Harga dan gambar langsung dari API produk",
-                      "Deskripsi mendukung format HTML dari backend",
-                      "Layout atas mengikuti pola marketplace",
-                      "Gambar utama dipertahankan tetap dominan",
-                    ].map((point) => (
-                      <div
-                        key={point}
-                        className="flex items-start gap-3 text-sm text-muted-foreground"
-                      >
-                        <span className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary">
-                          <ShoppingBag className="h-3 w-3" />
-                        </span>
-                        <span>{point}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div> */}
-
               <div className="rounded-2xl border border-border/60 bg-white p-6 soft-shadow md:p-8">
                 <h2 className="text-lg font-semibold text-foreground">
                   Deskripsi Produk
@@ -510,24 +461,32 @@ const ProductDetail = () => {
                 />
               </div>
 
-              <div className="space-y-5">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
+              {/* ── Produk Terkait ── */}
+              <div className="border-t border-border/60 pt-8">
+                {/* Section label */}
+                <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="space-y-1.5">
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium tracking-widest text-primary uppercase">
+                      <Sparkles className="h-3 w-3" />
+                      Mungkin Kamu Suka
+                    </div>
                     <h2 className="text-lg font-semibold text-foreground md:text-2xl">
                       Produk Terkait
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      Produk lain dalam kategori {product.category_name}
+                      Produk lain dalam kategori{" "}
+                      <span className="font-medium text-foreground">{product.category_name}</span>
                     </p>
                   </div>
                   <Link
-                    to="/shop"
-                    className="text-sm font-medium text-primary transition-colors hover:text-primary/80"
+                    to={shopByCategoryLink}
+                    className="shrink-0 text-sm font-medium text-primary transition-colors hover:text-primary/80"
                   >
-                    Lihat semua
+                    Lihat semua →
                   </Link>
                 </div>
 
+                {/* Skeleton */}
                 {isRelatedLoading ? (
                   <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
                     {Array.from({ length: 5 }).map((_, index) => (
@@ -538,12 +497,27 @@ const ProductDetail = () => {
                     ))}
                   </div>
                 ) : relatedProducts.length > 0 ? (
+                  /* Product grid */
                   <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
                     {relatedProducts.map((relatedProduct) => (
                       <ProductCard key={relatedProduct.id} p={relatedProduct} />
                     ))}
                   </div>
-                ) : null}
+                ) : (
+                  /* Empty state */
+                  <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-border/60 bg-muted/30 py-14 text-center">
+                    <PackageSearch className="h-10 w-10 text-muted-foreground/40" />
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Belum ada produk lain dalam kategori ini
+                    </p>
+                    <Link
+                      to="/shop"
+                      className="text-xs font-medium text-primary transition-colors hover:text-primary/80"
+                    >
+                      Jelajahi semua produk →
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           )}
