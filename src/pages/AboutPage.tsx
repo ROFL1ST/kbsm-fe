@@ -64,7 +64,7 @@ const TESTIMONIALS = [
     name: "Sari Dewi",
     location: "Jakarta",
     rating: 5,
-    text: "Produk Kasta BeautÃ© benar-benar mengubah rutinitas skincare saya. Kulit terasa lebih lembut dan cerah hanya dalam 2 minggu!",
+    text: "Produk Kasta Beauté benar-benar mengubah rutinitas skincare saya. Kulit terasa lebih lembut dan cerah hanya dalam 2 minggu!",
     avatar: "SD",
   },
   {
@@ -72,7 +72,7 @@ const TESTIMONIALS = [
     name: "Andini Putri",
     location: "Bandung",
     rating: 5,
-    text: "Saya sudah coba banyak brand lokal, tapi Kasta BeautÃ© tetap jadi favorit. Formulanya ringan, nggak bikin jerawat, dan wanginya enak banget.",
+    text: "Saya sudah coba banyak brand lokal, tapi Kasta Beauté tetap jadi favorit. Formulanya ringan, nggak bikin jerawat, dan wanginya enak banget.",
     avatar: "AP",
   },
   {
@@ -102,7 +102,7 @@ const VALUES = [
     icon: Heart,
     title: "Dibuat dengan Cinta",
     description:
-      "Setiap detail produk dirancang dengan penuh perhatian â€” dari formula hingga kemasan â€” karena kamu layak mendapatkan yang terbaik.",
+      "Setiap detail produk dirancang dengan penuh perhatian — dari formula hingga kemasan — karena kamu layak mendapatkan yang terbaik.",
   },
 ];
 
@@ -111,7 +111,7 @@ export default function AboutPage() {
   const [statsStarted, setStatsStarted] = useState(false);
 
   useEffect(() => {
-    document.title = "Tentang Kami â€” Kasta BeautÃ©";
+    document.title = "Tentang Kami — Kasta Beauté";
     window.scrollTo({ top: 0, behavior: "smooth" });
 
     const observer = new IntersectionObserver(
@@ -128,7 +128,7 @@ export default function AboutPage() {
     <main className="min-h-screen bg-background">
       <Navbar />
 
-      {/* 1. HERO â€” clean, no logo */}
+      {/* 1. HERO — clean, no logo */}
       <section className="relative pt-40 md:pt-48 pb-20 md:pb-28 overflow-hidden bg-gradient-luxury">
         <div className="absolute inset-0 bg-gradient-glow pointer-events-none" />
         <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
@@ -147,8 +147,8 @@ export default function AboutPage() {
           </h1>
 
           <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed animate-fade-up delay-75">
-            Kasta BeautÃ© hadir untuk merayakan kecantikan autentik setiap perempuan
-            Indonesia â€” dengan produk perawatan kulit yang jujur, aman, dan efektif.
+            Kasta Beauté hadir untuk merayakan kecantikan autentik setiap perempuan
+            Indonesia — dengan produk perawatan kulit yang jujur, aman, dan efektif.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 animate-fade-up delay-100">
@@ -174,12 +174,12 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 2. BRAND STORY â€” logo besar di panel kiri dengan ornamen */}
+      {/* 2. BRAND STORY — logo besar di panel kiri dengan ornamen */}
       <section className="py-20 md:py-28">
         <div className="container">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
 
-            {/* Visual panel â€” logo centered dengan treatment elegan */}
+            {/* Visual panel — logo centered dengan treatment elegan */}
             <div className="relative order-2 md:order-1 animate-fade-in">
               {/* Background panel */}
               <div className="relative rounded-3xl overflow-hidden bg-gradient-luxury p-12 md:p-16 flex flex-col items-center justify-center gap-6 min-h-[420px]">
@@ -191,7 +191,7 @@ export default function AboutPage() {
                 <div className="relative z-10 flex flex-col items-center gap-4">
                   <img
                     src={kastaLogo}
-                    alt="Kasta BeautÃ©"
+                    alt="Kasta Beauté"
                     loading="lazy"
                     width={200}
                     height={200}
@@ -201,7 +201,7 @@ export default function AboutPage() {
                   <div className="w-16 h-px bg-primary/40" />
                   {/* Tagline kecil */}
                   <p className="text-xs tracking-[0.3em] uppercase text-muted-foreground text-center">
-                    Est. 2020 Â· Bandung, Indonesia
+                    Est. 2020 · Bandung, Indonesia
                   </p>
                 </div>
               </div>
@@ -227,19 +227,19 @@ export default function AboutPage() {
 
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
-                  Kasta BeautÃ© lahir dari satu keyakinan sederhana: setiap perempuan
+                  Kasta Beauté lahir dari satu keyakinan sederhana: setiap perempuan
                   berhak mendapatkan produk perawatan kulit yang berkualitas tanpa harus
                   menguras kantong.
                 </p>
                 <p>
                   Berawal dari dapur kecil di Bandung pada 2020, kami meracik
-                  formula pertama kami dengan bahan-bahan alami lokal terbaik â€”
+                  formula pertama kami dengan bahan-bahan alami lokal terbaik —
                   memastikan setiap tetes produk aman, efektif, dan teruji secara
                   dermatologi.
                 </p>
                 <p>
                   Kini ribuan perempuan Indonesia telah mempercayakan rutinitas
-                  kecantikan mereka kepada Kasta BeautÃ©, dan kami terus berinovasi
+                  kecantikan mereka kepada Kasta Beauté, dan kami terus berinovasi
                   untuk menghadirkan yang terbaik bagi kulit tropis Indonesia.
                 </p>
               </div>
@@ -293,7 +293,7 @@ export default function AboutPage() {
             </div>
             <h2 className="font-display text-4xl md:text-5xl">
               Mengapa Memilih{" "}
-              <em className="italic gradient-text">Kasta BeautÃ©</em>?
+              <em className="italic gradient-text">Kasta Beauté</em>?
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto text-sm leading-relaxed">
               Setiap produk yang kami hadirkan mencerminkan komitmen kami terhadap
@@ -365,7 +365,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 6. CTA â€” clean tanpa logo */}
+      {/* 6. CTA — clean tanpa logo */}
       <section className="py-20 md:py-28">
         <div className="container">
           <div className="glass-card p-10 md:p-16 text-center space-y-7 max-w-3xl mx-auto relative overflow-hidden animate-fade-up">
@@ -380,7 +380,7 @@ export default function AboutPage() {
 
               <p className="text-muted-foreground leading-relaxed max-w-md mx-auto text-sm">
                 Temukan produk perawatan kulit yang tepat untuk kamu.
-                Ribuan perempuan Indonesia sudah merasakannya â€” sekarang giliran kamu.
+                Ribuan perempuan Indonesia sudah merasakannya — sekarang giliran kamu.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
