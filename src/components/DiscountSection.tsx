@@ -8,7 +8,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatRupiah, fetchDiscounts, mapProductToDiscount } from "@/lib/products";
+import { formatRupiah, fetchDiscounts, mapDiscountApiItem } from "@/lib/products";
 import staticDiscounts, { DiscountItem } from "@/data/discounts";
 
 const SLIDE_INTERVAL = 4500;
@@ -25,9 +25,7 @@ function useDiscounts() {
     fetchDiscounts()
       .then((data) => {
         if (cancelled) return;
-        const mapped = data
-          .filter((p) => p.discount_flag && p.discount_amount > 0)
-          .map(mapProductToDiscount);
+        const mapped = data.map(mapDiscountApiItem);
         setDiscounts(mapped.length > 0 ? mapped : staticDiscounts);
       })
       .catch(() => {
@@ -61,13 +59,11 @@ const DiscountSkeleton = ({ compact }: { compact?: boolean }) => (
           compact ? "lg:grid-cols-2 gap-6" : "lg:grid-cols-2 gap-12"
         } items-center animate-pulse`}
       >
-        {/* Image placeholder */}
         <div
           className={`rounded-3xl bg-muted ${
             compact ? "aspect-square" : "aspect-square lg:aspect-[4/5]"
           }`}
         />
-        {/* Content placeholder */}
         <div className="space-y-5">
           <div className="h-3 w-24 rounded bg-muted" />
           <div className="space-y-2">
@@ -134,7 +130,7 @@ const Box = ({
   </div>
 );
 
-/* ── HOME: DiscountSection (original layout) ─────────────────── */
+/* ── HOME: HomeSlider ──────────────────────────────────────── */
 const HomeSlider = ({ discounts }: { discounts: DiscountItem[] }) => {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -156,7 +152,6 @@ const HomeSlider = ({ discounts }: { discounts: DiscountItem[] }) => {
     };
   }, [active, total, paused, next]);
 
-  // Reset active index jika data berubah
   useEffect(() => {
     setActive(0);
   }, [discounts]);
@@ -309,7 +304,6 @@ const CompactSlider = ({ discounts }: { discounts: DiscountItem[] }) => {
     };
   }, [active, total, paused, next]);
 
-  // Reset active index jika data berubah
   useEffect(() => {
     setActive(0);
   }, [discounts]);

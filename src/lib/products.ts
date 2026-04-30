@@ -58,7 +58,31 @@ export type ProductApiItem = {
   final_price: number;
   is_best_seller: boolean;
   path: string | string[];
-  valid_until?: string;
+};
+
+// Type khusus untuk response /products/discount
+export type DiscountApiItem = {
+  id: number;
+  product_id: number;
+  product_detail_id: number;
+  product_unit_id: number;
+  name: string;
+  category_id: number;
+  category_name: string;
+  image: string;
+  original_price: number;
+  discount_percentage: number;
+  final_price: number;
+  valid_until: string;
+  created_at: string;
+  updated_at: string;
+};
+
+type DiscountApiResponse = {
+  status: boolean;
+  message: string;
+  data: DiscountApiItem[];
+  error: string | null;
 };
 
 export type ProductCardData = {
@@ -162,9 +186,9 @@ export async function fetchCategories() {
 }
 
 export async function fetchDiscounts() {
-  const endpoint = `${getApiBaseUrl()}/products/discounts`;
+  const endpoint = `${getApiBaseUrl()}/products/discount`;
   const response = await fetch(endpoint);
-  const payload = (await response.json()) as ProductsApiResponse;
+  const payload = (await response.json()) as DiscountApiResponse;
 
   if (!response.ok || !payload.status || !Array.isArray(payload.data)) {
     throw new Error(payload.error || payload.message || "Gagal mengambil data diskon.");
@@ -208,28 +232,19 @@ export function mapProductToCard(product: ProductApiItem): ProductCardData {
   };
 }
 
-export function mapProductToDiscount(product: ProductApiItem) {
-  const discountPercentage =
-    product.price > 0
-      ? Math.round((product.discount_amount / product.price) * 100)
-      : 0;
-
-  // Fallback valid_until: 7 hari dari sekarang jika API tidak mengembalikannya
-  const fallbackUntil = new Date(
-    Date.now() + 7 * 24 * 60 * 60 * 1000,
-  ).toISOString();
-
+// Mapper dari DiscountApiItem ke DiscountItem (untuk DiscountSection)
+export function mapDiscountApiItem(item: DiscountApiItem) {
   return {
-    product_id: product.product_id,
-    product_detail_id: product.product_detail_id,
-    product_unit_id: product.product_unit_id,
-    name: product.product_name,
-    category: product.category_name,
-    image: getProductImages(product)[0] ?? "",
-    original_price: product.price,
-    discount_percentage: discountPercentage,
-    final_price: product.final_price,
-    valid_until: product.valid_until ?? fallbackUntil,
+    product_id: item.product_id,
+    product_detail_id: item.product_detail_id,
+    product_unit_id: item.product_unit_id,
+    name: item.name,
+    category: item.category_name,
+    image: item.image,
+    original_price: item.original_price,
+    discount_percentage: item.discount_percentage,
+    final_price: item.final_price,
+    valid_until: item.valid_until,
   };
 }
 
