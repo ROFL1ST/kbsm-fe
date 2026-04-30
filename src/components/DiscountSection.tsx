@@ -8,13 +8,81 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatRupiah } from "@/lib/products";
-import discounts from "@/data/discounts";
+import { formatRupiah, fetchDiscounts, mapDiscountApiItem } from "@/lib/products";
+import staticDiscounts, { DiscountItem } from "@/data/discounts";
 
 const SLIDE_INTERVAL = 4500;
-const FADE_MS = 350;
 
-type Discount = (typeof discounts)[number];
+/* ── Hook: fetch discount dari API, fallback ke static ──────── */
+function useDiscounts() {
+  const [discounts, setDiscounts] = useState<DiscountItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    fetchDiscounts()
+      .then((data) => {
+        if (cancelled) return;
+        const mapped = data.map(mapDiscountApiItem);
+        setDiscounts(mapped.length > 0 ? mapped : staticDiscounts);
+      })
+      .catch(() => {
+        if (!cancelled) setDiscounts(staticDiscounts);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return { discounts, loading };
+}
+
+/* ── Skeleton ────────────────────────────────────────────── */
+const DiscountSkeleton = ({ compact }: { compact?: boolean }) => (
+  <section
+    className={`${
+      compact ? "" : "py-20 md:py-28 bg-gradient-nude"
+    } relative overflow-hidden`}
+  >
+    {!compact && (
+      <div className="absolute -top-20 -right-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+    )}
+    <div className="container">
+      <div
+        className={`grid ${
+          compact ? "lg:grid-cols-2 gap-6" : "lg:grid-cols-2 gap-12"
+        } items-center animate-pulse`}
+      >
+        <div
+          className={`rounded-3xl bg-muted ${
+            compact ? "aspect-square" : "aspect-square lg:aspect-[4/5]"
+          }`}
+        />
+        <div className="space-y-5">
+          <div className="h-3 w-24 rounded bg-muted" />
+          <div className="space-y-2">
+            <div className="h-8 w-3/4 rounded bg-muted" />
+            <div className="h-8 w-1/2 rounded bg-muted" />
+          </div>
+          <div className="h-4 w-full rounded bg-muted" />
+          <div className="h-4 w-5/6 rounded bg-muted" />
+          <div className="flex gap-3">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-16 w-16 rounded-xl bg-muted" />
+            ))}
+          </div>
+          <div className="h-12 w-40 rounded-full bg-muted" />
+        </div>
+      </div>
+    </div>
+  </section>
+);
 
 /* ── Countdown hook ──────────────────────────────────────── */
 function useCountdown(validUntil: string) {
@@ -62,11 +130,8 @@ const Box = ({
   </div>
 );
 
-/* ── HOME: DiscountSection (original layout) ─────────────────── */
-// Mobile: konten (label + judul + harga + countdown + CTA) di atas,
-//         gambar di bawah  (order-1 / order-2 via CSS order)
-// Desktop (lg+): gambar kiri, konten kanan
-const HomeSlider = () => {
+/* ── HOME: HomeSlider ──────────────────────────────────────── */
+const HomeSlider = ({ discounts }: { discounts: DiscountItem[] }) => {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const total = discounts.length;
@@ -87,6 +152,12 @@ const HomeSlider = () => {
     };
   }, [active, total, paused, next]);
 
+  useEffect(() => {
+    setActive(0);
+  }, [discounts]);
+
+  if (total === 0) return null;
+
   const item = discounts[active];
   const t = useCountdown(item.valid_until);
 
@@ -99,7 +170,7 @@ const HomeSlider = () => {
       <div className="absolute -top-20 -right-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="container relative grid lg:grid-cols-2 gap-12 items-center">
-        {/* Gambar — order-2 mobile, order-1 desktop (kiri) */}
+        {/* Gambar */}
         <div className="relative aspect-square lg:aspect-[4/5] rounded-3xl overflow-hidden luxury-shadow order-2 lg:order-1">
           {item.image ? (
             <img
@@ -138,7 +209,7 @@ const HomeSlider = () => {
           )}
         </div>
 
-        {/* Konten — order-1 mobile, order-2 desktop (kanan) */}
+        {/* Konten */}
         <div className="order-1 lg:order-2 space-y-7">
           <p className="text-xs tracking-[0.3em] uppercase text-primary">
             Penawaran Terbatas
@@ -212,10 +283,7 @@ const HomeSlider = () => {
 };
 
 /* ── SHOP: CompactSlider ──────────────────────────────────────── */
-// Dipasang di kolom kanan hero Shop (lg:grid-cols-2).
-// Mobile: label+judul → gambar → harga+countdown+CTA
-// Desktop (lg+): gambar kiri | info kanan
-const CompactSlider = () => {
+const CompactSlider = ({ discounts }: { discounts: DiscountItem[] }) => {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const total = discounts.length;
@@ -236,10 +304,15 @@ const CompactSlider = () => {
     };
   }, [active, total, paused, next]);
 
+  useEffect(() => {
+    setActive(0);
+  }, [discounts]);
+
+  if (total === 0) return null;
+
   const item = discounts[active];
   const t = useCountdown(item.valid_until);
 
-  // Shared image block
   const ImageBlock = (
     <div className="relative overflow-hidden rounded-3xl luxury-shadow aspect-square">
       {item.image ? (
@@ -263,7 +336,6 @@ const CompactSlider = () => {
     </div>
   );
 
-  // Shared info block
   const InfoBlock = (
     <div className="space-y-4">
       <p className="text-[10px] uppercase tracking-[0.3em] text-primary">
@@ -344,7 +416,7 @@ const CompactSlider = () => {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* Mobile: label+judul → gambar → harga+countdown+CTA */}
+      {/* Mobile */}
       <div className="flex flex-col gap-5 lg:hidden">
         <div className="space-y-1.5">
           <p className="text-[10px] uppercase tracking-[0.3em] text-primary">
@@ -425,7 +497,7 @@ const CompactSlider = () => {
         </div>
       </div>
 
-      {/* Desktop: gambar kiri | info kanan */}
+      {/* Desktop */}
       <div className="hidden lg:grid lg:grid-cols-2 gap-6 items-center">
         {ImageBlock}
         {InfoBlock}
@@ -436,8 +508,11 @@ const CompactSlider = () => {
 
 /* ── Export ─────────────────────────────────────────────── */
 const DiscountSection = ({ compact }: { compact?: boolean }) => {
-  if (compact) return <CompactSlider />;
-  return <HomeSlider />;
+  const { discounts, loading } = useDiscounts();
+
+  if (loading) return <DiscountSkeleton compact={compact} />;
+  if (compact) return <CompactSlider discounts={discounts} />;
+  return <HomeSlider discounts={discounts} />;
 };
 
 export default DiscountSection;

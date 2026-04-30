@@ -60,6 +60,31 @@ export type ProductApiItem = {
   path: string | string[];
 };
 
+// Type khusus untuk response /products/discount
+export type DiscountApiItem = {
+  id: number;
+  product_id: number;
+  product_detail_id: number;
+  product_unit_id: number;
+  name: string;
+  category_id: number;
+  category_name: string;
+  image: string;
+  original_price: number;
+  discount_percentage: number;
+  final_price: number;
+  valid_until: string;
+  created_at: string;
+  updated_at: string;
+};
+
+type DiscountApiResponse = {
+  status: boolean;
+  message: string;
+  data: DiscountApiItem[];
+  error: string | null;
+};
+
 export type ProductCardData = {
   id: number;
   productId: number;
@@ -160,6 +185,18 @@ export async function fetchCategories() {
   return payload.data;
 }
 
+export async function fetchDiscounts() {
+  const endpoint = `${getApiBaseUrl()}/products/discounts`;
+  const response = await fetch(endpoint);
+  const payload = (await response.json()) as DiscountApiResponse;
+
+  if (!response.ok || !payload.status || !Array.isArray(payload.data)) {
+    throw new Error(payload.error || payload.message || "Gagal mengambil data diskon.");
+  }
+
+  return payload.data;
+}
+
 export const formatRupiah = (n: number) =>
   new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -192,6 +229,22 @@ export function mapProductToCard(product: ProductApiItem): ProductCardData {
       : discountPercentage > 0
         ? `-${discountPercentage}%`
         : undefined,
+  };
+}
+
+// Mapper dari DiscountApiItem ke DiscountItem (untuk DiscountSection)
+export function mapDiscountApiItem(item: DiscountApiItem) {
+  return {
+    product_id: item.product_id,
+    product_detail_id: item.product_detail_id,
+    product_unit_id: item.product_unit_id,
+    name: item.name,
+    category: item.category_name,
+    image: item.image,
+    original_price: item.original_price,
+    discount_percentage: item.discount_percentage,
+    final_price: item.final_price,
+    valid_until: item.valid_until,
   };
 }
 
