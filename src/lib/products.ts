@@ -58,6 +58,7 @@ export type ProductApiItem = {
   final_price: number;
   is_best_seller: boolean;
   path: string | string[];
+  valid_until?: string;
 };
 
 export type ProductCardData = {
@@ -160,6 +161,18 @@ export async function fetchCategories() {
   return payload.data;
 }
 
+export async function fetchDiscounts() {
+  const endpoint = `${getApiBaseUrl()}/products/discount`;
+  const response = await fetch(endpoint);
+  const payload = (await response.json()) as ProductsApiResponse;
+
+  if (!response.ok || !payload.status || !Array.isArray(payload.data)) {
+    throw new Error(payload.error || payload.message || "Gagal mengambil data diskon.");
+  }
+
+  return payload.data;
+}
+
 export const formatRupiah = (n: number) =>
   new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -192,6 +205,31 @@ export function mapProductToCard(product: ProductApiItem): ProductCardData {
       : discountPercentage > 0
         ? `-${discountPercentage}%`
         : undefined,
+  };
+}
+
+export function mapProductToDiscount(product: ProductApiItem) {
+  const discountPercentage =
+    product.price > 0
+      ? Math.round((product.discount_amount / product.price) * 100)
+      : 0;
+
+  // Fallback valid_until: 7 hari dari sekarang jika API tidak mengembalikannya
+  const fallbackUntil = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000,
+  ).toISOString();
+
+  return {
+    product_id: product.product_id,
+    product_detail_id: product.product_detail_id,
+    product_unit_id: product.product_unit_id,
+    name: product.product_name,
+    category: product.category_name,
+    image: getProductImages(product)[0] ?? "",
+    original_price: product.price,
+    discount_percentage: discountPercentage,
+    final_price: product.final_price,
+    valid_until: product.valid_until ?? fallbackUntil,
   };
 }
 
