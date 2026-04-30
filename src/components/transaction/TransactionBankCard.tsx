@@ -17,29 +17,31 @@ export default function TransactionBankCard({ banks }: Props) {
   }
 
   return (
-    <div className="rounded-[2rem] border border-border/60 bg-white px-6 py-8 soft-shadow md:px-8 space-y-5">
+    <div className="rounded-[2rem] border border-border/60 bg-white px-4 py-6 soft-shadow md:px-8 md:py-8 space-y-4">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
           <Landmark className="h-4 w-4 text-primary" />
         </div>
         <div>
-          <h2 className="font-display text-2xl leading-none">Tujuan Transfer</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Lakukan pembayaran ke salah satu rekening berikut
+          <h2 className="font-display text-xl leading-none md:text-2xl">
+            Tujuan Transfer
+          </h2>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Pilih salah satu rekening berikut
           </p>
         </div>
       </div>
 
       {/* Bank list */}
-      <ul className="space-y-3">
+      <ul className="space-y-2.5">
         {banks.map((bank) => (
           <li
             key={bank.id}
-            className="flex items-center gap-4 rounded-2xl border border-border/60 bg-background/60 px-5 py-4"
+            className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background/60 px-3 py-3 md:px-5 md:py-4"
           >
             {/* Logo */}
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/40 bg-white p-1">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/40 bg-white p-1 md:h-12 md:w-12">
               <img
                 src={bank.logo}
                 alt={bank.name}
@@ -55,14 +57,17 @@ export default function TransactionBankCard({ banks }: Props) {
 
             {/* Info */}
             <div className="min-w-0 flex-1 space-y-0.5">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                 {bank.name}
               </p>
-              <p className="font-mono text-base font-semibold tracking-wider text-foreground">
+              <p className="font-mono text-sm font-bold tracking-wider text-foreground md:text-base">
                 {bank.account_number}
               </p>
-              <p className="text-xs text-muted-foreground">
-                a.n. <span className="font-medium text-foreground">{bank.account_name}</span>
+              <p className="text-[11px] text-muted-foreground">
+                a.n.{" "}
+                <span className="font-medium text-foreground">
+                  {bank.account_name}
+                </span>
               </p>
             </div>
 
@@ -71,12 +76,12 @@ export default function TransactionBankCard({ banks }: Props) {
               type="button"
               aria-label={`Salin nomor rekening ${bank.name}`}
               onClick={() => handleCopy(bank)}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border/60 bg-white text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-white text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
             >
               {copiedId === bank.id ? (
-                <Check className="h-4 w-4 text-primary" />
+                <Check className="h-3.5 w-3.5 text-primary" />
               ) : (
-                <Copy className="h-4 w-4" />
+                <Copy className="h-3.5 w-3.5" />
               )}
             </button>
           </li>
@@ -84,9 +89,9 @@ export default function TransactionBankCard({ banks }: Props) {
       </ul>
 
       {/* Footer note */}
-      <p className="rounded-2xl bg-primary/5 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
-        Setelah melakukan transfer, segera upload bukti pembayaran di bawah ini
-        agar pesanan dapat segera diproses.
+      <p className="rounded-2xl bg-primary/5 px-3 py-2.5 text-[11px] leading-relaxed text-muted-foreground md:px-4 md:py-3 md:text-xs">
+        Setelah transfer, segera upload bukti pembayaran di bawah agar
+        pesanan dapat segera diproses.
       </p>
     </div>
   );
