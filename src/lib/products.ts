@@ -162,7 +162,7 @@ export async function fetchCategories() {
 }
 
 export async function fetchDiscounts() {
-  const endpoint = `${getApiBaseUrl()}/products/discount`;
+  const endpoint = `${getApiBaseUrl()}/products/discounts`;
   const response = await fetch(endpoint);
   const payload = (await response.json()) as ProductsApiResponse;
 
