@@ -77,6 +77,18 @@ export interface TransactionProof {
   deleted_by?: string | null;
 }
 
+export interface TransactionBank {
+  id: number;
+  code: string;
+  name: string;
+  account_number: string;
+  account_name: string;
+  logo: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface TransactionDetailData {
   id: string;
   user_id: string;
@@ -91,6 +103,8 @@ export interface TransactionDetailData {
   products: TransactionProduct[];
   /** Selalu ada di response, tapi path-nya bisa null jika bukti belum diunggah */
   transaction_proof: TransactionProof | null;
+  /** Hanya ada ketika status_trx_code === "PENDING", selain itu null */
+  banks: TransactionBank[] | null;
 }
 
 export interface TransactionDetailResponse {

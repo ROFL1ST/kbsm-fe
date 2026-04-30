@@ -13,6 +13,7 @@ import TransactionProductsList from "@/components/transaction/TransactionProduct
 import TransactionShippingCard from "@/components/transaction/TransactionShippingCard";
 import TransactionProofCard from "@/components/transaction/TransactionProofCard";
 import TransactionProofUpload from "@/components/transaction/TransactionProofUpload";
+import TransactionBankCard from "@/components/transaction/TransactionBankCard";
 import TransactionDetailSkeleton from "@/components/transaction/TransactionDetailSkeleton";
 
 import {
@@ -124,6 +125,13 @@ export default function TransactionDetailPage() {
     (transaction.transaction_proof === null ||
       transaction.transaction_proof.path === null);
 
+  /** Tampilkan info bank jika status PENDING dan ada data bank */
+  const showBanks =
+    transaction !== null &&
+    transaction.status_trx_code === "PENDING" &&
+    Array.isArray(transaction.banks) &&
+    transaction.banks.length > 0;
+
   return (
     <main className="min-h-screen bg-background">
       <Navbar />
@@ -179,6 +187,11 @@ export default function TransactionDetailPage() {
 
                 {/* Right */}
                 <div className="space-y-6">
+                  {/* Info bank rekening tujuan — hanya tampil saat PENDING */}
+                  {showBanks && (
+                    <TransactionBankCard banks={transaction.banks!} />
+                  )}
+
                   {showUpload ? (
                     /* path === null → belum ada bukti, form upload pertama */
                     <TransactionProofUpload
