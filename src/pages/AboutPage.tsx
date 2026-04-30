@@ -6,6 +6,7 @@ import {
   ShieldCheck,
   Leaf,
   ArrowRight,
+  type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,8 +16,20 @@ import WhatsAppFloat from "@/components/WhatsAppFloat";
 import Testimonials from "@/components/Testimonials";
 import { cn } from "@/lib/utils";
 import kastaLogo from "@/assets/kasta.png";
+import aboutContent from "@/data/about.json";
+import type { AboutPageContent } from "@/types/about";
 
-/* --- Stat counter hook --- */
+// Cast JSON ke typed interface
+const content = aboutContent as AboutPageContent;
+
+/* ---------- Icon map (render concern, bukan data) ---------- */
+const ICON_MAP: Record<string, LucideIcon> = {
+  Leaf,
+  ShieldCheck,
+  Heart,
+};
+
+/* ---------- Stat counter hook ---------- */
 function useCountUp(target: number, duration = 1800, start = false) {
   const [count, setCount] = useState(0);
   useEffect(() => {
@@ -57,34 +70,15 @@ const StatCard = ({
   );
 };
 
-const VALUES = [
-  {
-    icon: Leaf,
-    title: "Bahan Alami Pilihan",
-    description:
-      "Setiap produk diformulasikan dari bahan-bahan alami terpilih yang aman untuk semua jenis kulit, tanpa bahan berbahaya.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Tersertifikasi & Teruji",
-    description:
-      "Seluruh rangkaian produk telah melalui uji dermatologi ketat dan mendapatkan sertifikasi BPOM untuk keamanan terjamin.",
-  },
-  {
-    icon: Heart,
-    title: "Dibuat dengan Cinta",
-    description:
-      "Setiap detail produk dirancang dengan penuh perhatian — dari formula hingga kemasan — karena kamu layak mendapatkan yang terbaik.",
-  },
-];
-
 export default function AboutPage() {
   const statsRef = useRef<HTMLElement>(null);
   const [statsStarted, setStatsStarted] = useState(false);
   const location = useLocation();
 
+  const { hero, brand_story, stats, values, cta } = content;
+
   useEffect(() => {
-    document.title = "Tentang Kami — Kasta Beauté";
+    document.title = "Tentang Kami \u2014 Kasta Beau\u00e9";
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -101,9 +95,7 @@ export default function AboutPage() {
     if (hash) {
       setTimeout(() => {
         const el = document.querySelector(hash);
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth" });
-        }
+        if (el) el.scrollIntoView({ behavior: "smooth" });
       }, 100);
     } else {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -123,19 +115,18 @@ export default function AboutPage() {
         <div className="container relative text-center space-y-6 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-xs tracking-[0.2em] uppercase text-primary animate-fade-in">
             <Sparkles className="h-3.5 w-3.5" />
-            Tentang Kami
+            {hero.badge}
           </div>
 
-          <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-tight animate-fade-up">
-            Kecantikan yang{" "}
-            <em className="italic font-medium gradient-text">Nyata</em>,<br />
-            untuk Kamu
-          </h1>
+          <h1
+            className="font-display text-5xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-tight animate-fade-up"
+            dangerouslySetInnerHTML={{ __html: hero.title_html }}
+          />
 
-          <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed animate-fade-up delay-75">
-            Kasta Beauté hadir untuk merayakan kecantikan autentik setiap perempuan
-            Indonesia — dengan produk perawatan kulit yang jujur, aman, dan efektif.
-          </p>
+          <p
+            className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed animate-fade-up delay-75"
+            dangerouslySetInnerHTML={{ __html: hero.subtitle_html }}
+          />
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 animate-fade-up delay-100">
             <Button
@@ -143,8 +134,8 @@ export default function AboutPage() {
               size="lg"
               className="rounded-full bg-foreground text-background hover:bg-primary transition-colors px-8 h-12 text-sm tracking-[0.1em] uppercase w-full sm:w-auto"
             >
-              <Link to="/shop">
-                Belanja Sekarang
+              <Link to={hero.cta_primary.href}>
+                {hero.cta_primary.label}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -154,7 +145,7 @@ export default function AboutPage() {
               variant="outline"
               className="rounded-full border-border/60 hover:border-primary hover:text-primary transition-colors px-8 h-12 text-sm tracking-[0.1em] uppercase w-full sm:w-auto"
             >
-              <Link to="/blog">Baca Blog Kami</Link>
+              <Link to={hero.cta_secondary.href}>{hero.cta_secondary.label}</Link>
             </Button>
           </div>
         </div>
@@ -171,7 +162,7 @@ export default function AboutPage() {
                 <div className="relative z-10 flex flex-col items-center gap-4">
                   <img
                     src={kastaLogo}
-                    alt="Kasta Beauté"
+                    alt="Kasta Beau\u00e9"
                     loading="lazy"
                     width={200}
                     height={200}
@@ -179,45 +170,31 @@ export default function AboutPage() {
                   />
                   <div className="w-16 h-px bg-primary/40" />
                   <p className="text-xs tracking-[0.3em] uppercase text-muted-foreground text-center">
-                    Est. 2020 · Bandung, Indonesia
+                    Est. {brand_story.established_year} \u00b7 {brand_story.location}
                   </p>
                 </div>
               </div>
               <div className="absolute -bottom-5 -right-5 md:bottom-8 md:-right-8 glass-card px-5 py-4 rounded-2xl space-y-0.5 shadow-lg animate-fade-up">
                 <p className="text-xs tracking-[0.15em] uppercase text-muted-foreground">Berdiri sejak</p>
-                <p className="font-display text-3xl">2020</p>
+                <p className="font-display text-3xl">{brand_story.established_year}</p>
               </div>
             </div>
 
             <div className="order-1 md:order-2 space-y-6 animate-fade-up">
               <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-xs tracking-[0.2em] uppercase text-primary">
                 <Sparkles className="h-3.5 w-3.5" />
-                Cerita Kami
+                {brand_story.badge}
               </div>
-              <h2 className="font-display text-4xl md:text-5xl leading-tight">
-                Lahir dari{" "}
-                <em className="italic gradient-text">Kebutuhan Nyata</em>
-              </h2>
-              <div className="space-y-4 text-muted-foreground leading-relaxed">
-                <p>
-                  Kasta Beauté lahir dari satu keyakinan sederhana: setiap perempuan
-                  berhak mendapatkan produk perawatan kulit yang berkualitas tanpa harus
-                  menguras kantong.
-                </p>
-                <p>
-                  Berawal dari dapur kecil di Bandung pada 2020, kami meracik
-                  formula pertama kami dengan bahan-bahan alami lokal terbaik —
-                  memastikan setiap tetes produk aman, efektif, dan teruji secara
-                  dermatologi.
-                </p>
-                <p>
-                  Kini ribuan perempuan Indonesia telah mempercayakan rutinitas
-                  kecantikan mereka kepada Kasta Beauté, dan kami terus berinovasi
-                  untuk menghadirkan yang terbaik bagi kulit tropis Indonesia.
-                </p>
-              </div>
+              <h2
+                className="font-display text-4xl md:text-5xl leading-tight"
+                dangerouslySetInnerHTML={{ __html: brand_story.title_html }}
+              />
+              <div
+                className="space-y-4 text-muted-foreground leading-relaxed [&>p]:text-muted-foreground [&>p]:leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: brand_story.content_html }}
+              />
               <div className="flex flex-wrap gap-2 pt-2">
-                {["BPOM Certified", "Cruelty Free", "Vegan Friendly", "Made in Indonesia"].map((tag) => (
+                {brand_story.tags.map((tag) => (
                   <Badge
                     key={tag}
                     variant="secondary"
@@ -238,18 +215,23 @@ export default function AboutPage() {
           <div className="text-center mb-12 space-y-3 animate-fade-up">
             <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-xs tracking-[0.2em] uppercase text-primary">
               <Sparkles className="h-3.5 w-3.5" />
-              Dalam Angka
+              {stats.badge}
             </div>
-            <h2 className="font-display text-4xl md:text-5xl">
-              Dipercaya Ribuan{" "}
-              <em className="italic gradient-text">Pelanggan</em>
-            </h2>
+            <h2
+              className="font-display text-4xl md:text-5xl"
+              dangerouslySetInnerHTML={{ __html: stats.title_html }}
+            />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard value={5000} suffix="+" label="Pelanggan Puas" started={statsStarted} />
-            <StatCard value={50}   suffix="+" label="Produk Tersedia" started={statsStarted} />
-            <StatCard value={49}   suffix="/5" label="Rating Rata-rata" started={statsStarted} />
-            <StatCard value={100}  suffix="%" label="Bahan Aman BPOM" started={statsStarted} />
+            {stats.items.map((item) => (
+              <StatCard
+                key={item.label}
+                value={item.value}
+                suffix={item.suffix}
+                label={item.label}
+                started={statsStarted}
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -260,37 +242,43 @@ export default function AboutPage() {
           <div className="text-center mb-14 space-y-3 animate-fade-up">
             <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-xs tracking-[0.2em] uppercase text-primary">
               <Sparkles className="h-3.5 w-3.5" />
-              Nilai Kami
+              {values.badge}
             </div>
-            <h2 className="font-display text-4xl md:text-5xl">
-              Mengapa Memilih{" "}
-              <em className="italic gradient-text">Kasta Beauté</em>?
-            </h2>
-            <p className="text-muted-foreground max-w-lg mx-auto text-sm leading-relaxed">
-              Setiap produk yang kami hadirkan mencerminkan komitmen kami terhadap
-              kualitas, keamanan, dan kecantikan yang berkelanjutan.
-            </p>
+            <h2
+              className="font-display text-4xl md:text-5xl"
+              dangerouslySetInnerHTML={{ __html: values.title_html }}
+            />
+            <p
+              className="text-muted-foreground max-w-lg mx-auto text-sm leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: values.subtitle_html }}
+            />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {VALUES.map(({ icon: Icon, title, description }, idx) => (
-              <div
-                key={title}
-                className="glass-card p-8 space-y-4 group hover-lift animate-fade-up"
-                style={{ animationDelay: `${idx * 120}ms` }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-px flex-1 bg-primary/30 group-hover:bg-primary transition-colors duration-500" />
-                  <Icon className="h-5 w-5 text-primary shrink-0" />
+            {values.items.map((item, idx) => {
+              const Icon = ICON_MAP[item.icon] ?? Sparkles;
+              return (
+                <div
+                  key={item.title}
+                  className="glass-card p-8 space-y-4 group hover-lift animate-fade-up"
+                  style={{ animationDelay: `${idx * 120}ms` }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-primary/30 group-hover:bg-primary transition-colors duration-500" />
+                    <Icon className="h-5 w-5 text-primary shrink-0" />
+                  </div>
+                  <h3 className="font-display text-xl">{item.title}</h3>
+                  <p
+                    className="text-sm text-muted-foreground leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: item.description_html }}
+                  />
                 </div>
-                <h3 className="font-display text-xl">{title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* 5. CUSTOMER STORIES — shared Testimonials component */}
+      {/* 5. CUSTOMER STORIES */}
       <div id="customer-stories" className="bg-gradient-luxury">
         <Testimonials />
       </div>
@@ -302,14 +290,14 @@ export default function AboutPage() {
             <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-blush rounded-full blur-3xl pointer-events-none" />
             <div className="relative space-y-5">
-              <h2 className="font-display text-4xl md:text-5xl leading-tight text-balance">
-                Siap Merasakan{" "}
-                <em className="italic gradient-text">Perbedaannya</em>?
-              </h2>
-              <p className="text-muted-foreground leading-relaxed max-w-md mx-auto text-sm">
-                Temukan produk perawatan kulit yang tepat untuk kamu.
-                Ribuan perempuan Indonesia sudah merasakannya — sekarang giliran kamu.
-              </p>
+              <h2
+                className="font-display text-4xl md:text-5xl leading-tight text-balance"
+                dangerouslySetInnerHTML={{ __html: cta.title_html }}
+              />
+              <p
+                className="text-muted-foreground leading-relaxed max-w-md mx-auto text-sm"
+                dangerouslySetInnerHTML={{ __html: cta.subtitle_html }}
+              />
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
                 <Button
                   asChild
@@ -320,8 +308,8 @@ export default function AboutPage() {
                     "shadow-lg hover:shadow-primary/25"
                   )}
                 >
-                  <Link to="/shop">
-                    Belanja Sekarang
+                  <Link to={cta.cta_primary.href}>
+                    {cta.cta_primary.label}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
@@ -331,7 +319,7 @@ export default function AboutPage() {
                   variant="outline"
                   className="rounded-full border-border/60 hover:border-primary hover:text-primary transition-colors px-10 h-14 text-sm tracking-[0.1em] uppercase w-full sm:w-auto"
                 >
-                  <Link to="/blog">Baca Tips Kecantikan</Link>
+                  <Link to={cta.cta_secondary.href}>{cta.cta_secondary.label}</Link>
                 </Button>
               </div>
             </div>

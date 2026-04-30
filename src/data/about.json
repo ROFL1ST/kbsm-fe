@@ -1,0 +1,72 @@
+{
+  "hero": {
+    "badge": "Tentang Kami",
+    "title_html": "Kecantikan yang <em class=\"italic font-medium gradient-text\">Nyata</em>,<br />untuk Kamu",
+    "subtitle_html": "<p>Kasta Beau\u00e9 hadir untuk merayakan kecantikan autentik setiap perempuan Indonesia \u2014 dengan produk perawatan kulit yang <strong>jujur</strong>, <strong>aman</strong>, dan <strong>efektif</strong>.</p>",
+    "cta_primary": {
+      "label": "Belanja Sekarang",
+      "href": "/shop"
+    },
+    "cta_secondary": {
+      "label": "Baca Blog Kami",
+      "href": "/blog"
+    }
+  },
+  "brand_story": {
+    "badge": "Cerita Kami",
+    "title_html": "Lahir dari <em class=\"italic gradient-text\">Kebutuhan Nyata</em>",
+    "content_html": "<p>Kasta Beau\u00e9 lahir dari satu keyakinan sederhana: setiap perempuan berhak mendapatkan produk perawatan kulit yang berkualitas tanpa harus menguras kantong.</p>\n\n<p>Berawal dari dapur kecil di <strong>Bandung</strong> pada 2020, kami meracik formula pertama kami dengan bahan-bahan alami lokal terbaik \u2014 memastikan setiap tetes produk aman, efektif, dan teruji secara dermatologi.</p>\n\n<p>Kini ribuan perempuan Indonesia telah mempercayakan rutinitas kecantikan mereka kepada Kasta Beau\u00e9, dan kami terus berinovasi untuk menghadirkan yang terbaik bagi kulit tropis Indonesia.</p>",
+    "tags": [
+      "BPOM Certified",
+      "Cruelty Free",
+      "Vegan Friendly",
+      "Made in Indonesia"
+    ],
+    "established_year": "2020",
+    "location": "Bandung, Indonesia"
+  },
+  "stats": {
+    "badge": "Dalam Angka",
+    "title_html": "Dipercaya Ribuan <em class=\"italic gradient-text\">Pelanggan</em>",
+    "items": [
+      { "value": 5000, "suffix": "+",  "label": "Pelanggan Puas" },
+      { "value": 50,   "suffix": "+",  "label": "Produk Tersedia" },
+      { "value": 49,   "suffix": "/5", "label": "Rating Rata-rata" },
+      { "value": 100,  "suffix": "%",  "label": "Bahan Aman BPOM" }
+    ]
+  },
+  "values": {
+    "badge": "Nilai Kami",
+    "title_html": "Mengapa Memilih <em class=\"italic gradient-text\">Kasta Beau\u00e9</em>?",
+    "subtitle_html": "<p>Setiap produk yang kami hadirkan mencerminkan komitmen kami terhadap <strong>kualitas</strong>, <strong>keamanan</strong>, dan kecantikan yang berkelanjutan.</p>",
+    "items": [
+      {
+        "icon": "Leaf",
+        "title": "Bahan Alami Pilihan",
+        "description_html": "<p>Setiap produk diformulasikan dari bahan-bahan alami terpilih yang aman untuk semua jenis kulit, tanpa bahan berbahaya.</p>\n\n<ul>\n  <li>Bebas paraben &amp; sulfat</li>\n  <li>Cocok untuk kulit sensitif</li>\n  <li>Diformulasikan khusus kulit tropis</li>\n</ul>"
+      },
+      {
+        "icon": "ShieldCheck",
+        "title": "Tersertifikasi &amp; Teruji",
+        "description_html": "<p>Seluruh rangkaian produk telah melalui uji dermatologi ketat dan mendapatkan sertifikasi <strong>BPOM</strong> untuk keamanan terjamin.</p>\n\n<ul>\n  <li>Terdaftar resmi di BPOM RI</li>\n  <li>Uji dermatologi non-comedogenic</li>\n  <li>Tidak mengandung bahan berbahaya</li>\n</ul>"
+      },
+      {
+        "icon": "Heart",
+        "title": "Dibuat dengan Cinta",
+        "description_html": "<p>Setiap detail produk dirancang dengan penuh perhatian \u2014 dari formula hingga kemasan \u2014 karena kamu layak mendapatkan yang terbaik.</p>\n\n<ul>\n  <li>Kemasan ramah lingkungan</li>\n  <li>Cruelty free &amp; vegan friendly</li>\n  <li>Diproduksi secara etis di Indonesia</li>\n</ul>"
+      }
+    ]
+  },
+  "cta": {
+    "title_html": "Siap Merasakan <em class=\"italic gradient-text\">Perbedaannya</em>?",
+    "subtitle_html": "<p>Temukan produk perawatan kulit yang tepat untuk kamu. Ribuan perempuan Indonesia sudah merasakannya \u2014 sekarang giliran kamu.</p>",
+    "cta_primary": {
+      "label": "Belanja Sekarang",
+      "href": "/shop"
+    },
+    "cta_secondary": {
+      "label": "Baca Tips Kecantikan",
+      "href": "/blog"
+    }
+  }
+}
