@@ -16,13 +16,9 @@ import WhatsAppFloat from "@/components/WhatsAppFloat";
 import Testimonials from "@/components/Testimonials";
 import { cn } from "@/lib/utils";
 import kastaLogo from "@/assets/kasta.png";
-import aboutContent from "@/data/about.json";
-import type { AboutPageContent } from "@/types/about";
+import { useAbout } from "@/hooks/use-about";
 
-// Cast JSON ke typed interface
-const content = aboutContent as AboutPageContent;
-
-/* ---------- Icon map (render concern, bukan data) ---------- */
+/* ---------- Icon map ---------- */
 const ICON_MAP: Record<string, LucideIcon> = {
   Leaf,
   ShieldCheck,
@@ -70,12 +66,68 @@ const StatCard = ({
   );
 };
 
+/* ---------- Skeleton ---------- */
+function AboutSkeleton() {
+  return (
+    <main className="min-h-screen bg-background">
+      <Navbar />
+      <section className="relative pt-40 md:pt-48 pb-20 md:pb-28 overflow-hidden bg-gradient-luxury">
+        <div className="container relative text-center space-y-6 max-w-3xl mx-auto">
+          <div className="skeleton h-7 w-36 rounded-full mx-auto" />
+          <div className="skeleton h-16 w-3/4 rounded-xl mx-auto" />
+          <div className="skeleton h-6 w-2/3 rounded-lg mx-auto" />
+          <div className="flex justify-center gap-3 pt-2">
+            <div className="skeleton h-12 w-44 rounded-full" />
+            <div className="skeleton h-12 w-44 rounded-full" />
+          </div>
+        </div>
+      </section>
+      <section className="py-20 md:py-28">
+        <div className="container">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
+            <div className="skeleton rounded-3xl min-h-[420px]" />
+            <div className="space-y-4">
+              <div className="skeleton h-7 w-32 rounded-full" />
+              <div className="skeleton h-12 w-3/4 rounded-xl" />
+              <div className="space-y-2">
+                <div className="skeleton h-4 w-full rounded" />
+                <div className="skeleton h-4 w-full rounded" />
+                <div className="skeleton h-4 w-2/3 rounded" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+/* ---------- Error ---------- */
+function AboutError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <main className="min-h-screen bg-background">
+      <Navbar />
+      <section className="flex flex-col items-center justify-center py-40 gap-6 text-center px-4">
+        <p className="text-muted-foreground text-sm max-w-sm">{message}</p>
+        <Button
+          onClick={onRetry}
+          variant="outline"
+          className="rounded-full border-border/60 hover:border-primary hover:text-primary"
+        >
+          Coba Lagi
+        </Button>
+      </section>
+      <Footer />
+    </main>
+  );
+}
+
+/* ---------- Page ---------- */
 export default function AboutPage() {
+  const { content, isLoading, error, refetch } = useAbout();
   const statsRef = useRef<HTMLElement>(null);
   const [statsStarted, setStatsStarted] = useState(false);
   const location = useLocation();
-
-  const { hero, brand_story, stats, values, cta } = content;
 
   useEffect(() => {
     document.title = "Tentang Kami \u2014 Kasta Beau\u00e9";
@@ -102,6 +154,11 @@ export default function AboutPage() {
     }
   }, [location.hash]);
 
+  if (isLoading) return <AboutSkeleton />;
+  if (error || !content) return <AboutError message={error ?? "Konten tidak tersedia."} onRetry={refetch} />;
+
+  const { hero, brand_story, stats, values, cta } = content;
+
   return (
     <main className="min-h-screen bg-background">
       <Navbar />
@@ -123,8 +180,8 @@ export default function AboutPage() {
             dangerouslySetInnerHTML={{ __html: hero.title_html }}
           />
 
-          <p
-            className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed animate-fade-up delay-75"
+          <div
+            className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed animate-fade-up delay-75 [&>p]:text-muted-foreground [&>p]:leading-relaxed"
             dangerouslySetInnerHTML={{ __html: hero.subtitle_html }}
           />
 
@@ -237,46 +294,50 @@ export default function AboutPage() {
       </section>
 
       {/* 4. VALUES */}
-      <section id="kenapa-memilih-kami" className="py-20 md:py-28">
-        <div className="container">
-          <div className="text-center mb-14 space-y-3 animate-fade-up">
-            <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-xs tracking-[0.2em] uppercase text-primary">
-              <Sparkles className="h-3.5 w-3.5" />
-              {values.badge}
-            </div>
-            <h2
-              className="font-display text-4xl md:text-5xl"
-              dangerouslySetInnerHTML={{ __html: values.title_html }}
-            />
-            <p
-              className="text-muted-foreground max-w-lg mx-auto text-sm leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: values.subtitle_html }}
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {values.items.map((item, idx) => {
-              const Icon = ICON_MAP[item.icon] ?? Sparkles;
-              return (
+      {values.items.length > 0 && (
+        <section id="kenapa-memilih-kami" className="py-20 md:py-28">
+          <div className="container">
+            <div className="text-center mb-14 space-y-3 animate-fade-up">
+              <div className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-xs tracking-[0.2em] uppercase text-primary">
+                <Sparkles className="h-3.5 w-3.5" />
+                {values.badge}
+              </div>
+              <h2
+                className="font-display text-4xl md:text-5xl"
+                dangerouslySetInnerHTML={{ __html: values.title_html }}
+              />
+              {values.subtitle_html && (
                 <div
-                  key={item.title}
-                  className="glass-card p-8 space-y-4 group hover-lift animate-fade-up"
-                  style={{ animationDelay: `${idx * 120}ms` }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-px flex-1 bg-primary/30 group-hover:bg-primary transition-colors duration-500" />
-                    <Icon className="h-5 w-5 text-primary shrink-0" />
+                  className="text-muted-foreground max-w-lg mx-auto text-sm leading-relaxed [&>p]:text-muted-foreground"
+                  dangerouslySetInnerHTML={{ __html: values.subtitle_html }}
+                />
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {values.items.map((item, idx) => {
+                const Icon = ICON_MAP[item.icon] ?? Sparkles;
+                return (
+                  <div
+                    key={item.title}
+                    className="glass-card p-8 space-y-4 group hover-lift animate-fade-up"
+                    style={{ animationDelay: `${idx * 120}ms` }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-px flex-1 bg-primary/30 group-hover:bg-primary transition-colors duration-500" />
+                      <Icon className="h-5 w-5 text-primary shrink-0" />
+                    </div>
+                    <h3 className="font-display text-xl">{item.title}</h3>
+                    <div
+                      className="text-sm text-muted-foreground leading-relaxed [&>p]:text-muted-foreground [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:space-y-1 [&>ul>li]:text-muted-foreground"
+                      dangerouslySetInnerHTML={{ __html: item.description_html }}
+                    />
                   </div>
-                  <h3 className="font-display text-xl">{item.title}</h3>
-                  <p
-                    className="text-sm text-muted-foreground leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: item.description_html }}
-                  />
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* 5. CUSTOMER STORIES */}
       <div id="customer-stories" className="bg-gradient-luxury">
@@ -294,8 +355,8 @@ export default function AboutPage() {
                 className="font-display text-4xl md:text-5xl leading-tight text-balance"
                 dangerouslySetInnerHTML={{ __html: cta.title_html }}
               />
-              <p
-                className="text-muted-foreground leading-relaxed max-w-md mx-auto text-sm"
+              <div
+                className="text-muted-foreground leading-relaxed max-w-md mx-auto text-sm [&>p]:text-muted-foreground"
                 dangerouslySetInnerHTML={{ __html: cta.subtitle_html }}
               />
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
