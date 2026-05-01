@@ -193,10 +193,20 @@ const Navbar = () => {
                   <Link
                     to={link.href}
                     className="story-link text-sm font-medium text-foreground/80 hover:text-primary transition-colors flex items-center gap-1"
-                    onClick={link.href.includes("#") ? () => {
-                      const hash = link.href.split("#")[1];
-                      setTimeout(() => document.querySelector(`#${hash}`)?.scrollIntoView({ behavior: "smooth" }), 100);
-                    } : undefined}
+                    onClick={
+                      link.href.includes("#")
+                        ? () => {
+                            const hash = link.href.split("#")[1];
+                            setTimeout(
+                              () =>
+                                document
+                                  .querySelector(`#${hash}`)
+                                  ?.scrollIntoView({ behavior: "smooth" }),
+                              100,
+                            );
+                          }
+                        : undefined
+                    }
                   >
                     {link.label}
                   </Link>
@@ -290,13 +300,13 @@ const Navbar = () => {
             <>
               {isLoggedIn && (
                 <>
-                  <Link
+                  {/* <Link
                     to="/"
                     className="p-2 rounded-full hover:bg-accent transition-colors hidden sm:block"
                     aria-label="Wishlist"
                   >
                     <Heart className="h-5 w-5 text-foreground/70" />
-                  </Link>
+                  </Link> */}
                   <Link
                     to="/cart"
                     className="p-2 rounded-full hover:bg-accent transition-colors relative"
