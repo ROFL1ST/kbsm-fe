@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatRupiah, fetchDiscounts, mapDiscountApiItem } from "@/lib/products";
-import staticDiscounts, { DiscountItem } from "@/data/discounts";
+import { DiscountItem } from "@/data/discounts";
 
 const SLIDE_INTERVAL = 4500;
 
@@ -26,10 +26,10 @@ function useDiscounts() {
       .then((data) => {
         if (cancelled) return;
         const mapped = data.map(mapDiscountApiItem);
-        setDiscounts(mapped.length > 0 ? mapped : staticDiscounts);
+        setDiscounts(mapped);
       })
       .catch(() => {
-        if (!cancelled) setDiscounts(staticDiscounts);
+
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -46,23 +46,20 @@ function useDiscounts() {
 /* ── Skeleton ────────────────────────────────────────────── */
 const DiscountSkeleton = ({ compact }: { compact?: boolean }) => (
   <section
-    className={`${
-      compact ? "" : "py-20 md:py-28 bg-gradient-nude"
-    } relative overflow-hidden`}
+    className={`${compact ? "" : "py-20 md:py-28 bg-gradient-nude"
+      } relative overflow-hidden`}
   >
     {!compact && (
       <div className="absolute -top-20 -right-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
     )}
     <div className="container">
       <div
-        className={`grid ${
-          compact ? "lg:grid-cols-2 gap-6" : "lg:grid-cols-2 gap-12"
-        } items-center animate-pulse`}
+        className={`grid ${compact ? "lg:grid-cols-2 gap-6" : "lg:grid-cols-2 gap-12"
+          } items-center animate-pulse`}
       >
         <div
-          className={`rounded-3xl bg-muted ${
-            compact ? "aspect-square" : "aspect-square lg:aspect-[4/5]"
-          }`}
+          className={`rounded-3xl bg-muted ${compact ? "aspect-square" : "aspect-square lg:aspect-[4/5]"
+            }`}
         />
         <div className="space-y-5">
           <div className="h-3 w-24 rounded bg-muted" />
@@ -116,11 +113,10 @@ const Box = ({
 }) => (
   <div className="text-center">
     <div
-      className={`glass-card tabular-nums font-display font-semibold text-foreground ${
-        compact
-          ? "px-3 py-2 min-w-[48px] text-xl"
-          : "px-4 md:px-6 py-3 md:py-4 min-w-[68px] md:min-w-[88px] text-3xl md:text-5xl"
-      }`}
+      className={`glass-card tabular-nums font-display font-semibold text-foreground ${compact
+        ? "px-3 py-2 min-w-[48px] text-xl"
+        : "px-4 md:px-6 py-3 md:py-4 min-w-[68px] md:min-w-[88px] text-3xl md:text-5xl"
+        }`}
     >
       {String(v).padStart(2, "0")}
     </div>
@@ -198,11 +194,10 @@ const HomeSlider = ({ discounts }: { discounts: DiscountItem[] }) => {
                   key={i}
                   onClick={() => setActive(i)}
                   aria-label={`Slide ${i + 1}`}
-                  className={`rounded-full transition-all duration-300 ${
-                    i === active
-                      ? "w-6 h-2 bg-foreground"
-                      : "w-2 h-2 bg-foreground/30 hover:bg-foreground/60"
-                  }`}
+                  className={`rounded-full transition-all duration-300 ${i === active
+                    ? "w-6 h-2 bg-foreground"
+                    : "w-2 h-2 bg-foreground/30 hover:bg-foreground/60"
+                    }`}
                 />
               ))}
             </div>
@@ -399,11 +394,10 @@ const CompactSlider = ({ discounts }: { discounts: DiscountItem[] }) => {
               key={i}
               onClick={() => setActive(i)}
               aria-label={`Slide ${i + 1}`}
-              className={`rounded-full transition-all duration-300 ${
-                i === active
-                  ? "w-6 h-2 bg-foreground"
-                  : "w-2 h-2 bg-foreground/30 hover:bg-foreground/60"
-              }`}
+              className={`rounded-full transition-all duration-300 ${i === active
+                ? "w-6 h-2 bg-foreground"
+                : "w-2 h-2 bg-foreground/30 hover:bg-foreground/60"
+                }`}
             />
           ))}
         </div>
@@ -485,11 +479,10 @@ const CompactSlider = ({ discounts }: { discounts: DiscountItem[] }) => {
                   key={i}
                   onClick={() => setActive(i)}
                   aria-label={`Slide ${i + 1}`}
-                  className={`rounded-full transition-all duration-300 ${
-                    i === active
-                      ? "w-6 h-2 bg-foreground"
-                      : "w-2 h-2 bg-foreground/30 hover:bg-foreground/60"
-                  }`}
+                  className={`rounded-full transition-all duration-300 ${i === active
+                    ? "w-6 h-2 bg-foreground"
+                    : "w-2 h-2 bg-foreground/30 hover:bg-foreground/60"
+                    }`}
                 />
               ))}
             </div>
