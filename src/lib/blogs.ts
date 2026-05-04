@@ -111,6 +111,7 @@ function resolveImage(raw: Record<string, unknown>, id: number) {
 
 function resolveDate(raw: Record<string, unknown>) {
   const candidate = [
+    raw.published_date,
     raw.created_at,
     raw.updated_at,
     raw.published_at,
@@ -175,6 +176,8 @@ function normalizeBlogPost(item: unknown, index = 0): BlogPost | null {
   const categoryBlogId = Number(raw.category_blog_id ?? raw.category_id ?? 0);
   const author = typeof raw.author === "string" && raw.author.trim().length > 0
     ? raw.author
+    : typeof raw.author_name === "string" && raw.author_name.trim().length > 0
+      ? raw.author_name
     : "Kasta Beaute";
   const authorBio = typeof raw.author_bio === "string" && raw.author_bio.trim().length > 0
     ? raw.author_bio
@@ -182,7 +185,13 @@ function normalizeBlogPost(item: unknown, index = 0): BlogPost | null {
   const date = resolveDate(raw);
   const textForReadTime = stripHtml(content);
   const words = textForReadTime.split(/\s+/).filter(Boolean).length;
-  const readTime = Math.max(1, Math.ceil(words / 180));
+  const apiReadTime = Number(raw.read_time);
+  const readTime = Number.isFinite(apiReadTime) && apiReadTime > 0
+    ? apiReadTime
+    : Math.max(1, Math.ceil(words / 180));
+  const authorAvatar = typeof raw.author_avatar === "string" && raw.author_avatar.trim().length > 0
+    ? raw.author_avatar
+    : FALLBACK_AUTHOR_AVATARS[index % FALLBACK_AUTHOR_AVATARS.length];
 
   return {
     id,
@@ -193,7 +202,7 @@ function normalizeBlogPost(item: unknown, index = 0): BlogPost | null {
     category_blog_id: Number.isFinite(categoryBlogId) && categoryBlogId > 0 ? categoryBlogId : null,
     category: categoryName,
     author,
-    authorAvatar: FALLBACK_AUTHOR_AVATARS[index % FALLBACK_AUTHOR_AVATARS.length],
+    authorAvatar,
     authorBio,
     date,
     readTime,
@@ -340,8 +349,14 @@ export async function fetchBlogs(params: BlogListParams = {}): Promise<BlogListR
 }
 
 export async function fetchBlogById(id: number) {
-  const response = await fetchBlogs({ id, size: 1, page: 1 });
-  return response.data[0] ?? null;
+  const response = await fetch(`${getApiBaseUrl()}/blogs?id=${id}`);
+  const payload = await response.json() as ApiEnvelope<unknown>;
+
+  if (!response.ok || !payload.status) {
+    throw new Error(payload.error || payload.message || "Gagal mengambil detail blog.");
+  }
+
+  return normalizeBlogPost(payload.data) ?? null;
 }
 
 export async function fetchBlogsByCategory(categoryBlogId: number, size = 3) {
