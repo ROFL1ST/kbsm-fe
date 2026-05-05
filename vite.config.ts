@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  envPrefix: ["VITE_", "KBBU_"],
+  envPrefix: ["VITE_", "KBBU_", "AUTH_"],
   server: {
     host: "::",
     port: 8080,

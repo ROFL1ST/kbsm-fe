@@ -1,8 +1,10 @@
 const API_BASE_URL = import.meta.env.KBBU_API?.replace(/\/$/, "");
 
-export const AUTH_TOKEN_STORAGE_KEY = "kbbu_access_token";
-export const AUTH_HASHED_USER_ID_STORAGE_KEY = "kbbu_auth";
-export const AUTH_STATE_CHANGE_EVENT = "kbbu-auth-state-change";
+export const {
+  AUTH_TOKEN_STORAGE_KEY,
+  AUTH_HASHED_USER_ID_STORAGE_KEY,
+  AUTH_STATE_CHANGE_EVENT,
+} = import.meta.env;
 
 export type ApiEnvelope<T> = {
   status: boolean;
@@ -57,7 +59,10 @@ async function readJsonSafely<T>(response: Response): Promise<T | null> {
   }
 }
 
-async function postJson<T>(path: string, body: AuthCredentials): Promise<ApiEnvelope<T>> {
+async function postJson<T>(
+  path: string,
+  body: AuthCredentials,
+): Promise<ApiEnvelope<T>> {
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
     method: "POST",
     headers: {
@@ -73,7 +78,9 @@ async function postJson<T>(path: string, body: AuthCredentials): Promise<ApiEnve
   }
 
   if (!response.ok || !payload.status || !payload.data) {
-    throw new Error(payload.error || payload.message || "Request gagal diproses.");
+    throw new Error(
+      payload.error || payload.message || "Request gagal diproses.",
+    );
   }
 
   return payload;
@@ -98,7 +105,9 @@ async function postAnyJson<T, TBody extends object>(
   }
 
   if (!response.ok || !payload.status) {
-    throw new Error(payload.error || payload.message || "Request gagal diproses.");
+    throw new Error(
+      payload.error || payload.message || "Request gagal diproses.",
+    );
   }
 
   return payload;
@@ -113,8 +122,12 @@ export async function loginUser(credentials: AuthCredentials) {
 }
 
 // ---------- Forgot Password ----------
-export async function forgotPassword(email: string): Promise<ApiEnvelope<null>> {
-  return postAnyJson<null, { email: string }>("/auth/forgot-password", { email });
+export async function forgotPassword(
+  email: string,
+): Promise<ApiEnvelope<null>> {
+  return postAnyJson<null, { email: string }>("/auth/forgot-password", {
+    email,
+  });
 }
 
 // ---------- Reset Password ----------
@@ -123,10 +136,14 @@ export async function resetPassword(
   newPassword: string,
   confirmPassword: string,
 ): Promise<ApiEnvelope<null>> {
-  return postAnyJson<null, { token: string; new_password: string; confirm_password: string }>(
-    "/auth/reset-password",
-    { token, new_password: newPassword, confirm_password: confirmPassword },
-  );
+  return postAnyJson<
+    null,
+    { token: string; new_password: string; confirm_password: string }
+  >("/auth/reset-password", {
+    token,
+    new_password: newPassword,
+    confirm_password: confirmPassword,
+  });
 }
 
 let authUserCache: AuthUser | null = null;
@@ -194,7 +211,10 @@ function getAuthUserFromToken(): AuthUser | null {
   }
 
   try {
-    const payload = JSON.parse(decodeBase64Url(tokenParts[1])) as Record<string, unknown>;
+    const payload = JSON.parse(decodeBase64Url(tokenParts[1])) as Record<
+      string,
+      unknown
+    >;
     const id =
       typeof payload.user_id === "string"
         ? payload.user_id
@@ -211,7 +231,8 @@ function getAuthUserFromToken(): AuthUser | null {
     return {
       id,
       email: typeof payload.email === "string" ? payload.email : "",
-      created_at: typeof payload.created_at === "string" ? payload.created_at : "",
+      created_at:
+        typeof payload.created_at === "string" ? payload.created_at : "",
     };
   } catch {
     return null;
@@ -228,14 +249,21 @@ export function getAuthUser(): AuthUser | null {
   return decodedUser;
 }
 
-export async function fetchAuth<T>(path: string, options?: RequestInit): Promise<ApiEnvelope<T>> {
+export async function fetchAuth<T>(
+  path: string,
+  options?: RequestInit,
+): Promise<ApiEnvelope<T>> {
   const token = getAuthToken();
   if (!token) {
     throw new Error("Token otentikasi tidak ditemukan. Silakan login kembali.");
   }
 
   const headers = new Headers(options?.headers);
-  if (!headers.has("Content-Type") && options?.method && options.method !== "GET") {
+  if (
+    !headers.has("Content-Type") &&
+    options?.method &&
+    options.method !== "GET"
+  ) {
     headers.set("Content-Type", "application/json");
   }
   headers.set("Authorization", `Bearer ${token}`);
@@ -252,7 +280,9 @@ export async function fetchAuth<T>(path: string, options?: RequestInit): Promise
   }
 
   if (!response.ok || !payload.status) {
-    throw new Error(payload.error || payload.message || "Request gagal diproses.");
+    throw new Error(
+      payload.error || payload.message || "Request gagal diproses.",
+    );
   }
 
   return payload;
