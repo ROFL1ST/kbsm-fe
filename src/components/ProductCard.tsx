@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Star, Eye, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatRupiah, type ProductCardData } from "@/lib/products";
@@ -11,6 +11,7 @@ import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 
 const ProductCard = ({ p }: { p: ProductCardData }) => {
   const [loginPromptOpen, setLoginPromptOpen] = useState(false);
+  const queryClient = useQueryClient();
   const addToCartMutation = useMutation({
     mutationFn: async () => {
       if (!hasAccessToken()) {
@@ -22,7 +23,12 @@ const ProductCard = ({ p }: { p: ProductCardData }) => {
         quantity: 1,
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["cart"] }),
+        queryClient.invalidateQueries({ queryKey: ["navbar-cart"] }),
+        queryClient.invalidateQueries({ queryKey: ["pre-checkout-cart"] }),
+      ]);
       toast.success(`${p.name} ditambahkan ke keranjang.`);
     },
     onError: (error) => {

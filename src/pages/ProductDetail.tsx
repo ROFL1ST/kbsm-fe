@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronRight,
   Minus,
@@ -36,6 +36,7 @@ const ProductDetail = () => {
   const [activeMobileSlide, setActiveMobileSlide] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [loginPromptOpen, setLoginPromptOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const {
     data: product,
@@ -119,7 +120,12 @@ const ProductDetail = () => {
         quantity,
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["cart"] }),
+        queryClient.invalidateQueries({ queryKey: ["navbar-cart"] }),
+        queryClient.invalidateQueries({ queryKey: ["pre-checkout-cart"] }),
+      ]);
       toast.success("Produk berhasil ditambahkan ke keranjang.");
     },
     onError: (error) => {
