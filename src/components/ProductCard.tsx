@@ -5,12 +5,16 @@ import { Star, Eye, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatRupiah, type ProductCardData } from "@/lib/products";
 import { addToCart } from "@/lib/cart";
-import { hasAccessToken } from "@/lib/auth";
+import { getAuthUser, hasAccessToken } from "@/lib/auth";
+import { getUserProfile } from "@/lib/profile";
+import { isProfileComplete } from "@/lib/profile-completeness";
 import { toast } from "@/components/ui/sonner";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
+import CompleteProfileDialog from "@/components/CompleteProfileDialog";
 
 const ProductCard = ({ p }: { p: ProductCardData }) => {
   const [loginPromptOpen, setLoginPromptOpen] = useState(false);
+  const [completeProfilePromptOpen, setCompleteProfilePromptOpen] = useState(false);
   const queryClient = useQueryClient();
   const addToCartMutation = useMutation({
     mutationFn: async () => {
@@ -41,9 +45,33 @@ const ProductCard = ({ p }: { p: ProductCardData }) => {
     },
   });
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!hasAccessToken()) {
       setLoginPromptOpen(true);
+      return;
+    }
+
+    try {
+      const currentUserId = getAuthUser()?.id;
+
+      if (!currentUserId) {
+        throw new Error("Sesi login tidak valid. Silakan login kembali.");
+      }
+
+      const profile = await queryClient.fetchQuery({
+        queryKey: ["user-profile", currentUserId],
+        queryFn: () => getUserProfile(currentUserId),
+        staleTime: 60_000,
+      });
+
+      if (!isProfileComplete(profile)) {
+        setCompleteProfilePromptOpen(true);
+        return;
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Gagal memeriksa data profil.";
+      toast.error(message);
       return;
     }
 
@@ -126,6 +154,11 @@ const ProductCard = ({ p }: { p: ProductCardData }) => {
       <LoginRequiredDialog
         open={loginPromptOpen}
         onOpenChange={setLoginPromptOpen}
+        productName={p.name}
+      />
+      <CompleteProfileDialog
+        open={completeProfilePromptOpen}
+        onOpenChange={setCompleteProfilePromptOpen}
         productName={p.name}
       />
     </>

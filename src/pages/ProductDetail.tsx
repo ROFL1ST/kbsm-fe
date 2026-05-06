@@ -15,10 +15,13 @@ import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
+import CompleteProfileDialog from "@/components/CompleteProfileDialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 import { getAuthUser, hasAccessToken } from "@/lib/auth";
 import { addToCart, createCartItemFromProduct, type DirectCheckoutState } from "@/lib/cart";
+import { getUserProfile } from "@/lib/profile";
+import { isProfileComplete } from "@/lib/profile-completeness";
 import {
   fetchProducts,
   fetchProductDetail,
@@ -36,6 +39,7 @@ const ProductDetail = () => {
   const [activeMobileSlide, setActiveMobileSlide] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [loginPromptOpen, setLoginPromptOpen] = useState(false);
+  const [completeProfilePromptOpen, setCompleteProfilePromptOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const {
@@ -137,9 +141,32 @@ const ProductDetail = () => {
     },
   });
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!hasAccessToken()) {
       setLoginPromptOpen(true);
+      return;
+    }
+
+    if (!authUser?.id) {
+      toast.error("Sesi login tidak valid. Silakan login kembali.");
+      return;
+    }
+
+    try {
+      const profile = await queryClient.fetchQuery({
+        queryKey: ["user-profile", authUser.id],
+        queryFn: () => getUserProfile(authUser.id),
+        staleTime: 60_000,
+      });
+
+      if (!isProfileComplete(profile)) {
+        setCompleteProfilePromptOpen(true);
+        return;
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Gagal memeriksa data profil.";
+      toast.error(message);
       return;
     }
 
@@ -548,6 +575,11 @@ const ProductDetail = () => {
       <LoginRequiredDialog
         open={loginPromptOpen}
         onOpenChange={setLoginPromptOpen}
+        productName={cardProduct?.name}
+      />
+      <CompleteProfileDialog
+        open={completeProfilePromptOpen}
+        onOpenChange={setCompleteProfilePromptOpen}
         productName={cardProduct?.name}
       />
       <WhatsAppFloat className="bottom-24 md:bottom-6" />
