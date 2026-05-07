@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Sparkles, Leaf, ShieldCheck, ArrowRight } from "lucide-react";
-import heroImg from "@/assets/hero-skincare.jpg";
+import heroImg from "@/assets/hero.png";
 
 const Hero = () => {
   return (
@@ -45,13 +45,6 @@ const Hero = () => {
                 Shop Now
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="rounded-full border-foreground/20 hover:bg-foreground hover:text-background h-14 px-8 text-sm tracking-[0.15em] uppercase bg-transparent"
-            >
-              Explore Collection
             </Button>
           </div>
 
