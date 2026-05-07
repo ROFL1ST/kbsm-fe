@@ -46,13 +46,6 @@ const Hero = () => {
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="rounded-full border-foreground/20 hover:bg-foreground hover:text-background h-14 px-8 text-sm tracking-[0.15em] uppercase bg-transparent"
-            >
-              Explore Collection
-            </Button>
           </div>
 
           {/* Badges */}
