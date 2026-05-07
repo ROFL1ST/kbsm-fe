@@ -405,7 +405,7 @@ const BlogPage = () => {
           </div>
 
           <div className="grid gap-3 rounded-2xl border bg-card p-3 sm:grid-cols-[160px_minmax(0,1fr)_auto] sm:items-center">
-              <Select value={String(size)} onValueChange={handleSizeChange}>
+            <Select value={String(size)} onValueChange={handleSizeChange}>
               <SelectTrigger className="h-11 w-full rounded-full bg-background">
                 <SelectValue placeholder="Articles per page" />
               </SelectTrigger>
@@ -418,7 +418,7 @@ const BlogPage = () => {
               </SelectContent>
             </Select>
 
-              <Input
+            <Input
               placeholder="Cari nama blog"
               value={blogSearchInput}
               onChange={(event) => setBlogSearchInput(event.target.value)}
