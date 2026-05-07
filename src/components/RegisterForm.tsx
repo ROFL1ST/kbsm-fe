@@ -17,6 +17,7 @@ const RegisterForm = () => {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -126,6 +127,8 @@ const RegisterForm = () => {
           <input
             type="checkbox"
             className="mt-1 h-4 w-4 rounded border-input accent-primary"
+            checked={agreedToTerms}
+            onChange={(e) => setAgreedToTerms(e.target.checked)}
             disabled={isSubmitting}
           />
           Saya setuju dengan Terms of Service dan Privacy Policy Kasta Beaute.
@@ -135,7 +138,7 @@ const RegisterForm = () => {
           type="submit"
           size="lg"
           className="group h-14 w-full rounded-full bg-foreground text-background hover:bg-primary elegant-shadow"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !agreedToTerms}
         >
           {isSubmitting ? "Memproses..." : "Buat Akun"}
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />

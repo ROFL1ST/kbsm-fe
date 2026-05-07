@@ -4,9 +4,16 @@ import type { TransactionBank } from "@/types/transaction";
 
 interface Props {
   banks: TransactionBank[];
+  subtotal: number;
+  ongkir: number;
+  finalTotal: number;
 }
 
-export default function TransactionBankCard({ banks }: Props) {
+function formatRupiah(n: number) {
+  return `Rp ${n.toLocaleString("id-ID")}`;
+}
+
+export default function TransactionBankCard({ banks, subtotal, ongkir, finalTotal }: Props) {
   const [copiedId, setCopiedId] = useState<number | null>(null);
 
   function handleCopy(bank: TransactionBank) {
@@ -87,6 +94,22 @@ export default function TransactionBankCard({ banks }: Props) {
           </li>
         ))}
       </ul>
+
+      {/* Payment breakdown */}
+      <div className="space-y-2 rounded-2xl border border-border/60 bg-background/60 px-4 py-4 text-sm">
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-muted-foreground">Subtotal produk</span>
+          <span className="font-medium">{formatRupiah(subtotal)}</span>
+        </div>
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-muted-foreground">Ongkos kirim</span>
+          <span className="font-medium">{formatRupiah(ongkir)}</span>
+        </div>
+        <div className="flex items-center justify-between gap-4 border-t border-border/60 pt-2">
+          <span className="font-semibold text-foreground">Total pembayaran</span>
+          <span className="text-base font-bold text-primary">{formatRupiah(finalTotal)}</span>
+        </div>
+      </div>
 
       {/* Footer note */}
       <p className="rounded-2xl bg-primary/5 px-3 py-2.5 text-[11px] leading-relaxed text-muted-foreground md:px-4 md:py-3 md:text-xs">

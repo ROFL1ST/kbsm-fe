@@ -9,11 +9,11 @@ const BASE_STEPS = [
     label: "Menunggu Pembayaran",
     description: "Pesanan dibuat dan menunggu konfirmasi pembayaran",
   },
-  {
-    key: "follow_up",
-    label: "Verifikasi Pembayaran",
-    description: "Tim kami sedang memverifikasi pembayaran kamu",
-  },
+  // {
+  //   key: "follow_up",
+  //   label: "Terverifikasi",
+  //   description: "Pembayaran kamu telah diverifikasi",
+  // },
   {
     key: "processed",
     label: "Diproses",
@@ -40,17 +40,23 @@ export function getTransactionProgressSteps(
   let currentIndex = 0;
   let isFailed = false;
 
-  if (statusCode === "CANCELLED") {
+  if (progressCode === "REJECTED") {
     currentIndex = 0;
     isFailed = true;
-  } else if (statusCode === "DONE") {
+  } else if (progressCode === "DONE") {
     currentIndex = 4;
-  } else if (statusCode === "SHIPPING" || progressCode === "SENDING") {
+  } else if (statusCode === "PAID" && progressCode === "SENDING") {
     currentIndex = 3;
-  } else if (statusCode === "PROCESS" || progressCode === "PACKING") {
+  } else if (statusCode === "PAID" && progressCode === "PACKING") {
     currentIndex = 2;
-  } else if (progressCode === "FOLLOW_UP" || statusCode === "PAID") {
+
+  } 
+  else if (statusCode === "PAID" && progressCode === "FOLLOW_UP") {
     currentIndex = 1;
+  } else if (progressCode === "FOLLOW_UP" && statusCode === "PAID") {
+    currentIndex = 1;
+  } else if (progressCode === "FOLLOW_UP" && statusCode === "PENDING") {
+    currentIndex = 0;
   } else {
     currentIndex = 0;
   }

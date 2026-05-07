@@ -189,7 +189,12 @@ export default function TransactionDetailPage() {
                 <div className="space-y-6">
                   {/* Info bank rekening tujuan — hanya tampil saat PENDING */}
                   {showBanks && (
-                    <TransactionBankCard banks={transaction.banks!} />
+                    <TransactionBankCard
+                      banks={transaction.banks!}
+                      ongkir={transaction.shippings.ongkir}
+                      subtotal={transaction.final_total - transaction.shippings.ongkir}
+                      finalTotal={transaction.final_total}
+                    />
                   )}
 
                   {showUpload ? (
