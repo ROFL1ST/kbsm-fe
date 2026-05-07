@@ -1,6 +1,6 @@
 import { Facebook } from "lucide-react";
 // import { Instagram, Twitter, Youtube } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCategories } from "@/lib/products";
 
@@ -69,6 +69,23 @@ const staticCols = [
 ];
 
 const Footer = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleHashClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    const hashIdx = href.indexOf("#");
+    if (hashIdx === -1) return;
+    e.preventDefault();
+    const path = href.slice(0, hashIdx) || "/";
+    const hash = href.slice(hashIdx + 1);
+    if (location.pathname === path) {
+      document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      navigate(href);
+      setTimeout(() => document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" }), 300);
+    }
+  };
+
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
     queryFn: fetchCategories,
@@ -130,7 +147,7 @@ const Footer = () => {
                   <Link
                     to="/shop#bestseller"
                     className="text-sm text-background/60 hover:text-background transition-colors"
-                    onClick={() => setTimeout(() => document.querySelector("#bestseller")?.scrollIntoView({ behavior: "smooth" }), 100)}
+                    onClick={(e) => handleHashClick(e, "/shop#bestseller")}
                   >
                     Best Seller
                   </Link>
@@ -139,7 +156,7 @@ const Footer = () => {
                   <Link
                     to="/#collections"
                     className="text-sm text-background/60 hover:text-background transition-colors"
-                    onClick={() => setTimeout(() => document.querySelector("#collections")?.scrollIntoView({ behavior: "smooth" }), 100)}
+                    onClick={(e) => handleHashClick(e, "/#collections")}
                   >
                     Collection
                   </Link>
@@ -170,6 +187,7 @@ const Footer = () => {
                       <Link
                         to={l.href}
                         className="text-sm text-background/60 hover:text-background transition-colors"
+                        onClick={l.href.includes("#") ? (e) => handleHashClick(e, l.href) : undefined}
                       >
                         {l.label}
                       </Link>

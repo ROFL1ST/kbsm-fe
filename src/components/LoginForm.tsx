@@ -104,7 +104,7 @@ const LoginForm = () => {
             <Input
               id="login-password"
               type={showPassword ? "text" : "password"}
-              placeholder="Minimal 8 karakter"
+              placeholder="Minimal 6 karakter"
               className="h-12 rounded-full border-white/70 bg-white/70 px-11"
               value={password}
               onChange={(event) => setPassword(event.target.value)}

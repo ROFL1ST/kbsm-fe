@@ -5,6 +5,10 @@ interface Props {
   shipping: TransactionShipping;
 }
 
+function formatRupiah(n: number) {
+  return `Rp ${n.toLocaleString("id-ID")}`;
+}
+
 export default function TransactionShippingCard({ shipping }: Props) {
   return (
     <div className="rounded-[2rem] border border-border/60 bg-white px-6 py-8 soft-shadow md:px-8 space-y-4">
@@ -49,6 +53,13 @@ export default function TransactionShippingCard({ shipping }: Props) {
             )}
           </div>
         </div>
+      </div>
+
+      <div className="flex items-center justify-between rounded-2xl bg-muted/50 px-4 py-3 text-sm">
+        <span className="text-muted-foreground">Biaya pengiriman</span>
+        <span className="font-semibold text-foreground">
+          {formatRupiah(shipping.ongkir)}
+        </span>
       </div>
     </div>
   );

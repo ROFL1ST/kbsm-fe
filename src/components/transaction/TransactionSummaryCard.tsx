@@ -78,7 +78,7 @@ export default function TransactionSummaryCard({ transaction }: Props) {
           </p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Total Pesanan</p>
+          <p className="text-xs text-muted-foreground">Total Pembayaran</p>
           <p className="text-sm font-semibold text-primary">
             {formatRupiah(transaction.final_total)}
           </p>
