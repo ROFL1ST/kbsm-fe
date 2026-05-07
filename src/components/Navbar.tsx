@@ -46,7 +46,7 @@ import NavbarSearchDropdown from "@/components/NavbarSearchDropdown";
 const navLinks = [
   { label: "Home", href: "/" },
   { label: "Shop", href: "/shop", hasMega: false },
-  { label: "Best Seller", href: "/shop#bestseller", isRoute: true },
+  // { label: "Best Seller", href: "/shop#bestseller", isRoute: true },
   // { label: "New Arrivals", href: "#new" },
   { label: "Collections", href: "/#collections", isRoute: true },
   { label: "About", href: "/about" },

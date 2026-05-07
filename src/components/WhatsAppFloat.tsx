@@ -8,7 +8,7 @@ type WhatsAppFloatProps = {
 
 const WhatsAppFloat = ({ className }: WhatsAppFloatProps) => (
   <a
-    href="https://wa.me/6281234567890"
+    href="https://wa.me/85363151900"
     target="_blank"
     rel="noopener noreferrer"
     aria-label="Chat on WhatsApp"
