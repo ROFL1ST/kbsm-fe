@@ -359,34 +359,36 @@ const CompactSlider = ({ discounts }: { discounts: DiscountItem[] }) => {
         <Box v={t.m} l="Min" compact />
         <Box v={t.s} l="Sec" compact />
       </div>
-      {total > 1 && (
-        <div className="flex items-center gap-3">
-          <Button
-            asChild
-            size="default"
-            className="rounded-full bg-foreground text-background hover:bg-primary h-11 px-5 text-xs tracking-[0.15em] uppercase elegant-shadow group"
-          >
-            <Link to={`/shop/product/${item.product_unit_id}`}>
-              Shop Now
-              <ArrowRight className="ml-2 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </Button>
-          <button
-            onClick={prev}
-            aria-label="Previous"
-            className="h-9 w-9 rounded-full border border-border/60 bg-white/70 backdrop-blur flex items-center justify-center hover:bg-accent active:bg-accent transition-colors"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
-            onClick={next}
-            aria-label="Next"
-            className="h-9 w-9 rounded-full border border-border/60 bg-white/70 backdrop-blur flex items-center justify-center hover:bg-accent active:bg-accent transition-colors"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+      <div className="flex items-center gap-3">
+        <Button
+          asChild
+          size="default"
+          className="rounded-full bg-foreground text-background hover:bg-primary h-11 px-5 text-xs tracking-[0.15em] uppercase elegant-shadow group"
+        >
+          <Link to={`/shop/product/${item.product_unit_id}`}>
+            Shop Now
+            <ArrowRight className="ml-2 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </Button>
+        {total > 1 && (
+          <>
+            <button
+              onClick={prev}
+              aria-label="Previous"
+              className="h-9 w-9 rounded-full border border-border/60 bg-white/70 backdrop-blur flex items-center justify-center hover:bg-accent active:bg-accent transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={next}
+              aria-label="Next"
+              className="h-9 w-9 rounded-full border border-border/60 bg-white/70 backdrop-blur flex items-center justify-center hover:bg-accent active:bg-accent transition-colors"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </>
+        )}
+      </div>
       {total > 1 && (
         <div className="flex items-center gap-2">
           {Array.from({ length: total }).map((_, i) => (
@@ -444,34 +446,36 @@ const CompactSlider = ({ discounts }: { discounts: DiscountItem[] }) => {
             <Box v={t.m} l="Min" compact />
             <Box v={t.s} l="Sec" compact />
           </div>
-          {total > 1 && (
-            <div className="flex items-center gap-3">
-              <Button
-                asChild
-                size="default"
-                className="rounded-full bg-foreground text-background hover:bg-primary h-11 px-5 text-xs tracking-[0.15em] uppercase elegant-shadow group"
-              >
-                <Link to={`/shop/product/${item.product_unit_id}`}>
-                  Shop Now
-                  <ArrowRight className="ml-2 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
-              <button
-                onClick={prev}
-                aria-label="Previous"
-                className="h-9 w-9 rounded-full border border-border/60 bg-white/70 backdrop-blur flex items-center justify-center hover:bg-accent active:bg-accent transition-colors"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                onClick={next}
-                aria-label="Next"
-                className="h-9 w-9 rounded-full border border-border/60 bg-white/70 backdrop-blur flex items-center justify-center hover:bg-accent active:bg-accent transition-colors"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            <Button
+              asChild
+              size="default"
+              className="rounded-full bg-foreground text-background hover:bg-primary h-11 px-5 text-xs tracking-[0.15em] uppercase elegant-shadow group"
+            >
+              <Link to={`/shop/product/${item.product_unit_id}`}>
+                Shop Now
+                <ArrowRight className="ml-2 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </Button>
+            {total > 1 && (
+              <>
+                <button
+                  onClick={prev}
+                  aria-label="Previous"
+                  className="h-9 w-9 rounded-full border border-border/60 bg-white/70 backdrop-blur flex items-center justify-center hover:bg-accent active:bg-accent transition-colors"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={next}
+                  aria-label="Next"
+                  className="h-9 w-9 rounded-full border border-border/60 bg-white/70 backdrop-blur flex items-center justify-center hover:bg-accent active:bg-accent transition-colors"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </>
+            )}
+          </div>
           {total > 1 && (
             <div className="flex items-center gap-2">
               {Array.from({ length: total }).map((_, i) => (
