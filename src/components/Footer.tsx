@@ -1,8 +1,9 @@
 import { Facebook } from "lucide-react";
-// import { Instagram, Twitter, Youtube } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { fetchCategories } from "@/lib/products";
+import { fetchCategories } from "@/lib/categories";
+import { fetchBanks } from "@/lib/banks";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const SOCIALS = [
   {
@@ -12,7 +13,7 @@ const SOCIALS = [
   },
   {
     label: "TikTok",
-    href: "https://tiktok.com/@reresky8", // ganti dengan URL TikTok
+    href: "https://tiktok.com/@reresky8",
     icon: (
       <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
         <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z" />
@@ -28,9 +29,6 @@ const SOCIALS = [
       </svg>
     ),
   },
-  // { label: "Instagram", href: "#", icon: <Instagram className="h-4 w-4" /> },
-  // { label: "X / Twitter", href: "#", icon: <Twitter className="h-4 w-4" /> },
-  // { label: "Youtube",  href: "#", icon: <Youtube className="h-4 w-4" /> },
 ];
 
 const staticCols = [
@@ -39,40 +37,21 @@ const staticCols = [
     titleHref: "/about",
     links: [
       { label: "Our Story", href: "/about#our-story" },
-      // { label: "Ingredients", href: "#" },
-      // { label: "Sustainability", href: "#" },
-      // { label: "Press", href: "#" },
-      // { label: "Careers", href: "#" },
       { label: "Kenapa Memilih Kami?", href: "/about#kenapa-memilih-kami" },
       { label: "Customer Stories", href: "/about#customer-stories" },
       { label: "Blog", href: "/blog" },
     ],
   },
-  // {
-  //   title: "Customer Care",
-  //   links: [
-  //     { label: "Contact Us", href: "#" },
-  //     { label: "FAQs", href: "#" },
-  //     { label: "Shipping Info", href: "#" },
-  //     { label: "Returns", href: "#" },
-  //     { label: "Track Order", href: "#" },
-  //   ],
-  // },
-  // {
-  //   title: "Policies",
-  //   links: [
-  //     { label: "Privacy Policy", href: "#" },
-  //     { label: "Terms of Service", href: "#" },
-  //     { label: "Cookie Policy", href: "#" },
-  //   ],
-  // },
 ];
 
 const Footer = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const handleHashClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  const handleHashClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    href: string,
+  ) => {
     const hashIdx = href.indexOf("#");
     if (hashIdx === -1) return;
     e.preventDefault();
@@ -82,7 +61,11 @@ const Footer = () => {
       document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" });
     } else {
       navigate(href);
-      setTimeout(() => document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" }), 300);
+      setTimeout(
+        () =>
+          document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" }),
+        300,
+      );
     }
   };
 
@@ -90,6 +73,13 @@ const Footer = () => {
     queryKey: ["categories"],
     queryFn: fetchCategories,
     staleTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+  });
+
+  const { data: banks = [], isLoading: banksLoading } = useQuery({
+    queryKey: ["banks"],
+    queryFn: () => fetchBanks(1, 10),
+    staleTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
   });
 
@@ -138,7 +128,10 @@ const Footer = () => {
             {/* Shop — dynamic categories */}
             <div>
               <h4 className="font-display text-base mb-4 text-primary-glow">
-                <Link to="/shop" className="hover:text-background transition-colors">
+                <Link
+                  to="/shop"
+                  className="hover:text-background transition-colors"
+                >
                   Shop
                 </Link>
               </h4>
@@ -177,7 +170,10 @@ const Footer = () => {
             {staticCols.map((c) => (
               <div key={c.title}>
                 <h4 className="font-display text-base mb-4 text-primary-glow">
-                  <Link to={c.titleHref} className="hover:text-background transition-colors">
+                  <Link
+                    to={c.titleHref}
+                    className="hover:text-background transition-colors"
+                  >
                     {c.title}
                   </Link>
                 </h4>
@@ -187,7 +183,11 @@ const Footer = () => {
                       <Link
                         to={l.href}
                         className="text-sm text-background/60 hover:text-background transition-colors"
-                        onClick={l.href.includes("#") ? (e) => handleHashClick(e, l.href) : undefined}
+                        onClick={
+                          l.href.includes("#")
+                            ? (e) => handleHashClick(e, l.href)
+                            : undefined
+                        }
                       >
                         {l.label}
                       </Link>
@@ -201,29 +201,40 @@ const Footer = () => {
 
         {/* Middle */}
         <div className="grid md:grid-cols-2 gap-6 py-8 border-b border-background/10 text-xs">
+          {/* We Accept — bank list dari API */}
           <div>
             <p className="text-background/40 tracking-[0.2em] uppercase mb-3">
               We Accept
             </p>
             <div className="flex flex-wrap gap-2">
-              {[
-                // "VISA",
-                // "Mastercard",
-                // "Midtrans",
-                // "GoPay",
-                // "ShopeePay",
-                // "OVO",
-                "Mandiri",
-              ].map((p) => (
-                <span
-                  key={p}
-                  className="px-3 py-1.5 bg-background/5 border border-background/10 rounded-md text-background/70"
-                >
-                  {p}
-                </span>
-              ))}
+              {banksLoading
+                ? Array.from({ length: 2 }).map((_, i) => (
+                    <Skeleton
+                      key={i}
+                      className="h-8 w-20 bg-background/10 rounded-md"
+                    />
+                  ))
+                : banks.map((bank) => (
+                    <div
+                      key={bank.id}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-background/5 border border-background/10 rounded-md"
+                    >
+                      {bank.logo ? (
+                        <img
+                          src={bank.logo}
+                          alt={bank.name}
+                          width={20}
+                          height={20}
+                          loading="lazy"
+                          className="h-5 w-auto max-w-[48px] object-contain brightness-0 invert"
+                        />
+                      ) : null}
+                      <span className="text-background/70">{bank.code}</span>
+                    </div>
+                  ))}
             </div>
           </div>
+
           <div className="md:text-right">
             <p className="text-background/40 tracking-[0.2em] uppercase mb-3">
               Shipping Partners
