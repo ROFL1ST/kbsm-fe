@@ -19,5 +19,5 @@ export async function fetchBanks(page = 1, size = 10): Promise<Bank[]> {
     throw new Error(payload.messages || "Gagal mengambil data bank.");
   }
 
-  return payload.data?.data ?? [];
+  return payload.data ?? [];
 }

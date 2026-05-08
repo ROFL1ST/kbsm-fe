@@ -13,10 +13,6 @@ export type Bank = {
 export type BankListApiResponse = {
   status: boolean;
   code: number;
-  data: {
-    total_data: number;
-    total_page: number;
-    data: Bank[];
-  };
+  data: Bank[];
   messages: string;
 };
