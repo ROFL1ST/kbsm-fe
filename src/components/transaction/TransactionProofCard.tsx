@@ -11,8 +11,12 @@ import {
   X,
   XCircle,
   AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import type { TransactionProof } from "@/types/transaction";
 
 interface Props {
@@ -30,8 +34,6 @@ function formatDate(iso: string) {
 
 const PAYMENT_LABEL: Record<string, string> = {
   TRANSFER: "Transfer Bank",
-  // CASH: "Tunai",
-  // COD: "Bayar di Tempat",
 };
 
 /** Pembayaran ditolak jika ada finance_callback_at DAN finance_callback_reason tidak kosong */
@@ -61,13 +63,6 @@ export default function TransactionProofCard({
   const rejected = isRejected(proof);
   const verified = isVerified(proof);
 
-  /**
-   * Bisa update jika:
-   * - sudah upload (hasProof)
-   * - belum diverifikasi (bukan verified)
-   * - ada handler onUpdate
-   * Ini mencakup status "menunggu" DAN "ditolak"
-   */
   const canUpdate = hasProof && !verified && !!onUpdate;
 
   const [isEditMode, setIsEditMode] = useState(false);
@@ -116,27 +111,33 @@ export default function TransactionProofCard({
 
     if (verified) {
       return (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary">
-          <CheckCircle2 className="h-3.5 w-3.5" />
+        <Badge
+          variant="outline"
+          className="gap-1.5 border-primary/30 bg-primary/10 text-primary"
+        >
+          <CheckCircle2 className="h-3 w-3" />
           Terverifikasi
-        </span>
+        </Badge>
       );
     }
 
     if (rejected) {
       return (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 px-3 py-1 text-[11px] font-medium text-destructive">
-          <XCircle className="h-3.5 w-3.5" />
+        <Badge
+          variant="outline"
+          className="gap-1.5 border-destructive/30 bg-destructive/10 text-destructive"
+        >
+          <XCircle className="h-3 w-3" />
           Ditolak
-        </span>
+        </Badge>
       );
     }
 
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-[11px] font-medium text-secondary-foreground">
-        <Clock className="h-3.5 w-3.5" />
+      <Badge variant="secondary" className="gap-1.5">
+        <Clock className="h-3 w-3" />
         Menunggu Verifikasi
-      </span>
+      </Badge>
     );
   }
 
@@ -148,28 +149,24 @@ export default function TransactionProofCard({
         <StatusBadge />
       </div>
 
-      {/* Banner alasan penolakan */}
+      {/* Banner alasan penolakan — pakai shadcn Alert */}
       {rejected && proof.finance_callback_reason && (
-        <div className="flex gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-          <div className="space-y-1 text-sm">
-            <p className="font-semibold text-destructive">
-              Pembayaran Ditolak
-            </p>
-            <p className="text-destructive/80">
-              {proof.finance_callback_reason}
-            </p>
+        <Alert variant="destructive" className="rounded-2xl">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Pembayaran Ditolak</AlertTitle>
+          <AlertDescription className="space-y-1.5">
+            <p>{proof.finance_callback_reason}</p>
             {canUpdate && (
-              <p className="mt-1 text-muted-foreground">
+              <p className="text-destructive/70">
                 Silakan periksa kembali jumlah transfer dan foto bukti
                 pembayaran, lalu unggah ulang.
               </p>
             )}
-          </div>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
-      {/* Mode edit — tampilkan file picker baru */}
+      {/* Mode edit — file picker baru */}
       {isEditMode ? (
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
@@ -202,9 +199,10 @@ export default function TransactionProofCard({
           </label>
 
           {updateError && (
-            <p className="rounded-xl bg-destructive/10 px-4 py-2 text-sm text-destructive">
-              {updateError}
-            </p>
+            <Alert variant="destructive" className="rounded-xl py-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{updateError}</AlertDescription>
+            </Alert>
           )}
 
           <div className="flex gap-2">
@@ -264,6 +262,8 @@ export default function TransactionProofCard({
         </>
       )}
 
+      <Separator />
+
       {/* Info pembayaran */}
       <div className="grid gap-2 text-sm">
         <div className="flex justify-between">
@@ -316,19 +316,25 @@ export default function TransactionProofCard({
           </a>
         )}
 
-        {/* Tombol ganti — muncul jika bisa diupdate (menunggu ATAU ditolak) dan tidak sedang edit */}
         {canUpdate && !isEditMode && (
           <Button
             type="button"
-            variant={rejected ? "default" : "outline"}
+            variant={rejected ? "destructive" : "outline"}
             size="sm"
-            className={`ml-auto rounded-full gap-1.5 ${
-              rejected ? "bg-destructive hover:bg-destructive/90 text-white" : ""
-            }`}
+            className="ml-auto rounded-full gap-1.5"
             onClick={() => setIsEditMode(true)}
           >
-            <Pencil className="h-3.5 w-3.5" />
-            {rejected ? "Unggah Ulang Bukti" : "Ganti Bukti"}
+            {rejected ? (
+              <>
+                <RefreshCw className="h-3.5 w-3.5" />
+                Unggah Ulang Bukti
+              </>
+            ) : (
+              <>
+                <Pencil className="h-3.5 w-3.5" />
+                Ganti Bukti
+              </>
+            )}
           </Button>
         )}
       </div>
