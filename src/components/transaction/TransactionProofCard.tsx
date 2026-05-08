@@ -9,6 +9,8 @@ import {
   Upload,
   Loader2,
   X,
+  XCircle,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { TransactionProof } from "@/types/transaction";
@@ -21,7 +23,7 @@ interface Props {
 }
 
 function formatDate(iso: string) {
-  return format(new Date(iso), "dd MMM yyyy \u00b7 HH:mm", {
+  return format(new Date(iso), "dd MMM yyyy · HH:mm", {
     locale: idLocale,
   });
 }
@@ -32,15 +34,41 @@ const PAYMENT_LABEL: Record<string, string> = {
   // COD: "Bayar di Tempat",
 };
 
+/** Pembayaran ditolak jika ada finance_callback_at DAN finance_callback_reason tidak kosong */
+function isRejected(proof: TransactionProof): boolean {
+  return (
+    proof.finance_callback_at !== null &&
+    proof.finance_callback_reason !== null &&
+    proof.finance_callback_reason.trim() !== ""
+  );
+}
+
+/** Pembayaran terverifikasi jika ada finance_callback_at DAN tidak ada alasan penolakan */
+function isVerified(proof: TransactionProof): boolean {
+  return (
+    proof.finance_callback_at !== null &&
+    (proof.finance_callback_reason === null ||
+      proof.finance_callback_reason.trim() === "")
+  );
+}
+
 export default function TransactionProofCard({
   proof,
   onUpdate,
   isUpdating = false,
 }: Props) {
   const hasProof = proof.path !== null;
-  const isVerified = proof.finance_callback_at !== null;
-  /** Bisa update jika sudah upload tapi belum diverifikasi */
-  const canUpdate = hasProof && !isVerified && !!onUpdate;
+  const rejected = isRejected(proof);
+  const verified = isVerified(proof);
+
+  /**
+   * Bisa update jika:
+   * - sudah upload (hasProof)
+   * - belum diverifikasi (bukan verified)
+   * - ada handler onUpdate
+   * Ini mencakup status "menunggu" DAN "ditolak"
+   */
+  const canUpdate = hasProof && !verified && !!onUpdate;
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [newFile, setNewFile] = useState<File | null>(null);
@@ -82,33 +110,64 @@ export default function TransactionProofCard({
     }
   }
 
+  /* ---------- badge status ---------- */
+  function StatusBadge() {
+    if (!hasProof) return null;
+
+    if (verified) {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary">
+          <CheckCircle2 className="h-3.5 w-3.5" />
+          Terverifikasi
+        </span>
+      );
+    }
+
+    if (rejected) {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 px-3 py-1 text-[11px] font-medium text-destructive">
+          <XCircle className="h-3.5 w-3.5" />
+          Ditolak
+        </span>
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-[11px] font-medium text-secondary-foreground">
+        <Clock className="h-3.5 w-3.5" />
+        Menunggu Verifikasi
+      </span>
+    );
+  }
+
   return (
     <div className="rounded-[2rem] border border-border/60 bg-white px-6 py-8 soft-shadow md:px-8 space-y-5">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <h2 className="font-display text-2xl">Bukti Pembayaran</h2>
-        {hasProof && (
-          <span
-            className={
-              isVerified
-                ? "inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary"
-                : "inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-[11px] font-medium text-secondary-foreground"
-            }
-          >
-            {isVerified ? (
-              <>
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                Terverifikasi
-              </>
-            ) : (
-              <>
-                <Clock className="h-3.5 w-3.5" />
-                Menunggu
-              </>
-            )}
-          </span>
-        )}
+        <StatusBadge />
       </div>
+
+      {/* Banner alasan penolakan */}
+      {rejected && proof.finance_callback_reason && (
+        <div className="flex gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+          <div className="space-y-1 text-sm">
+            <p className="font-semibold text-destructive">
+              Pembayaran Ditolak
+            </p>
+            <p className="text-destructive/80">
+              {proof.finance_callback_reason}
+            </p>
+            {canUpdate && (
+              <p className="mt-1 text-muted-foreground">
+                Silakan periksa kembali jumlah transfer dan foto bukti
+                pembayaran, lalu unggah ulang.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Mode edit — tampilkan file picker baru */}
       {isEditMode ? (
@@ -179,7 +238,13 @@ export default function TransactionProofCard({
         /* Mode normal — tampilkan gambar bukti */
         <>
           {hasProof ? (
-            <div className="overflow-hidden rounded-2xl border border-border/60 bg-muted">
+            <div
+              className={`overflow-hidden rounded-2xl border bg-muted ${
+                rejected
+                  ? "border-destructive/40 opacity-60"
+                  : "border-border/60"
+              }`}
+            >
               <img
                 src={proof.path!}
                 alt="Bukti pembayaran"
@@ -219,10 +284,18 @@ export default function TransactionProofCard({
             <span className="font-medium">{formatDate(proof.updated_at)}</span>
           </div>
         )}
-        {isVerified && proof.finance_callback_at && (
+        {verified && proof.finance_callback_at && (
           <div className="flex justify-between">
             <span className="text-muted-foreground">Diverifikasi</span>
             <span className="font-medium">
+              {formatDate(proof.finance_callback_at)}
+            </span>
+          </div>
+        )}
+        {rejected && proof.finance_callback_at && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Ditolak pada</span>
+            <span className="font-medium text-destructive">
               {formatDate(proof.finance_callback_at)}
             </span>
           </div>
@@ -243,17 +316,19 @@ export default function TransactionProofCard({
           </a>
         )}
 
-        {/* Tombol ganti — hanya muncul jika bisa diupdate dan tidak sedang edit */}
+        {/* Tombol ganti — muncul jika bisa diupdate (menunggu ATAU ditolak) dan tidak sedang edit */}
         {canUpdate && !isEditMode && (
           <Button
             type="button"
-            variant="outline"
+            variant={rejected ? "default" : "outline"}
             size="sm"
-            className="ml-auto rounded-full gap-1.5"
+            className={`ml-auto rounded-full gap-1.5 ${
+              rejected ? "bg-destructive hover:bg-destructive/90 text-white" : ""
+            }`}
             onClick={() => setIsEditMode(true)}
           >
             <Pencil className="h-3.5 w-3.5" />
-            Ganti Bukti
+            {rejected ? "Unggah Ulang Bukti" : "Ganti Bukti"}
           </Button>
         )}
       </div>
