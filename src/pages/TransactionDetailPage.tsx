@@ -19,6 +19,7 @@ import TransactionDetailSkeleton from "@/components/transaction/TransactionDetai
 import {
   fetchTransactionDetail,
   repeatOrder,
+  updateTransactionProgress,
   uploadTransactionProof,
 } from "@/lib/transaction-detail";
 import { getTransactionProgressSteps } from "@/lib/transaction-progress";
@@ -42,6 +43,7 @@ export default function TransactionDetailPage() {
 
   // State untuk update bukti yang sudah ada
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isUpdatingProgress, setIsUpdatingProgress] = useState(false);
 
   const [isRepeating, setIsRepeating] = useState(false);
 
@@ -49,19 +51,21 @@ export default function TransactionDetailPage() {
     document.title = "Detail Transaksi \u2014 Kasta Beau\u00e9";
   }, []);
 
-  function load() {
+  async function load() {
     if (!id || !userId) return;
     setIsLoading(true);
     setFetchError(null);
 
-    fetchTransactionDetail({ userId, transactionId: id })
-      .then((data) => setTransaction(data))
-      .catch((err: unknown) =>
-        setFetchError(
-          err instanceof Error ? err.message : "Gagal memuat detail transaksi."
-        )
-      )
-      .finally(() => setIsLoading(false));
+    try {
+      const data = await fetchTransactionDetail({ userId, transactionId: id });
+      setTransaction(data);
+    } catch (err: unknown) {
+      setFetchError(
+        err instanceof Error ? err.message : "Gagal memuat detail transaksi."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   useEffect(() => { load(); }, [id, userId]);
@@ -110,6 +114,25 @@ export default function TransactionDetailPage() {
     }
   }
 
+  async function handleUpdateStatus() {
+    if (!transaction) return;
+
+    setIsUpdatingProgress(true);
+    try {
+      await updateTransactionProgress({
+        trxId: transaction.id,
+        userId,
+      });
+      await load();
+    } catch (err: unknown) {
+      setFetchError(
+        err instanceof Error ? err.message : "Gagal memperbarui status transaksi."
+      );
+    } finally {
+      setIsUpdatingProgress(false);
+    }
+  }
+
   const progressSteps = transaction
     ? getTransactionProgressSteps(transaction)
     : [];
@@ -131,6 +154,10 @@ export default function TransactionDetailPage() {
     transaction.status_trx_code === "PENDING" &&
     Array.isArray(transaction.banks) &&
     transaction.banks.length > 0;
+
+  const canUpdateStatus =
+    transaction !== null &&
+    transaction.progress_type_code?.toUpperCase() === "SENDING";
 
   return (
     <main className="min-h-screen bg-background">
@@ -187,6 +214,27 @@ export default function TransactionDetailPage() {
 
                 {/* Right */}
                 <div className="space-y-6">
+                  {canUpdateStatus && (
+                    <div className="rounded-[2rem] border border-border/60 bg-white px-6 py-8 soft-shadow md:px-8 space-y-4">
+                      <h2 className="font-display text-xl">Update Status Pesanan</h2>
+                      <p className="text-sm text-muted-foreground">
+                        Tandai pesanan ini sudah selesai diterima.
+                      </p>
+                      <Button
+                        type="button"
+                        className="w-full rounded-full"
+                        disabled={isUpdatingProgress}
+                        onClick={handleUpdateStatus}
+                      >
+                        {isUpdatingProgress ? (
+                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Memperbarui...</>
+                        ) : (
+                          "Tandai Selesai"
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
                   {/* Info bank rekening tujuan — hanya tampil saat PENDING */}
                   {showBanks && (
                     <TransactionBankCard

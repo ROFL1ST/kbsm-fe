@@ -147,3 +147,15 @@ export interface RepeatOrderResponse {
   data?: unknown;
   error?: unknown;
 }
+
+export interface UpdateTransactionProgressPayload {
+  trxId: string;
+  userId: string;
+}
+
+export interface UpdateTransactionProgressResponse {
+  status: boolean;
+  message: string;
+  data?: unknown;
+  error?: unknown;
+}

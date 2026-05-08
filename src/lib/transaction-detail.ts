@@ -6,6 +6,8 @@ import type {
   UploadTransactionProofResponse,
   RepeatOrderPayload,
   RepeatOrderResponse,
+  UpdateTransactionProgressPayload,
+  UpdateTransactionProgressResponse,
 } from "@/types/transaction";
 
 export async function fetchTransactionDetail(params: {
@@ -79,6 +81,27 @@ export async function uploadTransactionProof({
   }
 
   return payload;
+}
+
+export async function updateTransactionProgress({
+  trxId,
+  userId,
+}: UpdateTransactionProgressPayload): Promise<UpdateTransactionProgressResponse> {
+  const result = await fetchAuth<unknown>(`/transaction/update-progress`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      transaction_id: trxId,
+      user_id: userId,
+    }),
+  });
+
+  const raw = result as unknown as UpdateTransactionProgressResponse;
+
+  if (!raw.status) {
+    throw new Error(raw.message || "Gagal memperbarui progress transaksi.");
+  }
+
+  return raw;
 }
 
 export async function repeatOrder({
