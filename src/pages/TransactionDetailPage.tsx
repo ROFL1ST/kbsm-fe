@@ -24,7 +24,7 @@ import {
 } from "@/lib/transaction-detail";
 import { getTransactionProgressSteps } from "@/lib/transaction-progress";
 import { getAuthUser } from "@/lib/auth";
-import type { TransactionDetailData } from "@/types/transaction";
+import type { TransactionDetailData, TransactionProof } from "@/types/transaction";
 
 export default function TransactionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -159,6 +159,20 @@ export default function TransactionDetailPage() {
     transaction !== null &&
     transaction.progress_type_code?.toUpperCase() === "SENDING";
 
+  /**
+   * Pembayaran dianggap VERIFIED jika ada finance_callback_at
+   * DAN tidak ada alasan penolakan (finance_callback_reason null/kosong).
+   * onUpdate hanya di-pass jika BELUM verified — mencakup status "menunggu" DAN "ditolak".
+   */
+  function resolveOnUpdate(proof: TransactionProof) {
+    const isVerified =
+      proof.finance_callback_at !== null &&
+      (proof.finance_callback_reason === null ||
+        proof.finance_callback_reason.trim() === "");
+
+    return isVerified ? undefined : handleUpdate;
+  }
+
   return (
     <main className="min-h-screen bg-background">
       <Navbar />
@@ -259,11 +273,7 @@ export default function TransactionDetailPage() {
                     transaction.transaction_proof && (
                       <TransactionProofCard
                         proof={transaction.transaction_proof}
-                        onUpdate={
-                          transaction.transaction_proof.finance_callback_at === null
-                            ? handleUpdate
-                            : undefined
-                        }
+                        onUpdate={resolveOnUpdate(transaction.transaction_proof)}
                         isUpdating={isUpdating}
                       />
                     )
