@@ -19,7 +19,11 @@ import CompleteProfileDialog from "@/components/CompleteProfileDialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 import { getAuthUser, hasAccessToken } from "@/lib/auth";
-import { addToCart, createCartItemFromProduct, type DirectCheckoutState } from "@/lib/cart";
+import {
+  addToCart,
+  createCartItemFromProduct,
+  type DirectCheckoutState,
+} from "@/lib/cart";
 import { getUserProfile } from "@/lib/profile";
 import { isProfileComplete } from "@/lib/profile-completeness";
 import {
@@ -39,7 +43,8 @@ const ProductDetail = () => {
   const [activeMobileSlide, setActiveMobileSlide] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [loginPromptOpen, setLoginPromptOpen] = useState(false);
-  const [completeProfilePromptOpen, setCompleteProfilePromptOpen] = useState(false);
+  const [completeProfilePromptOpen, setCompleteProfilePromptOpen] =
+    useState(false);
   const queryClient = useQueryClient();
 
   const {
@@ -49,19 +54,14 @@ const ProductDetail = () => {
   } = useQuery({
     queryKey: ["product-detail", productUnitId],
     queryFn: () => fetchProductDetail(productUnitId),
-    enabled:
-      Number.isInteger(productUnitId) &&
-      productUnitId > 0,
+    enabled: Number.isInteger(productUnitId) && productUnitId > 0,
     staleTime: PRODUCT_CACHE_TTL,
     gcTime: PRODUCT_CACHE_TTL * 2,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
 
-  const {
-    data: relatedProducts = [],
-    isLoading: isRelatedLoading,
-  } = useQuery({
+  const { data: relatedProducts = [], isLoading: isRelatedLoading } = useQuery({
     queryKey: ["related-products", product?.category_id, productUnitId],
     queryFn: () =>
       fetchProducts({
@@ -71,7 +71,8 @@ const ProductDetail = () => {
         page: 1,
       }),
     select: (items) => items.map(mapProductToCard),
-    enabled: typeof product?.category_id === "number" && product.category_id > 0,
+    enabled:
+      typeof product?.category_id === "number" && product.category_id > 0,
     staleTime: PRODUCT_CACHE_TTL,
     gcTime: PRODUCT_CACHE_TTL * 2,
     refetchOnWindowFocus: false,
@@ -92,8 +93,14 @@ const ProductDetail = () => {
     product && product.discount_flag && product.price > 0
       ? Math.round((product.discount_amount / product.price) * 100)
       : 0;
-  const mobileSlides = productImages.length > 0 ? productImages : cardProduct ? [cardProduct.image] : [];
-  const activeImage = mobileSlides[activeMobileSlide] ?? cardProduct?.image ?? "";
+  const mobileSlides =
+    productImages.length > 0
+      ? productImages
+      : cardProduct
+        ? [cardProduct.image]
+        : [];
+  const activeImage =
+    mobileSlides[activeMobileSlide] ?? cardProduct?.image ?? "";
   const authUser = getAuthUser();
 
   const shopByCategoryLink = product?.category_id
@@ -112,7 +119,9 @@ const ProductDetail = () => {
       }
 
       if (!hasAccessToken()) {
-        throw new Error("Kamu harus login dulu sebelum menambahkan produk ke keranjang.");
+        throw new Error(
+          "Kamu harus login dulu sebelum menambahkan produk ke keranjang.",
+        );
       }
 
       if (quantity <= 0) {
@@ -133,7 +142,10 @@ const ProductDetail = () => {
       toast.success("Produk berhasil ditambahkan ke keranjang.");
     },
     onError: (error) => {
-      const message = error instanceof Error ? error.message : "Gagal menambahkan produk ke keranjang.";
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Gagal menambahkan produk ke keranjang.";
       toast.error(message);
       if (message.includes("login")) {
         setLoginPromptOpen(true);
@@ -248,11 +260,16 @@ const ProductDetail = () => {
               Home
             </Link>
             <ChevronRight className="h-4 w-4" />
-            <Link to="/shop" className="transition-colors hover:text-foreground">
+            <Link
+              to="/shop"
+              className="transition-colors hover:text-foreground"
+            >
               Shop All
             </Link>
             <ChevronRight className="h-4 w-4" />
-            <span className="line-clamp-1 text-primary">{product?.product_name ?? "Detail Produk"}</span>
+            <span className="line-clamp-1 text-primary">
+              {product?.product_name ?? "Detail Produk"}
+            </span>
           </div>
 
           {isError ? (
@@ -291,7 +308,9 @@ const ProductDetail = () => {
                       key={`${slide}-${index}`}
                       type="button"
                       className={`overflow-hidden rounded-xl border bg-white ${
-                        index === activeMobileSlide ? "border-primary" : "border-border/60"
+                        index === activeMobileSlide
+                          ? "border-primary"
+                          : "border-border/60"
                       }`}
                       onClick={() => setActiveMobileSlide(index)}
                     >
@@ -409,14 +428,18 @@ const ProductDetail = () => {
 
                   <div className="hidden space-y-4 md:block">
                     <div>
-                      <p className="mb-2 text-sm font-medium text-foreground">Ukuran</p>
+                      <p className="mb-2 text-sm font-medium text-foreground">
+                        Ukuran
+                      </p>
                       <div className="inline-flex rounded-full border border-primary/25 px-4 py-2 text-sm font-medium text-primary">
                         {product.unit_code}
                       </div>
                     </div>
 
                     <div>
-                      <p className="mb-2 text-sm font-medium text-foreground">Jumlah</p>
+                      <p className="mb-2 text-sm font-medium text-foreground">
+                        Jumlah
+                      </p>
                       <div className="flex items-center gap-3">
                         <div className="flex h-11 items-center overflow-hidden rounded-xl border border-border/60 bg-white">
                           <button
@@ -451,15 +474,21 @@ const ProductDetail = () => {
                       variant="outline"
                       className="h-12 w-full rounded-xl border-foreground/20 bg-white text-foreground hover:bg-muted"
                       onClick={handleBuyNow}
+                      disabled={product.total_quantity <= 0}
                     >
                       Beli Langsung
                     </Button>
                     <Button
                       className="h-12 w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
                       onClick={handleAddToCart}
-                      disabled={addToCartMutation.isPending || product.total_quantity <= 0}
+                      disabled={
+                        addToCartMutation.isPending ||
+                        product.total_quantity <= 0
+                      }
                     >
-                      {addToCartMutation.isPending ? "Menambahkan..." : "+ Tambahkan ke Keranjang"}
+                      {addToCartMutation.isPending
+                        ? "Menambahkan..."
+                        : "+ Tambahkan ke Keranjang"}
                     </Button>
                   </div>
 
@@ -488,7 +517,9 @@ const ProductDetail = () => {
                 </h2>
                 <div
                   className="prose-blog mt-5 max-w-none"
-                  dangerouslySetInnerHTML={{ __html: product.product_description }}
+                  dangerouslySetInnerHTML={{
+                    __html: product.product_description,
+                  }}
                 />
               </div>
 
@@ -505,7 +536,9 @@ const ProductDetail = () => {
                     </h2>
                     <p className="text-sm text-muted-foreground">
                       Produk lain dalam kategori{" "}
-                      <span className="font-medium text-foreground">{product.category_name}</span>
+                      <span className="font-medium text-foreground">
+                        {product.category_name}
+                      </span>
                     </p>
                   </div>
                   <Link
@@ -565,7 +598,9 @@ const ProductDetail = () => {
             <Button
               className="h-12 w-full rounded-xl bg-primary px-5 text-base font-semibold text-primary-foreground hover:bg-primary/90"
               onClick={handleAddToCart}
-              disabled={addToCartMutation.isPending || product.total_quantity <= 0}
+              disabled={
+                addToCartMutation.isPending || product.total_quantity <= 0
+              }
             >
               {addToCartMutation.isPending ? "Menambahkan..." : "+ Keranjang"}
             </Button>

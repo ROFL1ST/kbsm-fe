@@ -10,7 +10,7 @@ const Marquee = () => {
     queryKey: ["categories"],
     queryFn: fetchCategories,
     staleTime: CATEGORY_CACHE_TTL,
-    gcTime: CATEGORY_CACHE_TTL * 2,
+    gcTime: CATEGORY_CACHE_TTL * 3,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
@@ -20,15 +20,17 @@ const Marquee = () => {
 
   return (
     <section className="py-10 border-y border-border/50 bg-background overflow-hidden">
-      <div className="flex animate-marquee gap-16 whitespace-nowrap">
-        {[...categories, ...categories].map((category, i) => (
-          <span
-            key={`${category.name}-${i}`}
-            className="font-display text-2xl md:text-3xl italic text-muted-foreground/50 hover:text-primary transition-colors"
-          >
-            {category.name}
-          </span>
-        ))}
+      <div className="flex animate-marquee gap-20 whitespace-nowrap">
+        {[...categories, ...categories, ...categories, ...categories].map(
+          (category, i) => (
+            <span
+              key={`${category.name}-${i}`}
+              className="font-display text-2xl md:text-3xl italic text-muted-foreground/50 hover:text-primary transition-colors"
+            >
+              {category.name}
+            </span>
+          ),
+        )}
       </div>
     </section>
   );

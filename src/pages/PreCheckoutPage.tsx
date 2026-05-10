@@ -144,13 +144,11 @@ const PreCheckoutPage = () => {
     : resolveReviewItems(cart?.items ?? []);
   const primaryAddress =
     addresses.find((address) => address.is_default) ?? addresses[0] ?? null;
-  const destinationSubdistrictId =
-    primaryAddress?.subdistrict_id ?? primaryAddress?.district_id ?? null;
+  const destinationSubdistrictId = primaryAddress?.district_id || null;
   const totalWeight = reviewItems.reduce(
     (total, item) => total + item.quantity * DEFAULT_ITEM_WEIGHT,
     0,
   );
-
   const {
     data: shippingOptions = [],
     isLoading: isShippingLoading,
@@ -167,7 +165,7 @@ const PreCheckoutPage = () => {
       fetchDeliveryCost({
         origin_subdistrict_id: ORIGIN_SUBDISTRICT_ID,
         destination_subdistrict_id: destinationSubdistrictId!,
-        weight: 100,
+        weight: 1000,
         courier: selectedCourier,
       }),
     enabled:
@@ -298,7 +296,9 @@ const PreCheckoutPage = () => {
 
       const purchaseOrderId = checkoutResult.data?.purchase_order_id?.trim();
 
-      toast.success("Checkout berhasil dibuat. Lanjutkan ke halaman pembayaran.");
+      toast.success(
+        "Checkout berhasil dibuat. Lanjutkan ke halaman pembayaran.",
+      );
       navigate(
         purchaseOrderId ? `/transactions/${purchaseOrderId}` : "/transactions",
       );

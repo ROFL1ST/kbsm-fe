@@ -1,4 +1,3 @@
-
 FROM node:22 AS staging
 ENV NODE_ENV=development
 WORKDIR /kbbu-web
