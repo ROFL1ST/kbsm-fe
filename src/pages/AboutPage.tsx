@@ -26,7 +26,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
 };
 
 /* ---------- Stat counter hook ---------- */
-function useCountUp(target: number, duration = 1800, start = false) {
+function useCountUp(target: number, duration = 1800, start = false, decimals = 0) {
   const [count, setCount] = useState(0);
   useEffect(() => {
     if (!start) return;
@@ -35,11 +35,12 @@ function useCountUp(target: number, duration = 1800, start = false) {
       if (!startTime) startTime = timestamp;
       const progress = Math.min((timestamp - startTime) / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.floor(eased * target));
+      const raw = eased * target;
+      setCount(decimals > 0 ? parseFloat(raw.toFixed(decimals)) : Math.floor(raw));
       if (progress < 1) requestAnimationFrame(step);
     };
     requestAnimationFrame(step);
-  }, [start, target, duration]);
+  }, [start, target, duration, decimals]);
   return count;
 }
 
@@ -48,17 +49,22 @@ const StatCard = ({
   suffix = "",
   label,
   started,
+  displayValue,
 }: {
   value: number;
   suffix?: string;
   label: string;
   started: boolean;
+  displayValue?: string;
 }) => {
   const count = useCountUp(value, 1600, started);
+
+  const display = displayValue ?? count;
+  console.log("display", display);
   return (
     <div className="glass-card p-6 md:p-8 text-center space-y-1 animate-fade-up">
       <p className="font-display text-4xl md:text-5xl tabular-nums">
-        {count}
+        {display}
         <span className="text-primary">{suffix}</span>
       </p>
       <p className="text-sm text-muted-foreground tracking-wide">{label}</p>
@@ -103,7 +109,13 @@ function AboutSkeleton() {
 }
 
 /* ---------- Error ---------- */
-function AboutError({ message, onRetry }: { message: string; onRetry: () => void }) {
+function AboutError({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
   return (
     <main className="min-h-screen bg-background">
       <Navbar />
@@ -130,17 +142,21 @@ export default function AboutPage() {
   const location = useLocation();
 
   useEffect(() => {
+    setStatsStarted(false);
+  }, [content]);
+
+  useEffect(() => {
     document.title = "Tentang Kami \u2014 Kasta Beau\u00e9";
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) setStatsStarted(true);
       },
-      { threshold: 0.3 }
+      { threshold: 0.3 },
     );
     if (statsRef.current) observer.observe(statsRef.current);
     return () => observer.disconnect();
-  }, []);
+  }, [content]);
 
   useEffect(() => {
     const hash = location.hash;
@@ -155,7 +171,13 @@ export default function AboutPage() {
   }, [location.hash]);
 
   if (isLoading) return <AboutSkeleton />;
-  if (error || !content) return <AboutError message={error ?? "Konten tidak tersedia."} onRetry={refetch} />;
+  if (error || !content)
+    return (
+      <AboutError
+        message={error ?? "Konten tidak tersedia."}
+        onRetry={refetch}
+      />
+    );
 
   const { hero, brand_story, stats, values, cta } = content;
 
@@ -202,7 +224,9 @@ export default function AboutPage() {
               variant="outline"
               className="rounded-full border-border/60 hover:border-primary hover:text-primary transition-colors px-8 h-12 text-sm tracking-[0.1em] uppercase w-full sm:w-auto"
             >
-              <Link to={hero.cta_secondary.href}>{hero.cta_secondary.label}</Link>
+              <Link to={hero.cta_secondary.href}>
+                {hero.cta_secondary.label}
+              </Link>
             </Button>
           </div>
         </div>
@@ -227,13 +251,18 @@ export default function AboutPage() {
                   />
                   <div className="w-16 h-px bg-primary/40" />
                   <p className="text-xs tracking-[0.3em] uppercase text-muted-foreground text-center">
-                    Est. {brand_story.established_year} \u00b7 {brand_story.location}
+                    Est. {brand_story.established_year} \u00b7{" "}
+                    {brand_story.location}
                   </p>
                 </div>
               </div>
               <div className="absolute -bottom-5 -right-5 md:bottom-8 md:-right-8 glass-card px-5 py-4 rounded-2xl space-y-0.5 shadow-lg animate-fade-up">
-                <p className="text-xs tracking-[0.15em] uppercase text-muted-foreground">Berdiri sejak</p>
-                <p className="font-display text-3xl">{brand_story.established_year}</p>
+                <p className="text-xs tracking-[0.15em] uppercase text-muted-foreground">
+                  Berdiri sejak
+                </p>
+                <p className="font-display text-3xl">
+                  {brand_story.established_year}
+                </p>
               </div>
             </div>
 
@@ -280,15 +309,22 @@ export default function AboutPage() {
             />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {stats.items.map((item) => (
-              <StatCard
-                key={item.label}
-                value={item.value}
-                suffix={item.suffix}
-                label={item.label}
-                started={statsStarted}
-              />
-            ))}
+            {stats.items.map((item) => {
+              const isDecimal = item.suffix === "/5";
+              const displayValue = isDecimal
+                ? (item.value / 10).toFixed(1)
+                : undefined;
+
+              return (
+                <StatCard
+                  key={item.label}
+                  value={isDecimal ? item.value / 10 : item.value}
+                  suffix={item.suffix}
+                  label={item.label}
+                  started={statsStarted}
+                />
+              );
+            })}
           </div>
         </div>
       </section>
@@ -329,7 +365,9 @@ export default function AboutPage() {
                     <h3 className="font-display text-xl">{item.title}</h3>
                     <div
                       className="text-sm text-muted-foreground leading-relaxed [&>p]:text-muted-foreground [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:space-y-1 [&>ul>li]:text-muted-foreground"
-                      dangerouslySetInnerHTML={{ __html: item.description_html }}
+                      dangerouslySetInnerHTML={{
+                        __html: item.description_html,
+                      }}
                     />
                   </div>
                 );
@@ -366,7 +404,7 @@ export default function AboutPage() {
                   className={cn(
                     "rounded-full bg-foreground text-background hover:bg-primary transition-colors",
                     "px-10 h-14 text-sm tracking-[0.1em] uppercase w-full sm:w-auto",
-                    "shadow-lg hover:shadow-primary/25"
+                    "shadow-lg hover:shadow-primary/25",
                   )}
                 >
                   <Link to={cta.cta_primary.href}>
@@ -380,7 +418,9 @@ export default function AboutPage() {
                   variant="outline"
                   className="rounded-full border-border/60 hover:border-primary hover:text-primary transition-colors px-10 h-14 text-sm tracking-[0.1em] uppercase w-full sm:w-auto"
                 >
-                  <Link to={cta.cta_secondary.href}>{cta.cta_secondary.label}</Link>
+                  <Link to={cta.cta_secondary.href}>
+                    {cta.cta_secondary.label}
+                  </Link>
                 </Button>
               </div>
             </div>
