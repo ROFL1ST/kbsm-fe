@@ -471,3 +471,8 @@ export async function fetchAuth<T>(
     payload.error || payload.message || "Request gagal diproses.",
   );
 }
+
+// ---------- /me ----------
+export async function getMe(): Promise<ApiEnvelope<AuthUser>> {
+  return fetchAuth<AuthUser>("/me");
+}
