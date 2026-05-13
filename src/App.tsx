@@ -21,8 +21,53 @@ import Shop from "./pages/Shop.tsx";
 import TransactionListPage from "./pages/TransactionListPage.tsx";
 import TransactionDetailPage from "./pages/TransactionDetailPage.tsx";
 import AboutPage from "./pages/AboutPage.tsx";
+import { useMe } from "@/hooks/use-me";
+import { useSessionExpired } from "@/hooks/use-session-expired";
 
 const queryClient = new QueryClient();
+
+/**
+ * Inner component rendered inside BrowserRouter + QueryClientProvider
+ * so hooks that need navigate() and useQuery() work correctly.
+ */
+function AppRoutes() {
+  // Validate session on every page load / tab focus
+  useMe();
+  // Listen for auth:session-expired event → show toast + redirect to /login
+  useSessionExpired();
+
+  return (
+    <>
+      <ScrollToTop />
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/shop" element={<Shop />} />
+        <Route
+          path="/shop/product/:productUnitId"
+          element={<ProductDetail />}
+        />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/pre-checkout" element={<PreCheckoutPage />} />
+        <Route path="/blog" element={<BlogPage />} />
+        <Route path="/blog/:slug" element={<BlogDetailPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile/addresses" element={<AddressPage />} />
+        <Route path="/transactions" element={<TransactionListPage />} />
+        <Route
+          path="/transactions/:id"
+          element={<TransactionDetailPage />}
+        />
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -30,30 +75,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <ScrollToTop />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/reset-password/:token" element={<ResetPassword />} />
-          <Route path="/shop" element={<Shop />} />
-          <Route
-            path="/shop/product/:productUnitId"
-            element={<ProductDetail />}
-          />
-          <Route path="/cart" element={<CartPage />} />
-          <Route path="/pre-checkout" element={<PreCheckoutPage />} />
-          <Route path="/blog" element={<BlogPage />} />
-          <Route path="/blog/:slug" element={<BlogDetailPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/profile/addresses" element={<AddressPage />} />
-          <Route path="/transactions" element={<TransactionListPage />} />
-          <Route path="/transactions/:id" element={<TransactionDetailPage />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AppRoutes />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
