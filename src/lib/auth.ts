@@ -337,6 +337,35 @@ function getOrStartRefresh(): Promise<string> {
   return _refreshPromise;
 }
 
+/**
+ * Detects whether a 401 response from the API indicates an expired token
+ * (as opposed to a truly unauthorized request).
+ *
+ * Strategy (in order of priority):
+ *  1. code === "TOKEN_EXPIRED"  — explicit field from BE
+ *  2. message/error contains "expired" keywords — BE returns plain strings
+ *  3. Any 401 while a refresh token is still stored — last-resort fallback
+ */
+function isExpiredTokenResponse(payload: ApiEnvelope<null> | null): boolean {
+  // 1. Explicit code
+  if (payload?.code === "TOKEN_EXPIRED") return true;
+
+  // 2. Match keywords in message or error string
+  const expiredKeywords = /expired|invalid.*(token|or expired)/i;
+  if (payload?.message && expiredKeywords.test(payload.message)) return true;
+  if (
+    payload?.error &&
+    typeof payload.error === "string" &&
+    expiredKeywords.test(payload.error)
+  )
+    return true;
+
+  // 3. Last-resort: no code field at all but refresh token exists
+  if (!payload?.code && Boolean(getRefreshToken())) return true;
+
+  return false;
+}
+
 // ---------- Authenticated fetch with auto-refresh interceptor ----------
 export async function fetchAuth<T>(
   path: string,
@@ -378,16 +407,12 @@ export async function fetchAuth<T>(
     return payload;
   }
 
-  // --- Handle 401: attempt refresh only for TOKEN_EXPIRED ---
+  // --- Handle 401 ---
   if (firstResponse.status === 401) {
     const errPayload =
       await readJsonSafely<ApiEnvelope<null>>(firstResponse);
-    const isTokenExpired =
-      errPayload?.code === "TOKEN_EXPIRED" ||
-      // Fallback: treat any 401 with a refresh token available as expired
-      (!errPayload?.code && Boolean(getRefreshToken()));
 
-    if (isTokenExpired) {
+    if (isExpiredTokenResponse(errPayload)) {
       let newToken: string;
       try {
         newToken = await getOrStartRefresh();
@@ -398,7 +423,6 @@ export async function fetchAuth<T>(
           saveReturnToPath(returnTo);
         }
         logoutUser();
-        // Dispatch a custom event so the UI layer can show a toast and redirect
         window.dispatchEvent(
           new CustomEvent("auth:session-expired", {
             detail: {
@@ -432,7 +456,7 @@ export async function fetchAuth<T>(
       return retryPayload;
     }
 
-    // 401 but NOT token-expired (e.g. truly unauthorized) → reject normally
+    // 401 but NOT token-expired (truly unauthorized) → reject normally
     throw new Error(
       errPayload?.error ||
         errPayload?.message ||
