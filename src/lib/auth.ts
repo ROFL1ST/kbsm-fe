@@ -6,11 +6,15 @@ export const {
   AUTH_STATE_CHANGE_EVENT,
 } = import.meta.env;
 
+const AUTH_REFRESH_TOKEN_KEY = "auth_refresh_token";
+const AUTH_RETURN_TO_KEY = "auth_return_to";
+
 export type ApiEnvelope<T> = {
   status: boolean;
   message: string;
   data: T | null;
   error: string | null;
+  code?: string;
 };
 
 type RegisterResponseData = {
@@ -21,6 +25,7 @@ type RegisterResponseData = {
 
 type LoginResponseData = {
   access_token: string;
+  refresh_token?: string;
   token_type: string;
   expires_in: number;
   user: {
@@ -28,6 +33,11 @@ type LoginResponseData = {
     email: string;
     created_at: string;
   };
+};
+
+type RefreshResponseData = {
+  access_token: string;
+  refresh_token?: string;
 };
 
 export type AuthUser = LoginResponseData["user"];
@@ -162,6 +172,18 @@ export function saveAccessToken(token: string) {
   window.dispatchEvent(new Event(AUTH_STATE_CHANGE_EVENT));
 }
 
+export function saveRefreshToken(token: string) {
+  localStorage.setItem(AUTH_REFRESH_TOKEN_KEY, token);
+}
+
+export function getRefreshToken() {
+  return localStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
+}
+
+export function clearRefreshToken() {
+  localStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
+}
+
 export async function saveHashedAuthUserId(userId: string) {
   const hashedUserId = await hashValue(userId);
   localStorage.setItem(AUTH_HASHED_USER_ID_STORAGE_KEY, hashedUserId);
@@ -249,6 +271,73 @@ export function getAuthUser(): AuthUser | null {
   return decodedUser;
 }
 
+// ---------- Return-to path ----------
+export function saveReturnToPath(path: string) {
+  sessionStorage.setItem(AUTH_RETURN_TO_KEY, path);
+}
+
+export function getReturnToPath(): string | null {
+  return sessionStorage.getItem(AUTH_RETURN_TO_KEY);
+}
+
+export function clearReturnToPath() {
+  sessionStorage.removeItem(AUTH_RETURN_TO_KEY);
+}
+
+// ---------- Logout helper (clears all auth state) ----------
+export function logoutUser() {
+  clearAccessToken();
+  clearRefreshToken();
+}
+
+// ---------- Refresh token ----------
+// Single in-flight refresh promise to prevent parallel refresh storms.
+let _refreshPromise: Promise<string> | null = null;
+
+async function refreshAccessToken(): Promise<string> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    throw new Error("Refresh token tidak tersedia.");
+  }
+
+  const response = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+
+  const payload =
+    await readJsonSafely<ApiEnvelope<RefreshResponseData>>(response);
+
+  if (!payload || !response.ok || !payload.status || !payload.data) {
+    throw new Error(
+      payload?.error || payload?.message || "Refresh token gagal.",
+    );
+  }
+
+  const { access_token, refresh_token } = payload.data;
+  saveAccessToken(access_token);
+  if (refresh_token) {
+    saveRefreshToken(refresh_token);
+  }
+
+  return access_token;
+}
+
+/**
+ * Ensures at most one refresh request is in-flight at any time.
+ * Concurrent callers wait for the same promise.
+ */
+function getOrStartRefresh(): Promise<string> {
+  if (!_refreshPromise) {
+    _refreshPromise = refreshAccessToken().finally(() => {
+      _refreshPromise = null;
+    });
+  }
+  return _refreshPromise;
+}
+
+// ---------- Authenticated fetch with auto-refresh interceptor ----------
 export async function fetchAuth<T>(
   path: string,
   options?: RequestInit,
@@ -258,32 +347,103 @@ export async function fetchAuth<T>(
     throw new Error("Token otentikasi tidak ditemukan. Silakan login kembali.");
   }
 
-  const headers = new Headers(options?.headers);
-  if (
-    !headers.has("Content-Type") &&
-    options?.method &&
-    options.method !== "GET"
-  ) {
-    headers.set("Content-Type", "application/json");
-  }
-  headers.set("Authorization", `Bearer ${token}`);
+  const buildHeaders = (accessToken: string): Headers => {
+    const headers = new Headers(options?.headers);
+    if (
+      !headers.has("Content-Type") &&
+      options?.method &&
+      options.method !== "GET"
+    ) {
+      headers.set("Content-Type", "application/json");
+    }
+    headers.set("Authorization", `Bearer ${accessToken}`);
+    return headers;
+  };
 
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+  // --- First attempt ---
+  const firstResponse = await fetch(`${getApiBaseUrl()}${path}`, {
     ...options,
-    headers,
+    headers: buildHeaders(token),
   });
 
-  const payload = await readJsonSafely<ApiEnvelope<T>>(response);
-
-  if (!payload) {
-    throw new Error("Server mengembalikan response kosong.");
+  // Fast path: success
+  if (firstResponse.ok) {
+    const payload = await readJsonSafely<ApiEnvelope<T>>(firstResponse);
+    if (!payload) throw new Error("Server mengembalikan response kosong.");
+    if (!payload.status) {
+      throw new Error(
+        payload.error || payload.message || "Request gagal diproses.",
+      );
+    }
+    return payload;
   }
 
-  if (!response.ok || !payload.status) {
+  // --- Handle 401: attempt refresh only for TOKEN_EXPIRED ---
+  if (firstResponse.status === 401) {
+    const errPayload =
+      await readJsonSafely<ApiEnvelope<null>>(firstResponse);
+    const isTokenExpired =
+      errPayload?.code === "TOKEN_EXPIRED" ||
+      // Fallback: treat any 401 with a refresh token available as expired
+      (!errPayload?.code && Boolean(getRefreshToken()));
+
+    if (isTokenExpired) {
+      let newToken: string;
+      try {
+        newToken = await getOrStartRefresh();
+      } catch {
+        // Refresh failed → logout and redirect to login
+        const returnTo = window.location.pathname + window.location.search;
+        if (returnTo !== "/login") {
+          saveReturnToPath(returnTo);
+        }
+        logoutUser();
+        // Dispatch a custom event so the UI layer can show a toast and redirect
+        window.dispatchEvent(
+          new CustomEvent("auth:session-expired", {
+            detail: {
+              message:
+                "Sesi Anda telah berakhir. Silakan login kembali untuk melanjutkan.",
+            },
+          }),
+        );
+        throw new Error(
+          "Sesi Anda telah berakhir. Silakan login kembali untuk melanjutkan.",
+        );
+      }
+
+      // --- Retry original request with new token ---
+      const retryResponse = await fetch(`${getApiBaseUrl()}${path}`, {
+        ...options,
+        headers: buildHeaders(newToken),
+      });
+
+      const retryPayload =
+        await readJsonSafely<ApiEnvelope<T>>(retryResponse);
+      if (!retryPayload)
+        throw new Error("Server mengembalikan response kosong.");
+      if (!retryResponse.ok || !retryPayload.status) {
+        throw new Error(
+          retryPayload.error ||
+            retryPayload.message ||
+            "Request gagal diproses.",
+        );
+      }
+      return retryPayload;
+    }
+
+    // 401 but NOT token-expired (e.g. truly unauthorized) → reject normally
     throw new Error(
-      payload.error || payload.message || "Request gagal diproses.",
+      errPayload?.error ||
+        errPayload?.message ||
+        "Tidak memiliki akses. Silakan login kembali.",
     );
   }
 
-  return payload;
+  // --- All other non-ok responses ---
+  const payload = await readJsonSafely<ApiEnvelope<T>>(firstResponse);
+  if (!payload) throw new Error("Server mengembalikan response kosong.");
+  throw new Error(
+    payload.error || payload.message || "Request gagal diproses.",
+  );
 }
